@@ -1,0 +1,2714 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRM Автосервис v2</title>
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-database-compat.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+  background: #1e1e2e;
+  color: #e0e0e0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+header {
+  background: #181825;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  border-bottom: 2px solid #313244;
+  flex-wrap: wrap;
+}
+header h1 { font-size: 20px; color: #89b4fa; }
+header .user-info {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+select, button, input, textarea {
+  background: #313244;
+  color: #e0e0e0;
+  border: 1px solid #45475a;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-family: inherit;
+  font-size: 13px;
+}
+button {
+  cursor: pointer;
+  transition: 0.2s;
+}
+button:hover { background: #45475a; }
+button.primary { background: #89b4fa; color: #1e1e2e; font-weight: 600; }
+button.primary:hover { background: #74a8f5; }
+button.success { background: #a6e3a1; color: #1e1e2e; }
+button.danger { background: #f38ba8; color: #1e1e2e; }
+button.warning { background: #f9e2af; color: #1e1e2e; }
+button.small { padding: 3px 8px; font-size: 12px; }
+
+.bell-btn {
+  position: relative;
+  background: #313244;
+  font-size: 18px;
+  padding: 5px 10px;
+}
+.bell-badge {
+  position: absolute;
+  top: -5px; right: -5px;
+  background: #f38ba8;
+  color: white;
+  border-radius: 50%;
+  font-size: 10px;
+  min-width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+}
+
+.board {
+  flex: 1;
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.column {
+  min-width: 260px;
+  width: 260px;
+  background: #181825;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  max-height: 100%;
+  border: 2px solid #313244;
+}
+.column.drag-over { border-color: #89b4fa; background: #1e1e2e; }
+.column-header {
+  padding: 10px;
+  font-weight: 600;
+  font-size: 13px;
+  text-align: center;
+  border-bottom: 2px solid #313244;
+  border-radius: 8px 8px 0 0;
+  color: #1e1e2e;
+}
+.col-1 .column-header { background: #f9e2af; }
+.col-2 .column-header { background: #fab387; }
+.col-3 .column-header { background: #f38ba8; }
+.col-4 .column-header { background: #89b4fa; }
+.col-5 .column-header { background: #a6e3a1; }
+.col-6 .column-header { background: #cba6f7; }
+
+.column-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.column-body::-webkit-scrollbar { width: 6px; }
+.column-body::-webkit-scrollbar-thumb { background: #45475a; border-radius: 3px; }
+
+.task {
+  background: #313244;
+  border-radius: 6px;
+  padding: 8px;
+  cursor: grab;
+  font-size: 12px;
+  border-left: 4px solid #89b4fa;
+  transition: transform 0.15s;
+  user-select: none;
+}
+.task:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
+.task.dragging { opacity: 0.5; }
+.task-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+.task-title { font-size: 13px; color: #cdd6f4; }
+.task-time { font-size: 11px; color: #a6adc8; }
+.task-row { font-size: 11px; color: #bac2de; margin: 2px 0; }
+.task-row b { color: #89b4fa; }
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+.modal {
+  background: #1e1e2e;
+  border-radius: 10px;
+  padding: 20px;
+  max-width: 700px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  border: 2px solid #313244;
+}
+.modal h2 { color: #89b4fa; margin-bottom: 15px; font-size: 18px; }
+.modal h3 { color: #a6e3a1; margin: 12px 0 8px; font-size: 14px; }
+.modal label { display: block; margin: 8px 0 4px; font-size: 13px; color: #bac2de; }
+.modal input, .modal textarea, .modal select {
+  width: 100%;
+  padding: 8px;
+}
+.modal textarea { min-height: 70px; resize: vertical; }
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 15px;
+  flex-wrap: wrap;
+}
+.readonly-field {
+  background: #181825;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  margin: 4px 0;
+  color: #a6adc8;
+  border: 1px solid #313244;
+}
+.readonly-field b { color: #cdd6f4; }
+
+.char-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 8px 0;
+}
+.char-item {
+  background: #313244;
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: 0.2s;
+}
+.char-item:hover { background: #45475a; }
+.char-item .label { color: #89b4fa; font-weight: 600; }
+.char-item .value { color: #cdd6f4; text-align: right; flex: 1; margin-left: 10px; }
+
+.vin-copy { cursor: pointer; }
+.vin-copy:active { color: #a6e3a1; }
+
+.log-entry {
+  background: #181825;
+  border-left: 3px solid #89b4fa;
+  padding: 6px 10px;
+  margin: 4px 0;
+  font-size: 11px;
+  border-radius: 4px;
+}
+.log-entry .log-time { color: #6c7086; font-size: 10px; }
+
+.notification-panel {
+  position: fixed;
+  top: 60px;
+  right: 20px;
+  background: #1e1e2e;
+  border: 2px solid #313244;
+  border-radius: 8px;
+  width: 320px;
+  max-height: 400px;
+  overflow-y: auto;
+  z-index: 999;
+  padding: 10px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+}
+.notification-panel h3 { color: #89b4fa; font-size: 14px; margin-bottom: 8px; }
+.notif-item {
+  background: #313244;
+  padding: 8px;
+  border-radius: 4px;
+  margin-bottom: 6px;
+  font-size: 12px;
+  border-left: 3px solid #f9e2af;
+}
+.notif-item.unread { border-left-color: #f38ba8; }
+.notif-item .notif-time { color: #6c7086; font-size: 10px; }
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+}
+.badge-green { background: #a6e3a1; color: #1e1e2e; }
+.badge-red { background: #f38ba8; color: #1e1e2e; }
+.badge-yellow { background: #f9e2af; color: #1e1e2e; }
+.badge-blue { background: #89b4fa; color: #1e1e2e; }
+.badge-gray { background: #6c7086; color: #e0e0e0; }
+
+.part-row {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  margin-bottom: 5px;
+  flex-wrap: wrap;
+}
+.part-row input { flex: 1; min-width: 100px; }
+.part-row select { width: auto; }
+
+.empty-msg { text-align: center; color: #6c7086; font-size: 12px; padding: 20px; }
+
+.schedule-post {
+  background: #313244;
+  padding: 8px;
+  border-radius: 6px;
+  margin: 5px 0;
+  font-size: 12px;
+}
+
+/* ===== ВКЛАДКИ ===== */
+.tab-btn {
+  background: transparent;
+  border: 1px solid #45475a;
+  color: #a6adc8;
+  font-weight: 600;
+}
+.tab-btn.active { background: #89b4fa; border-color: #89b4fa; color: #1e1e2e; }
+.tab-btn.active:hover { background: #74a8f5; }
+
+/* ===== СТРОКИ ЗАПЧАСТЕЙ / РАБОТ / ОПЛАТ ===== */
+.part-row input, .part-row select { flex: 1; min-width: 70px; }
+.part-row input.num { flex: 0 0 90px; min-width: 90px; }
+.part-row .row-total {
+  flex: 0 0 60px;
+  min-width: 60px;
+  text-align: right;
+  font-size: 12px;
+  font-weight: 600;
+  color: #a6e3a1;
+  align-self: center;
+}
+.part-row .row-total.neg { color: #f38ba8; }
+.part-row select.work-status { flex: 0 0 120px; min-width: 110px; }
+
+.rows-head {
+  display: flex;
+  gap: 5px;
+  font-size: 10px;
+  color: #6c7086;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin: 6px 0 2px;
+}
+.rows-head span { flex: 1; min-width: 70px; }
+.rows-head span.num { flex: 0 0 90px; min-width: 90px; }
+.rows-head span.row-total { flex: 0 0 60px; min-width: 60px; text-align: right; }
+.rows-head span.work-status { flex: 0 0 120px; min-width: 110px; }
+
+/* ===== КАЛЬКУЛЯЦИЯ ===== */
+.calc-wrap { flex: 1; overflow: auto; padding: 15px; }
+.calc-summary { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.calc-card {
+  background: #181825;
+  border: 2px solid #313244;
+  border-radius: 8px;
+  padding: 10px 14px;
+  min-width: 150px;
+}
+.calc-card .calc-card-title { font-size: 11px; color: #a6adc8; text-transform: uppercase; letter-spacing: 0.4px; }
+.calc-card .calc-card-value { font-size: 18px; font-weight: 700; margin-top: 4px; color: #cdd6f4; }
+.calc-card.green .calc-card-value { color: #a6e3a1; }
+.calc-card.red .calc-card-value { color: #f38ba8; }
+.calc-card.blue .calc-card-value { color: #89b4fa; }
+.calc-hint { font-size: 11px; color: #6c7086; margin-bottom: 10px; }
+
+.calc-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  background: #181825;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.calc-table th {
+  background: #313244;
+  color: #89b4fa;
+  padding: 8px 10px;
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+}
+.calc-table th:hover { background: #45475a; }
+.calc-table td { padding: 7px 10px; border-top: 1px solid #313244; }
+.calc-table tbody tr.clickable { cursor: pointer; }
+.calc-table tbody tr.clickable:hover { background: #313244; }
+.calc-table td.num, .calc-table th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.calc-table td.exp { color: #f38ba8; font-weight: 600; }
+.calc-table td.inc { color: #a6e3a1; font-weight: 600; }
+.calc-table td.paid { color: #6c7086; }
+.calc-table td.debt { color: #6c7086; font-weight: 600; }
+.calc-table td.debt.owed { color: #f9e2af; }
+.calc-table tfoot td.debt { color: #f9e2af; }
+.calc-table td.profit { font-weight: 700; }
+.calc-table td.profit.pos { color: #a6e3a1; }
+.calc-table td.profit.neg { color: #f38ba8; }
+.calc-table tfoot td {
+  background: #313244;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 10px;
+  border-top: 2px solid #45475a;
+}
+.calc-table tfoot td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.calc-table tfoot td.exp { color: #f38ba8; }
+.calc-table tfoot td.inc { color: #a6e3a1; }
+.calc-table td.del-cell, .calc-table th.del-cell { text-align: center; width: 40px; }
+.calc-status { font-size: 10px; color: #6c7086; display: block; margin-top: 2px; }
+.calc-num-col { font-variant-numeric: tabular-nums; color: #89b4fa; font-weight: 700; }
+.pay-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; }
+.pay-badge.unpaid { background: #f38ba8; color: #1e1e2e; }
+.pay-badge.paid { background: #a6e3a1; color: #1e1e2e; }
+.pay-badge.none { background: #6c7086; color: #e0e0e0; }
+.settings-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  padding: 10px 12px;
+  background: #313244;
+  border-radius: 6px;
+  margin: 6px 0;
+  font-size: 13px;
+}
+.settings-row .desc { font-size: 11px; color: #6c7086; margin-top: 3px; }
+.switch { position: relative; display: inline-block; width: 42px; height: 22px; flex-shrink: 0; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.switch .slider {
+  position: absolute; inset: 0; cursor: pointer;
+  background: #45475a; border-radius: 22px; transition: 0.2s;
+}
+.switch .slider:before {
+  content: ""; position: absolute; height: 16px; width: 16px;
+  left: 3px; top: 3px; background: #cdd6f4; border-radius: 50%; transition: 0.2s;
+}
+.switch input:checked + .slider { background: #a6e3a1; }
+.switch input:checked + .slider:before { transform: translateX(20px); background: #1e1e2e; }
+
+.sum-line {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  margin: 4px 0;
+  color: #bac2de;
+  gap: 15px;
+}
+.sum-line b { color: #cdd6f4; }
+.sum-line.total { border-top: 1px solid #45475a; margin-top: 8px; padding-top: 6px; font-size: 14px; }
+.sum-line.total b { color: #a6e3a1; }
+.sum-line.total.neg b { color: #f38ba8; }
+.pay-list { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
+.pay-item {
+  background: #313244;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.pay-item .pay-date { color: #89b4fa; font-weight: 600; }
+.pay-item .pay-comment { flex: 1; color: #a6adc8; font-size: 11px; }
+.pay-item .pay-sum { color: #a6e3a1; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🔧 CRM Автосервис <small style="color:#6c7086;font-size:12px">v2</small></h1>
+  <select id="userSelect">
+    <option value="chief">Главный механик</option>
+    <option value="electric">Работник: Электрик</option>
+    <option value="locksmith">Работник: Слесарь</option>
+    <option value="motorist">Работник: Моторист</option>
+  </select>
+  <button id="tabBtnBoard" class="tab-btn active" onclick="switchTab('board')">📋 Канбан</button>
+  <button id="tabBtnCalc" class="tab-btn" onclick="switchTab('calc')">💰 Калькуляция</button>
+  <button class="primary" onclick="openNewTaskModal()">➕ Новая задача</button>
+  <button onclick="createRandomTask()">🎲 Случайная задача</button>
+  <button onclick="showSchedule()">📅 Расписание постов</button>
+  <button onclick="exportCsv()">📤 Экспорт CSV</button>
+  <button onclick="openImportModal()">📥 Импорт CSV</button>
+  <button onclick="openSettings()">⚙ Настройки</button>
+  <div class="user-info">
+    <button class="bell-btn" onclick="toggleNotifications()">
+      🔔<span class="bell-badge" id="notifBadge" style="display:none">0</span>
+    </button>
+    <span id="currentUserLabel">Главный механик</span>
+  </div>
+</header>
+
+<div class="board" id="board"></div>
+<div class="calc-wrap" id="calcView" style="display:none"></div>
+
+<div id="modalContainer"></div>
+<div id="notifPanel"></div>
+
+<script>
+// ============ FIREBASE INIT ============
+// Firebase JS SDK v12.19.0 (compat). Ключи проекта baza54crm.
+// ВАЖНО: key не является секретом — доступ к данным регулируется правилами
+// Realtime Database (Firebase Console → Realtime Database → Правила).
+const firebaseConfig = {
+  apiKey: "AIzaSyC6l-V5BOMO_rJ9cxJq3_HMhDCpWyak9UQ",
+  authDomain: "baza54crm.firebaseapp.com",
+  databaseURL: "https://baza54crm-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "baza54crm",
+  storageBucket: "baza54crm.firebasestorage.app",
+  messagingSenderId: "538489079474",
+  appId: "1:538489079474:web:3c274bd327700e37e1ebab",
+  measurementId: "G-Z8ZFLSR9J8"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const dataRef = db.ref('crm_data');
+
+// ============ ДАННЫЕ ============
+
+const USERS = {
+  chief: { name: 'Главный механик', role: 'chief' },
+  electric: { name: 'Электрик', role: 'worker' },
+  locksmith: { name: 'Слесарь', role: 'worker' },
+  motorist: { name: 'Моторист', role: 'worker' }
+};
+
+const COLUMNS = [
+  { id: 'waiting', title: '1. Ожидает действия', cls: 'col-1' },
+  { id: 'approval', title: '2. На согласовании', cls: 'col-2' },
+  { id: 'parts', title: '3. Заказ / Ремонт запчастей', cls: 'col-3' },
+  { id: 'inwork', title: '4. В работе', cls: 'col-4' },
+  { id: 'done', title: '5. Работа завершена', cls: 'col-5' },
+  { id: 'issue', title: '6. На выдачу', cls: 'col-6' }
+];
+
+const COLORS = ['#89b4fa','#a6e3a1','#f9e2af','#f38ba8','#cba6f7','#fab387','#94e2d5','#f5c2e7'];
+
+let state = {
+  tasks: [],
+  notifications: [],
+  currentUser: 'chief',
+  notifOpen: false,
+  lastRead: {},
+  activeTab: 'board',
+  taskCounter: 0,
+  calcSort: { field: 'taskNumber', dir: 'asc' }
+};
+
+function loadState() {
+  // Подписываемся на изменения в Firebase в реальном времени
+  dataRef.on('value', (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      state.tasks = data.tasks || [];
+      state.notifications = data.notifications || [];
+      state.lastRead = data.lastRead || {};
+      state.taskCounter = data.taskCounter || 0;
+    }
+    normalizeTasks(state.tasks);
+    render();
+  }, (error) => {
+    console.error('Firebase read error:', error);
+    // Fallback на localStorage если Firebase недоступен
+    try {
+      const saved = localStorage.getItem('crm_autoservice_v1');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        state.tasks = parsed.tasks || [];
+        state.notifications = parsed.notifications || [];
+        state.lastRead = parsed.lastRead || {};
+        state.taskCounter = parsed.taskCounter || 0;
+      }
+    } catch(e) { console.error(e); }
+    normalizeTasks(state.tasks);
+    render();
+  });
+}
+
+function saveState() {
+  const data = {
+    tasks: state.tasks,
+    notifications: state.notifications,
+    lastRead: state.lastRead,
+    taskCounter: state.taskCounter
+  };
+  // Сохраняем в Firebase
+  dataRef.set(data).catch(err => {
+    console.error('Firebase write error:', err);
+    // Fallback: сохраняем локально
+    localStorage.setItem('crm_autoservice_v1', JSON.stringify(data));
+  });
+}
+
+// Сквозной номер задачи: выдаётся один раз, при удалении не переиспользуется
+function nextTaskNumber() {
+  state.taskCounter = (state.taskCounter || 0) + 1;
+  return state.taskCounter;
+}
+
+const PARTS_STATUS = {
+  notordered: 'Не заказано',
+  ordered: 'Заказано',
+  instock: 'На складе'
+};
+
+const WORKS_STATUS = {
+  notstarted: 'Не в работе',
+  inwork: 'В работе',
+  finished: 'Завершено'
+};
+
+function money(n) {
+  const v = Number(n) || 0;
+  return v.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₽';
+}
+
+function num(v) {
+  if (v === null || v === undefined || v === '') return 0;
+  const n = parseFloat(String(v).replace(/\s/g, '').replace(',', '.'));
+  return isNaN(n) ? 0 : n;
+}
+
+function esc(s) {
+  return String(s === null || s === undefined ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function partsCost(task) { return (task.parts || []).reduce((s,p) => s + num(p.purchase), 0); }
+function partsRevenue(task) { return (task.parts || []).reduce((s,p) => s + num(p.sale), 0); }
+function worksCost(task) { return (task.works || []).reduce((s,w) => s + num(w.cost), 0); }
+function worksRevenue(task) { return (task.works || []).reduce((s,w) => s + num(w.price), 0); }
+function totalCost(task) { return partsCost(task) + worksCost(task); }
+function totalRevenue(task) { return partsRevenue(task) + worksRevenue(task); }
+function paidSum(task) { return (task.payments || []).reduce((s,p) => s + num(p.amount), 0); }
+function netProfit(task) { return totalRevenue(task) - totalCost(task); }
+
+// Нормализация задач после загрузки (совместимость со старыми данными)
+function normalizeTasks(tasks) {
+  (tasks || []).forEach(t => {
+    if (!t.parts) t.parts = [];
+    t.parts.forEach(p => {
+      if (p.purchase === undefined) p.purchase = '';
+      if (p.sale === undefined) p.sale = '';
+      if (!p.status) p.status = 'notordered';
+    });
+    if (!t.works) t.works = [];
+    t.works.forEach(w => {
+      if (w.cost === undefined) w.cost = '';
+      if (w.price === undefined) w.price = '';
+      if (!w.status) w.status = 'notstarted';
+      if (!w.link) w.link = '';
+    });
+    if (!t.payments) t.payments = [];
+    if (!t.log) t.log = [];
+    if (!t.client) t.client = { name: '—', phone: '—', history: [] };
+    if (!t.client.history) t.client.history = [];
+    if (!t.car) t.car = { plate: '—', model: '—', year: '', vin: '' };
+  });
+
+  // Номера задач: отдаём старым задачам недостающие номера по порядку создания,
+  // счётчик поднимаем выше максимального, чтобы номера не переиспользовались
+  const numbered = (tasks || []).filter(t => typeof t.number === 'number' && t.number > 0);
+  if (numbered.length) {
+    state.taskCounter = Math.max(state.taskCounter || 0, ...numbered.map(t => t.number));
+  }
+  const unnumbered = (tasks || [])
+    .filter(t => typeof t.number !== 'number' || !(t.number > 0))
+    .sort((a, b) => String(a.createdAt || a.updatedAt || '').localeCompare(String(b.createdAt || b.updatedAt || '')));
+  unnumbered.forEach(t => { t.number = nextTaskNumber(); });
+}
+
+// ============ СТАТУС ОПЛАТЫ ============
+// 'none'  — нет суммы к оплате (доходы не заданы)
+// 'unpaid'— не оплачено (оплачено меньше суммы к оплате)
+// 'paid'  — оплачено полностью (оплачено >= доходы и доходы > 0)
+function paymentState(task) {
+  const rev = totalRevenue(task);
+  if (rev <= 0) return 'none';
+  const paid = paidSum(task);
+  return paid >= rev - 0.005 ? 'paid' : 'unpaid';
+}
+
+function paymentLabel(state) {
+  if (state === 'paid') return 'Оплачено';
+  if (state === 'unpaid') return 'Неоплачено';
+  return 'Нет суммы';
+}
+
+function paymentBadge(task) {
+  const st = paymentState(task);
+  const cls = st === 'paid' ? 'paid' : (st === 'unpaid' ? 'unpaid' : 'none');
+  return `<span class="pay-badge ${cls}">${paymentLabel(st)}</span>`;
+}
+
+// ============ НАСТРОЙКИ ВИДИМОСТИ ============
+const SETTINGS_KEY = 'crm_autoservice_v2_settings';
+
+const DEFAULT_SETTINGS = {
+  showPost: true,
+  showAssignee: true
+};
+
+let appSettings = Object.assign({}, DEFAULT_SETTINGS);
+
+function loadSettings() {
+  try {
+    const raw = localStorage.getItem(SETTINGS_KEY);
+    if (raw) appSettings = Object.assign({}, DEFAULT_SETTINGS, JSON.parse(raw));
+  } catch(e) { console.error('settings load error', e); }
+}
+
+function saveSettings() {
+  try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(appSettings)); }
+  catch(e) { console.error('settings save error', e); }
+  saveState();
+  render();
+}
+
+function openSettings() {
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.innerHTML = `
+    <div class="modal" style="max-width:520px">
+      <h2>⚙ Настройки</h2>
+      <div class="settings-row">
+        <div>
+          <div>Показывать «🅿️ Пост»</div>
+          <div class="desc">Столбец поста на карточке задачи и в расписании</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="setShowPost" ${appSettings.showPost ? 'checked' : ''}>
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="settings-row">
+        <div>
+          <div>Показывать «👤 Исполнитель»</div>
+          <div class="desc">Столбец исполнителя на карточке задачи</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="setShowAssignee" ${appSettings.showAssignee ? 'checked' : ''}>
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button onclick="resetSettings()">Сбросить</button>
+        <button class="primary" onclick="applySettings()">Сохранить</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('modalContainer').appendChild(modal);
+}
+
+function applySettings() {
+  appSettings.showPost = document.getElementById('setShowPost').checked;
+  appSettings.showAssignee = document.getElementById('setShowAssignee').checked;
+  saveSettings();
+  closeModal();
+}
+
+function resetSettings() {
+  appSettings = Object.assign({}, DEFAULT_SETTINGS);
+  saveSettings();
+  closeModal();
+}
+
+// ============ УТИЛИТЫ ============
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+function nowStr() {
+  const d = new Date();
+  return d.toLocaleString('ru-RU', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+}
+
+function genVin() {
+  const chars = 'ABCDEFGHJKLMNPRSTUVWXYZ0123456789';
+  let s = '';
+  for (let i=0;i<17;i++) s += chars[Math.floor(Math.random()*chars.length)];
+  return s;
+}
+
+function randomPlate() {
+  const L = 'АВЕКМНОРСТУХ';
+  const d = () => Math.floor(Math.random()*10);
+  return `${L[Math.floor(Math.random()*L.length)]}${d()}${d()}${d()}${L[Math.floor(Math.random()*L.length)]}${L[Math.floor(Math.random()*L.length)]} ${d()}${d()}${d()}`;
+}
+
+function randomModel() {
+  const models = ['Toyota Camry','Kia Rio','Hyundai Solaris','Lada Vesta','BMW X5','Mercedes E200','Ford Focus','Skoda Octavia','Nissan Qashqai','VW Tiguan'];
+  return models[Math.floor(Math.random()*models.length)];
+}
+
+function randomName() {
+  const names = ['Иванов Иван Иванович','Петров Петр Петрович','Сидоров Сидор Сидорович','Кузнецов Алексей','Смирнова Анна','Морозов Дмитрий','Волков Сергей','Зайцева Елена'];
+  return names[Math.floor(Math.random()*names.length)];
+}
+
+function randomPhone() {
+  return '+7' + (9000000000 + Math.floor(Math.random()*999999999));
+}
+
+function randomReason() {
+  const reasons = ['Стук в двигателе','Не заводится','Проблема с электрикой','Замена масла','Тормозная система','Подвеска стучит','Кондиционер не работает','Утечка антифриза'];
+  return reasons[Math.floor(Math.random()*reasons.length)];
+}
+
+function getTaskColor(id) {
+  let h = 0;
+  for (let i=0;i<id.length;i++) h = (h*31 + id.charCodeAt(i)) | 0;
+  return COLORS[Math.abs(h) % COLORS.length];
+}
+
+function formatTime(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleString('ru-RU', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+}
+
+function parseTimeToMinutes(t) {
+  if (!t) return Infinity;
+  const d = new Date(t);
+  if (isNaN(d)) return Infinity;
+  return d.getTime();
+}
+
+// ============ РЕНДЕР ============
+function render() {
+  renderBoard();
+  renderCalculator();
+  renderNotifications();
+  updateBadge();
+  document.getElementById('currentUserLabel').textContent = USERS[state.currentUser].name;
+}
+
+function switchTab(tab) {
+  state.activeTab = tab;
+  document.getElementById('tabBtnBoard').classList.toggle('active', tab === 'board');
+  document.getElementById('tabBtnCalc').classList.toggle('active', tab === 'calc');
+  document.getElementById('board').style.display = tab === 'board' ? 'flex' : 'none';
+  document.getElementById('calcView').style.display = tab === 'calc' ? 'block' : 'none';
+  render();
+}
+
+function visibleTasksForUser() {
+  const u = state.currentUser;
+  if (USERS[u].role === 'chief') return state.tasks;
+  // Работник видит: назначенные ему ИЛИ без исполнителя
+  return state.tasks.filter(t => !t.assignee || t.assignee === u);
+}
+
+function renderBoard() {
+  const board = document.getElementById('board');
+  board.innerHTML = '';
+  const visible = visibleTasksForUser();
+
+  COLUMNS.forEach(col => {
+    const colEl = document.createElement('div');
+    colEl.className = `column ${col.cls}`;
+    colEl.dataset.col = col.id;
+
+    const header = document.createElement('div');
+    header.className = 'column-header';
+    const count = visible.filter(t => t.column === col.id).length;
+    header.textContent = `${col.title} (${count})`;
+    colEl.appendChild(header);
+
+    const body = document.createElement('div');
+    body.className = 'column-body';
+    body.dataset.col = col.id;
+
+    // drag & drop
+    colEl.addEventListener('dragover', e => { e.preventDefault(); colEl.classList.add('drag-over'); });
+    colEl.addEventListener('dragleave', () => colEl.classList.remove('drag-over'));
+    colEl.addEventListener('drop', e => {
+      e.preventDefault();
+      colEl.classList.remove('drag-over');
+      const id = e.dataTransfer.getData('text/plain');
+      if (id) tryMoveTask(id, col.id);
+    });
+
+    const tasks = visible.filter(t => t.column === col.id)
+      .sort((a,b) => parseTimeToMinutes(b.updatedAt) - parseTimeToMinutes(a.updatedAt));
+
+    tasks.forEach(t => body.appendChild(renderTask(t)));
+
+    if (tasks.length === 0) {
+      const em = document.createElement('div');
+      em.className = 'empty-msg';
+      em.textContent = 'Пусто';
+      body.appendChild(em);
+    }
+
+    colEl.appendChild(body);
+    board.appendChild(colEl);
+  });
+}
+
+function renderTask(task) {
+  const el = document.createElement('div');
+  el.className = 'task';
+  el.draggable = true;
+  el.dataset.id = task.id;
+  el.style.borderLeftColor = getTaskColor(task.id);
+
+  const partsStatus = getPartsSummary(task);
+  const worksStatus = getWorksSummary(task);
+
+  el.innerHTML = `
+    <div class="task-header">
+      <span class="task-title">${esc(task.car.plate)} · ${esc(task.car.model)}</span>
+    </div>
+    <div class="task-row">⏰ ${formatTime(task.scheduledTime)}</div>
+    ${appSettings.showAssignee ? `<div class="task-row">👤 ${task.assignee ? USERS[task.assignee].name : '—'}</div>` : ''}
+    ${appSettings.showPost ? `<div class="task-row">🅿️ Пост №${task.post || '—'}</div>` : ''}
+    ${partsStatus ? `<div class="task-row">${partsStatus}</div>` : ''}
+    ${worksStatus ? `<div class="task-row">${worksStatus}</div>` : ''}
+    <div class="task-row">💰 ${money(totalRevenue(task))} · 📥 ${money(paidSum(task))}</div>
+    <div class="task-row">${paymentBadge(task)}</div>
+  `;
+
+  el.addEventListener('dragstart', e => {
+    e.dataTransfer.setData('text/plain', task.id);
+    el.classList.add('dragging');
+  });
+  el.addEventListener('dragend', () => el.classList.remove('dragging'));
+
+  // Двойной клик — просмотр
+  el.addEventListener('dblclick', () => openTaskView(task.id));
+
+  return el;
+}
+
+function getPartsSummary(task) {
+  if (!task.parts || task.parts.length === 0) return '';
+  const statuses = task.parts.map(p => p.status);
+  if (statuses.every(s => s === 'instock')) return `<span class="badge badge-green">Запчасти: на складе</span>`;
+  if (statuses.some(s => s === 'notordered')) return `<span class="badge badge-red">Запчасти: не заказано</span>`;
+  return `<span class="badge badge-yellow">Запчасти: заказаны</span>`;
+}
+
+function getWorksSummary(task) {
+  if (!task.works || task.works.length === 0) return '';
+  const statuses = task.works.map(w => w.status);
+  if (statuses.every(s => s === 'finished')) return `<span class="badge badge-green">Работы: завершено</span>`;
+  if (statuses.some(s => s === 'notstarted')) return `<span class="badge badge-red">Работы: не в работе</span>`;
+  return `<span class="badge badge-yellow">Работы: в работе</span>`;
+}
+
+// ============ ПЕРЕМЕЩЕНИЕ ЗАДАЧ ============
+function tryMoveTask(taskId, newCol) {
+  const task = state.tasks.find(t => t.id === taskId);
+  if (!task) return;
+
+  // Работник не может перемещать задачи, если он не назначен или нет прав
+  const u = state.currentUser;
+  if (USERS[u].role === 'worker') {
+    if (task.assignee && task.assignee !== u) {
+      alert('Вы не можете изменять эту задачу');
+      return;
+    }
+    if (!task.assignee) {
+      // без исполнителя — можно взять, но с назначением
+      if (newCol !== 'inwork') {
+        alert('Сначала возьмите задачу в работу (назначьте себя исполнителем)');
+        return;
+      }
+    }
+  }
+
+  if (task.column === newCol) return;
+
+  openMoveModal(taskId, newCol);
+}
+
+function openMoveModal(taskId, newCol) {
+  const task = state.tasks.find(t => t.id === taskId);
+  const colInfo = COLUMNS.find(c => c.id === newCol);
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+
+  let extraFields = '';
+
+  if (newCol === 'waiting') {
+    extraFields = `
+      <label>Какое действие ожидается? *</label>
+      <textarea id="mExpectedAction" placeholder="Опишите ожидаемое действие">${task.pendingAction||''}</textarea>
+    `;
+  } else if (newCol === 'approval') {
+    extraFields = `
+      <label>Что необходимо согласовать? *</label>
+      <textarea id="mApproval" placeholder="Опишите, что нужно согласовать">${task.approvalNote||''}</textarea>
+    `;
+  } else if (newCol === 'parts') {
+    extraFields = `
+      <label>Запчасти для приобретения</label>
+      <div class="rows-head">
+        <span>Название</span><span>Ссылка</span><span class="num">Закупка ₽</span><span class="num">Продажа ₽</span><span class="work-status">Статус</span><span class="row-total">Итог</span><span></span>
+      </div>
+      <div id="partsList"></div>
+      <button type="button" class="small" onclick="addPartRow()">➕ Добавить ещё</button>
+    `;
+  } else if (newCol === 'inwork') {
+    const assigneeOpts = Object.keys(USERS).filter(k => USERS[k].role === 'worker')
+      .map(k => `<option value="${k}" ${task.assignee===k?'selected':''}>${USERS[k].name}</option>`).join('');
+    // Строки «Исполнитель» и «Пост» показываются только если включены в настройках
+    const assigneeField = appSettings.showAssignee ? `
+      <label>Исполнитель *</label>
+      <select id="mAssignee">
+        <option value="">— выберите —</option>
+        ${assigneeOpts}
+      </select>` : '';
+    const postField = appSettings.showPost ? `
+      <label>Пост *</label>
+      <select id="mPost">
+        ${[1,2,3,4].map(n => `<option value="${n}" ${task.post==n?'selected':''}>Пост №${n}</option>`).join('')}
+      </select>` : '';
+    extraFields = `
+      ${assigneeField}
+      ${postField}
+      <label>Время *</label>
+      <input type="datetime-local" id="mTime" value="${task.scheduledTime ? toLocalInput(task.scheduledTime) : ''}">
+      <label>Работа (из свободного времени)</label>
+      <select id="mWork">
+        <option value="">— выберите работу —</option>
+        <option value="Диагностика">Диагностика</option>
+        <option value="Ремонт двигателя">Ремонт двигателя</option>
+        <option value="Замена масла">Замена масла</option>
+        <option value="Электрика">Электрика</option>
+        <option value="Тормозная система">Тормозная система</option>
+        <option value="Подвеска">Подвеска</option>
+      </select>
+    `;
+  } else if (newCol === 'done') {
+    extraFields = `
+      <label>Проделанные работы</label>
+      <textarea id="mWorkDone" placeholder="Что было сделано">${task.workDone||''}</textarea>
+      <label>Комментарий</label>
+      <textarea id="mComment" placeholder="Комментарий">${task.doneComment||''}</textarea>
+      <label>Рекомендации для обслуживания</label>
+      <textarea id="mRecommend" placeholder="Рекомендации">${task.recommendations||''}</textarea>
+    `;
+  } else if (newCol === 'issue') {
+    extraFields = `
+      <div class="readonly-field"><b>Статус выдачи:</b> ${task.issued ? 'ВЫДАНО' : 'НЕ ВЫДАНО'}</div>
+    `;
+  }
+
+  modal.innerHTML = `
+    <div class="modal">
+      <h2>Перемещение: ${colInfo.title}</h2>
+      <div class="readonly-field"><b>Авто:</b> ${task.car.plate} · ${task.car.model}</div>
+      <div class="readonly-field"><b>Клиент:</b> ${task.client.name}</div>
+      <div class="readonly-field"><b>Причина:</b> ${task.reason}</div>
+      ${extraFields}
+      <div class="modal-actions">
+        <button onclick="closeModal()">Отмена</button>
+        <button class="primary" onclick="confirmMove('${taskId}','${newCol}')">Подтвердить</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('modalContainer').appendChild(modal);
+
+  if (newCol === 'parts') {
+    const list = document.getElementById('partsList');
+    (task.parts && task.parts.length ? task.parts : [{name:'',status:'notordered'}]).forEach(p => addPartRow(p));
+  }
+}
+
+function toLocalInput(iso) {
+  const d = new Date(iso);
+  const pad = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+let partRowCounter = 0;
+function addPartRow(part) {
+  const list = document.getElementById('partsList');
+  if (!list) return;
+  const id = 'part_' + (partRowCounter++);
+  const div = document.createElement('div');
+  div.className = 'part-row';
+  div.dataset.partId = id;
+  div.innerHTML = `
+    <input type="text" placeholder="Название запчасти" value="${esc(part?.name||'')}">
+    <input type="text" placeholder="Ссылка" value="${esc(part?.link||'')}">
+    <input type="number" step="0.01" min="0" class="num" placeholder="Закупка" value="${part?.purchase!==undefined?esc(part.purchase):''}" oninput="updatePartRowTotal(this)">
+    <input type="number" step="0.01" min="0" class="num" placeholder="Продажа" value="${part?.sale!==undefined?esc(part.sale):''}" oninput="updatePartRowTotal(this)">
+    <select class="work-status">
+      <option value="notordered" ${part?.status==='notordered'?'selected':''}>Не заказано</option>
+      <option value="ordered" ${part?.status==='ordered'?'selected':''}>Заказано</option>
+      <option value="instock" ${part?.status==='instock'?'selected':''}>На складе</option>
+    </select>
+    <span class="row-total">—</span>
+    <button type="button" class="danger small" onclick="this.parentElement.remove()">✕</button>
+  `;
+  list.appendChild(div);
+  updatePartRowTotal(div.querySelector('input.num'));
+}
+
+function updatePartRowTotal(el) {
+  const row = el.closest('.part-row');
+  if (!row) return;
+  const nums = row.querySelectorAll('input.num');
+  const purchase = num(nums[0] ? nums[0].value : 0);
+  const sale = num(nums[1] ? nums[1].value : 0);
+  const out = row.querySelector('.row-total');
+  if (!out) return;
+  const profit = sale - purchase;
+  out.textContent = money(profit);
+  out.classList.toggle('neg', profit < 0);
+}
+
+// Считывает строки запчастей из контейнера
+function collectPartRows(selector) {
+  const rows = document.querySelectorAll(selector + ' .part-row');
+  const parts = [];
+  rows.forEach(r => {
+    const inputs = r.querySelectorAll('input');
+    const name = inputs[0].value.trim();
+    const link = inputs[1].value.trim();
+    const purchase = inputs[2] ? inputs[2].value.trim() : '';
+    const sale = inputs[3] ? inputs[3].value.trim() : '';
+    const status = r.querySelector('select').value;
+    if (name) parts.push({ name, link, purchase, sale, status });
+  });
+  return parts;
+}
+
+function confirmMove(taskId, newCol) {
+  const task = state.tasks.find(t => t.id === taskId);
+  const oldCol = task.column;
+  const user = USERS[state.currentUser].name;
+  const logEntries = [];
+
+  if (newCol === 'waiting') {
+    const v = document.getElementById('mExpectedAction').value.trim();
+    task.pendingAction = v;
+    logEntries.push(`Ожидаемое действие: ${v || '(не указано)'}`);
+  } else if (newCol === 'approval') {
+    const v = document.getElementById('mApproval').value.trim();
+    task.approvalNote = v;
+    logEntries.push(`Согласовать: ${v || '(не указано)'}`);
+  } else if (newCol === 'parts') {
+    const parts = collectPartRows('#partsList');
+    task.parts = parts;
+    logEntries.push(`Запчасти: ${parts.map(p=>p.name).join(', ') || '(нет)'}. Закупка: ${money(partsCost(task))}, продажа: ${money(partsRevenue(task))}`);
+  } else if (newCol === 'inwork') {
+    // Поля Исполнитель и Пост могут быть скрыты в настройках
+    const assigneeEl = document.getElementById('mAssignee');
+    const postEl = document.getElementById('mPost');
+    const time = document.getElementById('mTime').value;
+    const work = document.getElementById('mWork').value;
+
+    if (assigneeEl) {
+      const assignee = assigneeEl.value;
+      if (!assignee) { alert('Назначьте исполнителя'); return; }
+      task.assignee = assignee;
+    } else if (!task.assignee) {
+      // Исполнитель скрыт и не назначен — берём первого свободного работника
+      const freeWorker = Object.keys(USERS).find(k => USERS[k].role === 'worker' &&
+        !state.tasks.some(t => t.assignee === k && t.column === 'inwork'));
+      task.assignee = freeWorker || Object.keys(USERS).find(k => USERS[k].role === 'worker');
+    }
+
+    if (postEl) {
+      task.post = parseInt(postEl.value);
+    } else if (!task.post) {
+      task.post = 1; // пост скрыт и не задан — по умолчанию Пост №1
+    }
+
+    if (!time) { alert('Укажите время'); return; }
+    task.scheduledTime = new Date(time).toISOString();
+    task.workType = work;
+
+    const assigneeTxt = task.assignee ? USERS[task.assignee].name : '—';
+    logEntries.push(`Исполнитель: ${assigneeTxt}, Пост №${task.post}, Время: ${formatTime(task.scheduledTime)}, Работа: ${work || '—'}`);
+  } else if (newCol === 'done') {
+    const wd = document.getElementById('mWorkDone').value.trim();
+    const cm = document.getElementById('mComment').value.trim();
+    const rc = document.getElementById('mRecommend').value.trim();
+    task.workDone = wd;
+    task.doneComment = cm;
+    task.recommendations = rc;
+    logEntries.push(`Проделанные работы: ${wd || '—'}`);
+    logEntries.push(`Комментарий: ${cm || '—'}`);
+    logEntries.push(`Рекомендации: ${rc || '—'}`);
+  } else if (newCol === 'issue') {
+    logEntries.push(`Перемещено в "На выдачу"`);
+  }
+
+  const fromTitle = COLUMNS.find(c=>c.id===oldCol).title;
+  const toTitle = COLUMNS.find(c=>c.id===newCol).title;
+
+  task.column = newCol;
+  task.updatedAt = new Date().toISOString();
+
+  task.log.push({
+    time: new Date().toISOString(),
+    user: user,
+    text: `Перемещение: ${fromTitle} → ${toTitle}` + (logEntries.length ? '. ' + logEntries.join(' | ') : '')
+  });
+
+  if (!task.color) task.color = getTaskColor(task.id);
+
+  // Уведомления
+  notifyAboutTask(task, `Задача ${task.car.plate} перемещена в "${toTitle}"`);
+
+  saveState();
+  closeModal();
+  render();
+}
+
+// ============ СОЗДАНИЕ ЗАДАЧ ============
+function openNewTaskModal() {
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.innerHTML = `
+    <div class="modal">
+      <h2>Новая задача</h2>
+      <h3>Автомобиль</h3>
+      <label>Госномер</label>
+      <input id="nPlate" placeholder="А123БВ 123">
+      <label>Модель</label>
+      <input id="nModel" placeholder="Toyota Camry">
+      <label>Год</label>
+      <input id="nYear" type="number" value="2020">
+      <label>VIN</label>
+      <input id="nVin" maxlength="17" placeholder="17 символов">
+      <h3>Клиент</h3>
+      <label>ФИО</label>
+      <input id="nClientName" placeholder="Иванов Иван">
+      <label>Телефон</label>
+      <input id="nClientPhone" placeholder="+79001234567">
+      <h3>Задача</h3>
+      <label>Причина обращения</label>
+      <textarea id="nReason" placeholder="Опишите причину"></textarea>
+      <label>Комментарий</label>
+      <textarea id="nComment" placeholder="Комментарий"></textarea>
+      <div class="modal-actions">
+        <button onclick="closeModal()">Отмена</button>
+        <button class="primary" onclick="createTaskFromForm()">Создать</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('modalContainer').appendChild(modal);
+}
+
+function createTaskFromForm() {
+  const plate = document.getElementById('nPlate').value.trim();
+  const model = document.getElementById('nModel').value.trim();
+  if (!plate || !model) { alert('Заполните госномер и модель'); return; }
+
+  const task = {
+    id: uid(),
+    number: nextTaskNumber(),
+    column: 'waiting',
+    car: {
+      plate,
+      model,
+      year: document.getElementById('nYear').value,
+      vin: document.getElementById('nVin').value.trim().toUpperCase()
+    },
+    client: {
+      name: document.getElementById('nClientName').value.trim() || '—',
+      phone: document.getElementById('nClientPhone').value.trim() || '—',
+      history: []
+    },
+    reason: document.getElementById('nReason').value.trim() || '—',
+    comment: document.getElementById('nComment').value.trim() || '',
+    scheduledTime: null,
+    assignee: null,
+    post: null,
+    parts: [],
+    works: [],
+    payments: [],
+    log: [{
+      time: new Date().toISOString(),
+      user: USERS[state.currentUser].name,
+      text: 'Задача создана'
+    }],
+    updatedAt: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    issued: false,
+    color: null
+  };
+  state.tasks.push(task);
+  notifyAboutTask(task, `Создана новая задача: ${task.car.plate}`);
+  saveState();
+  closeModal();
+  render();
+}
+
+function createRandomTask() {
+  const task = {
+    id: uid(),
+    number: nextTaskNumber(),
+    column: 'waiting',
+    car: {
+      plate: randomPlate(),
+      model: randomModel(),
+      year: 2015 + Math.floor(Math.random()*9),
+      vin: genVin()
+    },
+    client: {
+      name: randomName(),
+      phone: randomPhone(),
+      history: ['Замена масла 10.01.2024', 'Диагностика 15.03.2024']
+    },
+    reason: randomReason(),
+    comment: '',
+    scheduledTime: null,
+    assignee: null,
+    post: null,
+    parts: [],
+    works: [],
+    payments: [],
+    log: [{
+      time: new Date().toISOString(),
+      user: USERS[state.currentUser].name,
+      text: 'Задача создана (случайная)'
+    }],
+    updatedAt: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    issued: false,
+    color: null
+  };
+  state.tasks.push(task);
+  notifyAboutTask(task, `Создана случайная задача: ${task.car.plate}`);
+  saveState();
+  render();
+}
+
+// ============ ПРОСМОТР ЗАДАЧИ ============
+function openTaskView(taskId) {
+  const task = state.tasks.find(t => t.id === taskId);
+  if (!task) return;
+
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.id = 'taskViewModal';
+  const isWorker = USERS[state.currentUser].role === 'worker';
+  const canEdit = !isWorker || (task.assignee === state.currentUser || !task.assignee);
+  const canEditIssue = !isWorker;
+
+  modal.innerHTML = `
+    <div class="modal" style="max-width:800px">
+      <h2>Задача ${task.car.plate}</h2>
+      <div class="char-list">
+        <div class="char-item" onclick="openCharEditor('${taskId}','car')">
+          <span class="label">🚗 Авто</span>
+          <span class="value">${task.car.plate} · ${task.car.model} · ${task.car.year}</span>
+        </div>
+        <div class="char-item" onclick="openCharEditor('${taskId}','vin')">
+          <span class="label">VIN</span>
+          <span class="value"><span class="vin-copy" onclick="event.stopPropagation();copyVin('${task.car.vin}')">${task.car.vin}</span> 📋</span>
+        </div>
+        <div class="char-item" onclick="openCharEditor('${taskId}','time')">
+          <span class="label">⏰ Время назначенное</span>
+          <span class="value">${formatTime(task.scheduledTime)}</span>
+        </div>
+        ${appSettings.showAssignee ? `
+        <div class="char-item" onclick="openCharEditor('${taskId}','assignee')">
+          <span class="label">👤 Ответственный</span>
+          <span class="value">${task.assignee ? USERS[task.assignee].name : '—'}</span>
+        </div>` : ''}
+        ${appSettings.showPost ? `
+        <div class="char-item" onclick="openCharEditor('${taskId}','post')">
+          <span class="label">🅿️ Пост</span>
+          <span class="value">${task.post ? 'Пост №'+task.post : '—'}</span>
+        </div>` : ''}
+        <div class="char-item" onclick="openCharEditor('${taskId}','parts')">
+          <span class="label">🔩 Запчасти</span>
+          <span class="value">${task.parts && task.parts.length ? task.parts.map(p=>esc(p.name)).join(', ') : '—'}<br>
+            <small>Закупка: ${money(partsCost(task))} · Продажа: ${money(partsRevenue(task))}</small>
+          </span>
+        </div>
+        <div class="char-item" onclick="openCharEditor('${taskId}','works')">
+          <span class="label">🛠 Работы</span>
+          <span class="value">${task.works && task.works.length ? task.works.map(w=>esc(w.name)).join(', ') : '—'}<br>
+            <small>Себестоимость: ${money(worksCost(task))} · Цена: ${money(worksRevenue(task))}</small>
+          </span>
+        </div>
+        <div class="char-item" onclick="openCharEditor('${taskId}','payments')">
+          <span class="label">💳 Оплата</span>
+          <span class="value">${paymentBadge(task)} Оплачено: ${money(paidSum(task))} из ${money(totalRevenue(task))}<br>
+            <small>${(task.payments||[]).length ? (task.payments||[]).length + ' платеж(ей)' : 'оплат нет'}</small>
+          </span>
+        </div>
+        <div class="char-item" onclick="openCharEditor('${taskId}','finance')">
+          <span class="label">💰 Финансы задачи</span>
+          <span class="value">Расходы: ${money(totalCost(task))} · Доходы: ${money(totalRevenue(task))}<br>
+            <small>Чистая прибыль: ${money(netProfit(task))}</small>
+          </span>
+        </div>
+        <div class="char-item" onclick="openCharEditor('${taskId}','client')">
+          <span class="label">👥 Клиент</span>
+          <span class="value">${task.client.name} · ${task.client.phone}</span>
+        </div>
+        <div class="char-item" onclick="openCharEditor('${taskId}','reason')">
+          <span class="label">📋 Причина обращения</span>
+          <span class="value">${task.reason}</span>
+        </div>
+        <div class="char-item" onclick="openCharEditor('${taskId}','comment')">
+          <span class="label">💬 Комментарий</span>
+          <span class="value">${task.comment || '—'}</span>
+        </div>
+        <div class="char-item" onclick="openCharEditor('${taskId}','log')">
+          <span class="label">📜 Лог задачи</span>
+          <span class="value">${task.log.length} записей</span>
+        </div>
+      </div>
+      <div class="modal-actions" style="justify-content:space-between">
+        <div>
+          ${canEditIssue && task.column === 'issue' ? `<button class="${task.issued?'warning':'success'}" onclick="toggleIssued('${task.id}')">${task.issued?'НЕ ВЫДАНО':'ВЫДАНО'}</button>` : ''}
+          ${task.column === 'issue' ? `<span class="badge ${task.issued?'badge-green':'badge-red'}">${task.issued?'ВЫДАНО':'НЕ ВЫДАНО'}</span>` : ''}
+        </div>
+        <div>
+          ${canEdit ? `<button class="warning" onclick="openEditTask('${taskId}')">✏️ Редактировать</button>` : ''}
+          ${task.car.vin ? `<button class="primary" onclick="openArmtek('${task.car.vin}')">🔗 Armtek</button>` : ''}
+          ${!isWorker ? `<button class="danger" onclick="deleteTask('${taskId}')">🗑 Удалить задачу</button>` : ''}
+          <button onclick="closeModal()">Закрыть</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.getElementById('modalContainer').appendChild(modal);
+}
+
+function copyVin(vin) {
+  navigator.clipboard.writeText(vin).then(() => alert('VIN скопирован: ' + vin)).catch(()=>{});
+}
+
+function toggleIssued(taskId) {
+  const t = state.tasks.find(x => x.id === taskId);
+  t.issued = !t.issued;
+  t.log.push({
+    time: new Date().toISOString(),
+    user: USERS[state.currentUser].name,
+    text: `Статус выдачи: ${t.issued?'ВЫДАНО':'НЕ ВЫДАНО'}`
+  });
+  saveState();
+  closeModal();
+  render();
+  setTimeout(()=>openTaskView(taskId), 100);
+}
+
+// ============ УДАЛЕНИЕ ЗАДАЧИ ============
+function deleteTask(taskId) {
+  const task = state.tasks.find(t => t.id === taskId);
+  if (!task) return;
+  const info = `Задача ${task.car.plate} · ${task.car.model}\nКлиент: ${task.client.name}\n` +
+    `Расходы: ${money(totalCost(task))} · Доходы: ${money(totalRevenue(task))}\n` +
+    `Оплачено: ${money(paidSum(task))} · Чистая прибыль: ${money(netProfit(task))}`;
+  if (!confirm('Удалить задачу безвозвратно?\n\n' + info)) return;
+
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.innerHTML = `
+    <div class="modal" style="max-width:460px">
+      <h2>🗑 Удаление задачи</h2>
+      <div class="readonly-field">${esc(info).replace(/\n/g,'<br>')}</div>
+      <label>Укажите причину удаления (попадёт в уведомления)</label>
+      <textarea id="delReason" placeholder="Например: создана по ошибке"></textarea>
+      <div class="modal-actions">
+        <button onclick="closeModal()">Отмена</button>
+        <button class="danger" onclick="confirmDeleteTask('${taskId}')">Удалить</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('modalContainer').appendChild(modal);
+}
+
+function confirmDeleteTask(taskId) {
+  const idx = state.tasks.findIndex(t => t.id === taskId);
+  if (idx === -1) { closeModal(); return; }
+  const task = state.tasks[idx];
+  const reason = (document.getElementById('delReason')?.value || '').trim();
+
+  state.tasks.splice(idx, 1);
+  state.notifications = (state.notifications || []).filter(n => n.taskId !== taskId);
+
+  state.notifications.push({
+    id: uid(),
+    taskId: null,
+    message: `🗑 Задача ${task.car.plate} удалена (${USERS[state.currentUser].name})${reason ? ': ' + reason : ''}`,
+    time: new Date().toISOString(),
+    read: false
+  });
+  if (state.notifications.length > 100) state.notifications = state.notifications.slice(-100);
+
+  saveState();
+  closeModal();
+  render();
+}
+
+// ============ РЕДАКТОР ХАРАКТЕРИСТИК ============
+function openCharEditor(taskId, field) {
+  const task = state.tasks.find(t => t.id === taskId);
+  if (!task) return;
+
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  let content = '';
+  let title = '';
+
+  switch(field) {
+    case 'car':
+      title = '🚗 Автомобиль';
+      content = `
+        <label>Госномер</label><input id="ce_plate" value="${task.car.plate}">
+        <label>Модель</label><input id="ce_model" value="${task.car.model}">
+        <label>Год</label><input id="ce_year" type="number" value="${task.car.year}">
+      `;
+      break;
+    case 'vin':
+      title = 'VIN';
+      content = `<label>VIN (17 символов)</label><input id="ce_vin" maxlength="17" value="${task.car.vin}">`;
+      break;
+    case 'time':
+      title = '⏰ Время назначенное';
+      content = `<label>Дата и время</label><input type="datetime-local" id="ce_time" value="${task.scheduledTime ? toLocalInput(task.scheduledTime) : ''}">`;
+      break;
+    case 'assignee':
+      title = '👤 Ответственный';
+      content = `<label>Исполнитель</label>
+        <select id="ce_assignee">
+          <option value="">— не назначен —</option>
+          ${Object.keys(USERS).filter(k=>USERS[k].role==='worker').map(k=>`<option value="${k}" ${task.assignee===k?'selected':''}>${USERS[k].name}</option>`).join('')}
+        </select>`;
+      break;
+    case 'post':
+      title = '🅿️ Пост';
+      content = `<label>Номер поста</label>
+        <select id="ce_post">
+          <option value="">—</option>
+          ${[1,2,3,4].map(n=>`<option value="${n}" ${task.post==n?'selected':''}>Пост №${n}</option>`).join('')}
+        </select>`;
+      break;
+    case 'parts':
+      title = '🔩 Запчасти';
+      content = `
+        <div class="rows-head">
+          <span>Название</span><span>Ссылка</span><span class="num">Закупка ₽</span><span class="num">Продажа ₽</span><span class="work-status">Статус</span><span class="row-total">Итог</span><span></span>
+        </div>
+        <div id="ce_partsList"></div>
+        <button type="button" class="small" onclick="addCePartRow()">➕ Добавить ещё</button>
+      `;
+      break;
+    case 'works':
+      title = '🛠 Работы';
+      content = `
+        <div class="rows-head">
+          <span>Название работы</span><span>Ссылка</span><span class="num">Себестоимость ₽</span><span class="num">Цена работы ₽</span><span class="work-status">Статус</span><span class="row-total">Итог</span><span></span>
+        </div>
+        <div id="ce_worksList"></div>
+        <button type="button" class="small" onclick="addCeWorkRow()">➕ Добавить ещё</button>
+        <h3>Итого по работам</h3>
+        <div class="sum-line"><span>Себестоимость работ</span><b id="ce_worksCost">${money(worksCost(task))}</b></div>
+        <div class="sum-line"><span>Стоимость для клиента</span><b id="ce_worksRevenue">${money(worksRevenue(task))}</b></div>
+      `;
+      break;
+    case 'payments': {
+      title = '💳 Оплата (авансы)';
+      const paid = paidSum(task);
+      const rev = totalRevenue(task);
+      const left = rev - paid;
+      content = `
+        <div class="readonly-field">
+          <b>К оплате по задаче:</b> ${money(rev)}<br>
+          <b>Оплачено:</b> ${money(paid)}<br>
+          <b>Остаток:</b> ${money(left)} ${left <= 0 ? '✅ оплачено полностью' : ''}
+        </div>
+        <h3>Внесённые оплаты</h3>
+        <div class="pay-list" id="ce_paymentsPreview">
+          ${(task.payments||[]).length ? task.payments.map((p,i) => `
+            <div class="pay-item">
+              <span class="pay-date">${formatTime(p.date)}</span>
+              <span class="pay-comment">${esc(p.comment||'')} ${p.user ? '· '+esc(p.user) : ''}</span>
+              <span class="pay-sum">${money(p.amount)}</span>
+              <button type="button" class="danger small" onclick="removePayment('${taskId}',${i})">✕</button>
+            </div>
+          `).join('') : '<div class="empty-msg">Оплат пока нет</div>'}
+        </div>
+        <h3>Добавить оплату</h3>
+        <label>Сумма, ₽ *</label>
+        <input type="number" step="0.01" min="0" id="ce_payAmount" placeholder="0.00">
+        <label>Дата оплаты</label>
+        <input type="datetime-local" id="ce_payDate" value="${toLocalInput(new Date().toISOString())}">
+        <label>Комментарий</label>
+        <input type="text" id="ce_payComment" placeholder="Аванс / наличные / карта">
+      `;
+      break;
+    }
+    case 'finance': {
+      title = '💰 Финансы задачи';
+      const pc = partsCost(task), pr = partsRevenue(task);
+      const wc = worksCost(task), wr = worksRevenue(task);
+      const cost = totalCost(task), rev = totalRevenue(task), profit = netProfit(task);
+      const paid = paidSum(task);
+      content = `
+        <h3>Расходы (закупочная стоимость)</h3>
+        <div class="sum-line"><span>Запчасти (закупка)</span><b>${money(pc)}</b></div>
+        <div class="sum-line"><span>Работы (себестоимость)</span><b>${money(wc)}</b></div>
+        <div class="sum-line total"><span>Всего расходов</span><b>${money(cost)}</b></div>
+        <h3>Доходы (цена продажи)</h3>
+        <div class="sum-line"><span>Запчасти (продажа)</span><b>${money(pr)}</b></div>
+        <div class="sum-line"><span>Работы (цена для клиента)</span><b>${money(wr)}</b></div>
+        <div class="sum-line total"><span>Всего доходов</span><b>${money(rev)}</b></div>
+        <h3>Оплата</h3>
+        <div class="sum-line"><span>Статус оплаты</span><b>${paymentBadge(task)}</b></div>
+        <div class="sum-line"><span>Оплачено клиентом</span><b>${money(paid)}</b></div>
+        <div class="sum-line"><span>Остаток к оплате</span><b>${money(rev - paid)}</b></div>
+        <h3>Итог</h3>
+        <div class="sum-line total ${profit < 0 ? 'neg' : ''}"><span>Чистая прибыль</span><b>${money(profit)}</b></div>
+        <div class="readonly-field">Маржинальность: ${rev > 0 ? ((profit / rev) * 100).toFixed(1) + '%' : '—'}</div>
+      `;
+      break;
+    }
+    case 'client':
+      title = '👥 Клиент';
+      content = `
+        <label>ФИО</label><input id="ce_clientName" value="${task.client.name}">
+        <label>Телефон</label><input id="ce_clientPhone" value="${task.client.phone}">
+        <h3>История обслуживания</h3>
+        <div class="readonly-field">${(task.client.history||[]).join('<br>') || '—'}</div>
+        <label>Добавить запись в историю</label>
+        <input id="ce_historyAdd" placeholder="Например: Замена масла 01.01.2025">
+      `;
+      break;
+    case 'reason':
+      title = '📋 Причина обращения';
+      content = `<textarea id="ce_reason">${task.reason}</textarea>`;
+      break;
+    case 'comment':
+      title = '💬 Комментарий';
+      content = `
+        <label>Текущий комментарий (только чтение)</label>
+        <div class="readonly-field">${task.comment || '—'}</div>
+        <label>Добавить комментарий</label>
+        <textarea id="ce_newComment" placeholder="Новый комментарий"></textarea>
+      `;
+      break;
+    case 'log':
+      title = '📜 Лог задачи';
+      content = `<div>${task.log.slice().reverse().map(l => `
+        <div class="log-entry">
+          <div class="log-time">${formatTime(l.time)} — ${l.user}</div>
+          <div>${l.text}</div>
+        </div>
+      `).join('')}</div>`;
+      break;
+  }
+
+  modal.innerHTML = `
+    <div class="modal">
+      <h2>${title}</h2>
+      ${content}
+      <div class="modal-actions">
+        <button onclick="closeModal()">Отмена</button>
+        ${field !== 'log' ? `<button class="primary" onclick="saveChar('${taskId}','${field}')">Сохранить</button>` : ''}
+      </div>
+    </div>
+  `;
+  document.getElementById('modalContainer').appendChild(modal);
+
+  if (field === 'parts') {
+    const list = document.getElementById('ce_partsList');
+    (task.parts && task.parts.length ? task.parts : [{name:'',status:'notordered'}]).forEach(p => addCePartRow(p));
+  }
+  if (field === 'works') {
+    const list = document.getElementById('ce_worksList');
+    (task.works && task.works.length ? task.works : [{name:'',status:'notstarted'}]).forEach(w => addCeWorkRow(w));
+  }
+}
+
+function addCePartRow(part) {
+  const list = document.getElementById('ce_partsList');
+  if (!list) return;
+  const div = document.createElement('div');
+  div.className = 'part-row';
+  div.innerHTML = `
+    <input type="text" placeholder="Название" value="${esc(part?.name||'')}">
+    <input type="text" placeholder="Ссылка" value="${esc(part?.link||'')}">
+    <input type="number" step="0.01" min="0" class="num" placeholder="Закупка" value="${part?.purchase!==undefined?esc(part.purchase):''}" oninput="updatePartRowTotal(this)">
+    <input type="number" step="0.01" min="0" class="num" placeholder="Продажа" value="${part?.sale!==undefined?esc(part.sale):''}" oninput="updatePartRowTotal(this)">
+    <select class="work-status">
+      <option value="notordered" ${part?.status==='notordered'?'selected':''}>Не заказано</option>
+      <option value="ordered" ${part?.status==='ordered'?'selected':''}>Заказано</option>
+      <option value="instock" ${part?.status==='instock'?'selected':''}>На складе</option>
+    </select>
+    <span class="row-total">—</span>
+    <button type="button" class="danger small" onclick="this.parentElement.remove()">✕</button>
+  `;
+  list.appendChild(div);
+  updatePartRowTotal(div.querySelector('input.num'));
+}
+
+function addCeWorkRow(work) {
+  const list = document.getElementById('ce_worksList');
+  if (!list) return;
+  const div = document.createElement('div');
+  div.className = 'part-row';
+  div.innerHTML = `
+    <input type="text" placeholder="Название работы" value="${esc(work?.name||'')}">
+    <input type="text" placeholder="Ссылка (необязательно)" value="${esc(work?.link||'')}">
+    <input type="number" step="0.01" min="0" class="num" placeholder="Себест." value="${work?.cost!==undefined?esc(work.cost):''}" oninput="updateWorkRowTotal(this)">
+    <input type="number" step="0.01" min="0" class="num" placeholder="Цена работы" value="${work?.price!==undefined?esc(work.price):''}" oninput="updateWorkRowTotal(this)">
+    <select class="work-status">
+      <option value="notstarted" ${work?.status==='notstarted'?'selected':''}>Не в работе</option>
+      <option value="inwork" ${work?.status==='inwork'?'selected':''}>В работе</option>
+      <option value="finished" ${work?.status==='finished'?'selected':''}>Завершено</option>
+    </select>
+    <span class="row-total">—</span>
+    <button type="button" class="danger small" onclick="this.parentElement.remove()">✕</button>
+  `;
+  list.appendChild(div);
+  updateWorkRowTotal(div.querySelector('input.num'));
+}
+
+function updateWorkRowTotal(el) {
+  const row = el.closest('.part-row');
+  if (!row) return;
+  const nums = row.querySelectorAll('input.num');
+  const cost = num(nums[0] ? nums[0].value : 0);
+  const price = num(nums[1] ? nums[1].value : 0);
+  const out = row.querySelector('.row-total');
+  if (!out) return;
+  const profit = price - cost;
+  out.textContent = money(profit);
+  out.classList.toggle('neg', profit < 0);
+}
+
+function collectWorkRows(selector) {
+  const rows = document.querySelectorAll(selector + ' .part-row');
+  const works = [];
+  rows.forEach(r => {
+    const inputs = r.querySelectorAll('input');
+    const name = inputs[0].value.trim();
+    const link = inputs[1].value.trim();
+    const cost = inputs[2] ? inputs[2].value.trim() : '';
+    const price = inputs[3] ? inputs[3].value.trim() : '';
+    const status = r.querySelector('select').value;
+    if (name) works.push({ name, link, cost, price, status });
+  });
+  return works;
+}
+
+function removePayment(taskId, index) {
+  const task = state.tasks.find(t => t.id === taskId);
+  if (!task || !task.payments) return;
+  const p = task.payments[index];
+  if (!p) return;
+  if (!confirm(`Удалить оплату ${money(p.amount)} от ${formatTime(p.date)}?`)) return;
+  task.payments.splice(index, 1);
+  task.log.push({
+    time: new Date().toISOString(),
+    user: USERS[state.currentUser].name,
+    text: `Удалена оплата: ${money(p.amount)} (${formatTime(p.date)})`
+  });
+  task.updatedAt = new Date().toISOString();
+  saveState();
+  closeModal();
+  render();
+  setTimeout(()=>openCharEditor(taskId, 'payments'), 100);
+}
+
+function saveChar(taskId, field) {
+  const task = state.tasks.find(t => t.id === taskId);
+  const user = USERS[state.currentUser].name;
+  let logText = '';
+
+  if (field === 'car') {
+    task.car.plate = document.getElementById('ce_plate').value.trim();
+    task.car.model = document.getElementById('ce_model').value.trim();
+    task.car.year = document.getElementById('ce_year').value;
+    logText = `Авто изменено: ${task.car.plate} ${task.car.model} ${task.car.year}`;
+  } else if (field === 'vin') {
+    task.car.vin = document.getElementById('ce_vin').value.trim().toUpperCase();
+    logText = `VIN изменён: ${task.car.vin}`;
+  } else if (field === 'time') {
+    const v = document.getElementById('ce_time').value;
+    task.scheduledTime = v ? new Date(v).toISOString() : null;
+    logText = `Время изменено: ${formatTime(task.scheduledTime)}`;
+  } else if (field === 'assignee') {
+    task.assignee = document.getElementById('ce_assignee').value || null;
+    logText = `Исполнитель: ${task.assignee ? USERS[task.assignee].name : 'не назначен'}`;
+  } else if (field === 'post') {
+    const v = document.getElementById('ce_post').value;
+    task.post = v ? parseInt(v) : null;
+    logText = `Пост: ${task.post ? '№'+task.post : '—'}`;
+  } else if (field === 'parts') {
+    const parts = collectPartRows('#ce_partsList');
+    task.parts = parts;
+    logText = `Запчасти обновлены: ${parts.map(p=>`${p.name} (${PARTS_STATUS[p.status]||p.status}, закупка ${money(p.purchase)}, продажа ${money(p.sale)})`).join(', ') || '—'}`;
+  } else if (field === 'works') {
+    const works = collectWorkRows('#ce_worksList');
+    task.works = works;
+    logText = `Работы обновлены: ${works.map(w=>`${w.name} (${WORKS_STATUS[w.status]||w.status}, себест. ${money(w.cost)}, цена ${money(w.price)})`).join(', ') || '—'}`;
+  } else if (field === 'payments') {
+    const amountRaw = document.getElementById('ce_payAmount').value.trim();
+    const amount = num(amountRaw);
+    if (!amountRaw || amount <= 0) { alert('Укажите сумму оплаты больше нуля'); return; }
+    const dateVal = document.getElementById('ce_payDate').value;
+    const comment = document.getElementById('ce_payComment').value.trim();
+    task.payments = task.payments || [];
+    task.payments.push({
+      date: dateVal ? new Date(dateVal).toISOString() : new Date().toISOString(),
+      amount: amount,
+      comment: comment,
+      user: user
+    });
+    logText = `Внесена оплата: ${money(amount)}${comment ? ' (' + comment + ')' : ''}. Всего оплачено: ${money(paidSum(task))}`;
+  } else if (field === 'finance') {
+    // только просмотр — ничего не сохраняем
+  } else if (field === 'client') {
+    task.client.name = document.getElementById('ce_clientName').value.trim();
+    task.client.phone = document.getElementById('ce_clientPhone').value.trim();
+    const add = document.getElementById('ce_historyAdd').value.trim();
+    if (add) {
+      task.client.history = task.client.history || [];
+      task.client.history.push(add);
+    }
+    logText = `Клиент изменён: ${task.client.name} ${task.client.phone}${add ? ' + запись в историю' : ''}`;
+  } else if (field === 'reason') {
+    task.reason = document.getElementById('ce_reason').value.trim();
+    logText = `Причина изменена: ${task.reason}`;
+  } else if (field === 'comment') {
+    const nc = document.getElementById('ce_newComment').value.trim();
+    if (nc) {
+      task.comment = (task.comment ? task.comment + '\n' : '') + `[${nowStr()}] ${nc}`;
+      logText = `Добавлен комментарий: ${nc}`;
+    }
+  }
+
+  if (logText) {
+    task.log.push({ time: new Date().toISOString(), user, text: logText });
+    task.updatedAt = new Date().toISOString();
+    notifyAboutTask(task, `${task.car.plate}: ${logText}`);
+  }
+
+  saveState();
+  closeModal();
+  render();
+  setTimeout(()=>{
+    if (field === 'payments' || field === 'finance') openCharEditor(taskId, field);
+    else openTaskView(taskId);
+  }, 100);
+}
+
+// ============ РЕДАКТИРОВАНИЕ ЗАДАЧИ ============
+function openEditTask(taskId) {
+  const task = state.tasks.find(t => t.id === taskId);
+  if (!task) return;
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.innerHTML = `
+    <div class="modal">
+      <h2>Редактирование задачи</h2>
+      <label>Госномер</label><input id="e_plate" value="${task.car.plate}">
+      <label>Модель</label><input id="e_model" value="${task.car.model}">
+      <label>Год</label><input id="e_year" type="number" value="${task.car.year}">
+      <label>VIN</label><input id="e_vin" maxlength="17" value="${task.car.vin}">
+      <label>Клиент ФИО</label><input id="e_clientName" value="${task.client.name}">
+      <label>Клиент телефон</label><input id="e_clientPhone" value="${task.client.phone}">
+      <label>Причина</label><textarea id="e_reason">${task.reason}</textarea>
+      <div class="readonly-field"><b>Комментарий (только чтение):</b><br>${task.comment || '—'}</div>
+      <label>Добавить комментарий (сохранится история)</label>
+      <textarea id="e_newComment" placeholder="Новый комментарий"></textarea>
+      <div class="modal-actions">
+        <button onclick="closeModal()">Отмена</button>
+        <button class="primary" onclick="saveEditTask('${taskId}')">Сохранить</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('modalContainer').appendChild(modal);
+}
+
+function saveEditTask(taskId) {
+  const task = state.tasks.find(t => t.id === taskId);
+  const user = USERS[state.currentUser].name;
+  const changes = [];
+
+  const nv = (id) => document.getElementById(id).value.trim();
+
+  if (task.car.plate !== nv('e_plate')) { changes.push(`Госномер: ${task.car.plate}→${nv('e_plate')}`); task.car.plate = nv('e_plate'); }
+  if (task.car.model !== nv('e_model')) { changes.push(`Модель: ${task.car.model}→${nv('e_model')}`); task.car.model = nv('e_model'); }
+  if (String(task.car.year) !== nv('e_year')) { changes.push(`Год: ${task.car.year}→${nv('e_year')}`); task.car.year = nv('e_year'); }
+  if (task.car.vin !== nv('e_vin').toUpperCase()) { changes.push(`VIN изменён`); task.car.vin = nv('e_vin').toUpperCase(); }
+  if (task.client.name !== nv('e_clientName')) { changes.push(`Клиент: ${task.client.name}→${nv('e_clientName')}`); task.client.name = nv('e_clientName'); }
+  if (task.client.phone !== nv('e_clientPhone')) { changes.push(`Телефон: ${task.client.phone}→${nv('e_clientPhone')}`); task.client.phone = nv('e_clientPhone'); }
+  if (task.reason !== nv('e_reason')) { changes.push(`Причина изменена`); task.reason = nv('e_reason'); }
+
+  const nc = nv('e_newComment');
+  if (nc) {
+    task.comment = (task.comment ? task.comment + '\n' : '') + `[${nowStr()}] ${nc}`;
+    changes.push(`Комментарий: ${nc}`);
+  }
+
+  if (changes.length) {
+    task.log.push({ time: new Date().toISOString(), user, text: 'Редактирование. ' + changes.join('; ') });
+    task.updatedAt = new Date().toISOString();
+    notifyAboutTask(task, `Задача ${task.car.plate} отредактирована`);
+  }
+
+  saveState();
+  closeModal();
+  render();
+  setTimeout(()=>openTaskView(taskId), 100);
+}
+
+// ============ ARMETEK ============
+async function getArmtekLink(vin) {
+  const cleanVin = String(vin).trim().toUpperCase();
+  if (!cleanVin) throw new Error('VIN не указан');
+  const url = 'http://127.0.0.1:5000/armtek?vin=' + encodeURIComponent(cleanVin);
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error('Сервер вернул статус ' + resp.status);
+  const data = await resp.json();
+  if (data.error) throw new Error(data.error);
+  return data.link;
+}
+
+async function openArmtek(vin) {
+  try {
+    const link = await getArmtekLink(vin);
+    window.open(link, '_blank');
+  } catch(e) {
+    alert('Не удалось получить ссылку Armtek: ' + e.message + '\n(убедитесь, что локальный сервер запущен на 127.0.0.1:5000)');
+  }
+}
+
+// ============ РАСПИСАНИЕ ============
+function showSchedule() {
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  let html = '<h2>📅 Расписание постов</h2>';
+  for (let i=1; i<=4; i++) {
+    html += `<h3>Пост №${i}</h3>`;
+    const tasks = state.tasks.filter(t => t.post === i && t.column === 'inwork').sort((a,b)=>parseTimeToMinutes(a.scheduledTime)-parseTimeToMinutes(b.scheduledTime));
+    if (tasks.length === 0) {
+      html += `<div class="schedule-post">Свободен</div>`;
+    } else {
+      tasks.forEach(t => {
+        html += `<div class="schedule-post">
+          ${formatTime(t.scheduledTime)} — ${t.car.plate} (${t.car.model})<br>
+          <small>${t.assignee?USERS[t.assignee].name:'—'} · ${t.workType||''}</small>
+        </div>`;
+      });
+    }
+  }
+  modal.innerHTML = `<div class="modal">${html}
+    <div class="modal-actions"><button onclick="closeModal()">Закрыть</button></div>
+  </div>`;
+  document.getElementById('modalContainer').appendChild(modal);
+}
+
+function showPostSchedule(postNum) {
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  let html = `<h2>📅 Расписание поста №${postNum}</h2>`;
+  const tasks = state.tasks.filter(t => t.post === postNum).sort((a,b)=>parseTimeToMinutes(a.scheduledTime)-parseTimeToMinutes(b.scheduledTime));
+  if (tasks.length === 0) html += '<div class="schedule-post">Нет задач</div>';
+  tasks.forEach(t => {
+    html += `<div class="schedule-post">
+      <b>${formatTime(t.scheduledTime)}</b> — ${t.car.plate} (${t.car.model})<br>
+      <small>Столбец: ${COLUMNS.find(c=>c.id===t.column).title}</small><br>
+      <small>Исполнитель: ${t.assignee?USERS[t.assignee].name:'—'}</small>
+    </div>`;
+  });
+  modal.innerHTML = `<div class="modal">${html}
+    <div class="modal-actions"><button onclick="closeModal()">Закрыть</button></div>
+  </div>`;
+  document.getElementById('modalContainer').appendChild(modal);
+}
+
+// ============ КАЛЬКУЛЯЦИЯ ============
+// Подписи столбцов:
+//  exp_parts  — расходы (запчасти, закупочная цена)
+//  inc_parts  — запчасти (продажа)
+//  exp_works  — расходы (себестоимость работ)
+//  inc_works  — работа (цена)
+//  exp_total  — расходы (общие)
+//  paid       — оплачено
+//  debt       — долг (сколько клиент ещё должен: доходы − оплачено, не меньше 0)
+//  inc_total  — доходы (общие)
+//  profit     — чистая прибыль
+const CALC_FIELDS = [
+  { field: 'number',    title: '№',                  type: 'num' },
+  { field: 'plate',     title: 'Авто / Клиент',       type: 'task' },
+  { field: 'reason',    title: 'Причина',            type: 'task' },
+  { field: 'exp_parts', title: 'Расходы (запчасти)',  type: 'num', cls: 'exp' },
+  { field: 'inc_parts', title: 'Запчасти (продажа)',  type: 'num', cls: 'inc' },
+  { field: 'exp_works', title: 'Расходы (работа)',    type: 'num', cls: 'exp' },
+  { field: 'inc_works', title: 'Работа (цена)',       type: 'num', cls: 'inc' },
+  { field: 'exp_total', title: 'Расходы (общие)',     type: 'num', cls: 'exp' },
+  { field: 'paid',      title: 'Оплачено',           type: 'num', cls: 'paid' },
+  { field: 'debt',      title: 'Долг',               type: 'num', cls: 'debt' },
+  { field: 'inc_total', title: 'Доходы (общие)',      type: 'num', cls: 'inc' },
+  { field: 'profit',    title: 'Чистая прибыль',      type: 'num', cls: 'profit' },
+  { field: 'payStatus', title: 'Оплата',             type: 'task' },
+  { field: 'status',    title: 'Статус задачи',       type: 'task' }
+];
+
+// Долг клиента по задаче: сумма, которая ещё не оплачена
+// (доходы − оплачено, не меньше 0 — при переплате долг = 0)
+function debtOf(task) {
+  const d = totalRevenue(task) - paidSum(task);
+  return d > 0 ? d : 0;
+}
+
+function calcTaskRow(t) {
+  const paySt = paymentState(t);
+  return {
+    number: t.number || 0,
+    createdAt: t.createdAt || t.updatedAt || '',
+    plate: t.car.plate,
+    reason: t.reason,
+    exp_parts: partsCost(t),
+    inc_parts: partsRevenue(t),
+    exp_works: worksCost(t),
+    inc_works: worksRevenue(t),
+    exp_total: totalCost(t),
+    paid: paidSum(t),
+    debt: debtOf(t),
+    inc_total: totalRevenue(t),
+    profit: netProfit(t),
+    payStatus: paymentLabel(paySt),
+    payStatusCode: paySt,
+    status: (COLUMNS.find(c => c.id === t.column) || {}).title || '—'
+  };
+}
+
+function renderCalculator() {
+  const el = document.getElementById('calcView');
+  if (!el) return;
+
+  const tasks = visibleTasksForUser();
+  const rows = tasks.map(t => ({ task: t, row: calcTaskRow(t) }));
+
+  // Сортировка
+  const { field, dir } = state.calcSort;
+  rows.sort((a, b) => {
+    let va = a.row[field], vb = b.row[field];
+    if (typeof va === 'string' || typeof vb === 'string') {
+      va = String(va || '').toLowerCase();
+      vb = String(vb || '').toLowerCase();
+      return dir === 'asc' ? va.localeCompare(vb, 'ru') : vb.localeCompare(va, 'ru');
+    }
+    va = num(va); vb = num(vb);
+    return dir === 'asc' ? va - vb : vb - va;
+  });
+
+  // Суммы
+  const sum = (f) => rows.reduce((s, r) => s + num(r.row[f]), 0);
+  const expParts = sum('exp_parts'), expWorks = sum('exp_works'), expTotal = sum('exp_total');
+  const incParts = sum('inc_parts'), incWorks = sum('inc_works'), incTotal = sum('inc_total');
+  const paid = sum('paid'), profit = sum('profit'), debt = sum('debt');
+  const doneCount = tasks.filter(t => t.column === 'done' || t.column === 'issue').length;
+
+  const arrow = (f) => field === f ? (dir === 'asc' ? ' ▲' : ' ▼') : '';
+
+  el.innerHTML = `
+    <div class="calc-summary">
+      <div class="calc-card red">
+        <div class="calc-card-title">Расходы (общие)</div>
+        <div class="calc-card-value">${money(expTotal)}</div>
+      </div>
+      <div class="calc-card green">
+        <div class="calc-card-title">Доходы (общие)</div>
+        <div class="calc-card-value">${money(incTotal)}</div>
+      </div>
+      <div class="calc-card blue">
+        <div class="calc-card-title">Оплачено</div>
+        <div class="calc-card-value">${money(paid)}</div>
+      </div>
+      <div class="calc-card ${debt > 0 ? 'red' : 'green'}">
+        <div class="calc-card-title">Долг</div>
+        <div class="calc-card-value">${money(debt)}</div>
+      </div>
+      <div class="calc-card ${profit < 0 ? 'red' : 'green'}">
+        <div class="calc-card-title">Чистая прибыль</div>
+        <div class="calc-card-value">${money(profit)}</div>
+      </div>
+      <div class="calc-card">
+        <div class="calc-card-title">Задач / завершено</div>
+        <div class="calc-card-value">${tasks.length} / ${doneCount}</div>
+      </div>
+    </div>
+    <div class="calc-hint">Нажмите на любую строку или ячейку — откроется окно задачи для редактирования. Заголовок столбца — сортировка (столбец «№» сортирует по временной шкале).</div>
+    <table class="calc-table">
+      <thead>
+        <tr>
+          ${CALC_FIELDS.map(f => `<th class="${f.type === 'num' ? 'num' : ''}" onclick="sortCalc('${f.field}')">${f.title}${arrow(f.field)}</th>`).join('')}
+          <th class="del-cell"></th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows.length === 0 ? `<tr><td colspan="${CALC_FIELDS.length+1}" class="empty-msg">Нет задач для калькуляции</td></tr>` : ''}
+        ${rows.map(r => {
+          const row = r.row;
+          const task = r.task;
+          const profitCls = row.profit < 0 ? 'neg' : 'pos';
+          const payCls = row.payStatusCode === 'paid' ? 'paid' : (row.payStatusCode === 'unpaid' ? 'unpaid' : 'none');
+          return `<tr class="clickable" onclick="openTaskView('${task.id}')">
+            <td class="num calc-num-col">${task.number || '—'}</td>
+            <td><b>${esc(row.plate)}</b><span class="calc-status">${esc(task.client.name)}</span></td>
+            <td>${esc(row.reason)}</td>
+            <td class="num exp">${money(row.exp_parts)}</td>
+            <td class="num inc">${money(row.inc_parts)}</td>
+            <td class="num exp">${money(row.exp_works)}</td>
+            <td class="num inc">${money(row.inc_works)}</td>
+            <td class="num exp">${money(row.exp_total)}</td>
+            <td class="num paid">${money(row.paid)}</td>
+            <td class="num debt ${row.debt > 0 ? 'owed' : ''}">${money(row.debt)}</td>
+            <td class="num inc">${money(row.inc_total)}</td>
+            <td class="num profit ${profitCls}">${money(row.profit)}</td>
+            <td><span class="pay-badge ${payCls}">${esc(row.payStatus)}</span></td>
+            <td><span class="badge badge-blue">${esc(row.status)}</span></td>
+            <td class="del-cell"><button type="button" class="danger small" onclick="event.stopPropagation();deleteTask('${task.id}')">🗑</button></td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="3">ИТОГО (${rows.length} задач)</td>
+          <td class="num exp">${money(expParts)}</td>
+          <td class="num inc">${money(incParts)}</td>
+          <td class="num exp">${money(expWorks)}</td>
+          <td class="num inc">${money(incWorks)}</td>
+          <td class="num exp">${money(expTotal)}</td>
+          <td class="num paid">${money(paid)}</td>
+          <td class="num debt ${debt > 0 ? 'owed' : ''}">${money(debt)}</td>
+          <td class="num inc">${money(incTotal)}</td>
+          <td class="num ${profit < 0 ? 'exp' : 'inc'}">${money(profit)}</td>
+          <td colspan="3"></td>
+        </tr>
+      </tfoot>
+    </table>
+  `;
+}
+
+function sortCalc(field) {
+  if (state.calcSort.field === field) {
+    state.calcSort.dir = state.calcSort.dir === 'asc' ? 'desc' : 'asc';
+  } else {
+    state.calcSort.field = field;
+    state.calcSort.dir = 'asc';
+  }
+  renderCalculator();
+}
+
+// ============ УВЕДОМЛЕНИЯ ============
+function notifyAboutTask(task, message) {
+  const notif = {
+    id: uid(),
+    taskId: task.id,
+    message,
+    time: new Date().toISOString(),
+    read: false
+  };
+  state.notifications.push(notif);
+  if (state.notifications.length > 100) state.notifications = state.notifications.slice(-100);
+  saveState();
+  renderNotifications();
+  updateBadge();
+}
+
+function notificationsForUser() {
+  const u = state.currentUser;
+  if (USERS[u].role === 'chief') return state.notifications;
+  // Работник: уведомления о задачах, где он исполнитель
+  return state.notifications.filter(n => {
+    const t = state.tasks.find(x => x.id === n.taskId);
+    return t && t.assignee === u;
+  });
+}
+
+function updateBadge() {
+  const notifs = notificationsForUser();
+  const unread = notifs.filter(n => !n.read).length;
+  const badge = document.getElementById('notifBadge');
+  if (unread > 0) {
+    badge.style.display = 'flex';
+    badge.textContent = unread > 99 ? '99+' : unread;
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+function toggleNotifications() {
+  state.notifOpen = !state.notifOpen;
+  renderNotifications();
+  if (state.notifOpen) {
+    notificationsForUser().forEach(n => n.read = true);
+    saveState();
+    updateBadge();
+  }
+}
+
+function renderNotifications() {
+  const panel = document.getElementById('notifPanel');
+  if (!state.notifOpen) { panel.innerHTML = ''; return; }
+  const notifs = notificationsForUser().slice().reverse();
+  panel.innerHTML = `
+    <div class="notification-panel">
+      <h3>🔔 Уведомления (${notifs.length})</h3>
+      ${notifs.length === 0 ? '<div class="empty-msg">Нет уведомлений</div>' : ''}
+      ${notifs.slice(0,30).map(n => `
+        <div class="notif-item ${n.read?'':'unread'}" onclick="openTaskView('${n.taskId}')">
+          <div>${n.message}</div>
+          <div class="notif-time">${formatTime(n.time)}</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+// ============ ЭКСПОРТ / ИМПОРТ CSV ============
+// Формат: CSV с разделителем ';' и BOM — открывается в Excel без настроек.
+// Кодировка UTF-8, десятичный разделитель — запятая (как в русском Excel).
+
+const CSV_SEP = ';';
+
+// Колонки выгрузки: заголовок -> значение из задачи
+const CSV_COLUMNS = [
+  { key: 'number',    title: '№' },
+  { key: 'createdAt', title: 'Дата создания' },
+  { key: 'plate',     title: 'Госномер' },
+  { key: 'model',     title: 'Модель' },
+  { key: 'year',      title: 'Год' },
+  { key: 'vin',       title: 'VIN' },
+  { key: 'client',    title: 'Клиент' },
+  { key: 'phone',     title: 'Телефон' },
+  { key: 'reason',    title: 'Причина' },
+  { key: 'column',    title: 'Статус задачи' },
+  { key: 'assignee',  title: 'Исполнитель' },
+  { key: 'post',      title: 'Пост' },
+  { key: 'scheduled', title: 'Время' },
+  { key: 'partsList', title: 'Запчасти' },
+  { key: 'worksList', title: 'Работы' },
+  { key: 'payList',   title: 'Оплаты' },
+  { key: 'exp_parts', title: 'Расходы (запчасти)' },
+  { key: 'inc_parts', title: 'Запчасти (продажа)' },
+  { key: 'exp_works', title: 'Расходы (работа)' },
+  { key: 'inc_works', title: 'Работа (цена)' },
+  { key: 'exp_total', title: 'Расходы (общие)' },
+  { key: 'paid',      title: 'Оплачено' },
+  { key: 'debt',      title: 'Долг' },
+  { key: 'inc_total', title: 'Доходы (общие)' },
+  { key: 'profit',    title: 'Чистая прибыль' },
+  { key: 'payStatus', title: 'Оплата' },
+  { key: 'comment',   title: 'Комментарий' }
+];
+
+// Число -> строка с запятой как десятичным разделителем (для русского Excel)
+function csvNum(v) {
+  const n = num(v);
+  return n === 0 ? '0' : String(Math.round(n * 100) / 100).replace('.', ',');
+}
+
+// Экранирование значения для CSV
+function csvCell(v) {
+  const s = v === null || v === undefined ? '' : String(v);
+  // Кавычим, если есть разделитель, кавычка, перевод строки или ведущие пробелы
+  if (s.indexOf(CSV_SEP) >= 0 || s.indexOf('"') >= 0 || /[\r\n]/.test(s) || s !== s.trim()) {
+    return '"' + s.replace(/"/g, '""') + '"';
+  }
+  return s;
+}
+
+function csvRow(values) {
+  return values.map(csvCell).join(CSV_SEP);
+}
+
+// Полная дата-время для CSV: дд.мм.гггг чч:мм (однозначно разбирается при импорте)
+function csvDateTime(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d)) return '';
+  const p = n => String(n).padStart(2, '0');
+  return `${p(d.getDate())}.${p(d.getMonth()+1)}.${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+// Разбирает дату-время из CSV. Понимает:
+//   "24.09.2026 10:00", "24.09.2026, 10:00", "24.09 10:00" (год = текущий),
+//   "2026-09-24T10:00", "24.09.2026"
+function parseCsvDateTime(s) {
+  const v = String(s || '').trim();
+  if (!v || v === '—') return null;
+
+  // ISO / год-месяц-день
+  let m = v.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2}))?/);
+  if (m) return new Date(+m[1], +m[2] - 1, +m[3], +(m[4] || 0), +(m[5] || 0)).toISOString();
+
+  // дд.мм.гггг [чч:мм]  и  дд.мм [чч:мм]
+  m = v.match(/^(\d{2})\.(\d{2})(?:\.(\d{4}))?(?:,?\s+(\d{1,2}):(\d{2}))?/);
+  if (m) {
+    const year = m[3] ? +m[3] : new Date().getFullYear();
+    return new Date(year, +m[2] - 1, +m[1], +(m[4] || 0), +(m[5] || 0)).toISOString();
+  }
+  return null;
+}
+
+// Собирает данные одной задачи в плоский объект
+function taskToCsvRecord(t) {
+  const paySt = paymentState(t);
+  return {
+    number: t.number || '',
+    createdAt: csvDateTime(t.createdAt),
+    plate: t.car.plate,
+    model: t.car.model,
+    year: t.car.year,
+    vin: t.car.vin,
+    client: t.client.name,
+    phone: t.client.phone,
+    reason: t.reason,
+    column: (COLUMNS.find(c => c.id === t.column) || {}).title || t.column || '',
+    assignee: t.assignee ? USERS[t.assignee].name : '',
+    post: t.post || '',
+    scheduled: csvDateTime(t.scheduledTime),
+    // Детализация в одной ячейке: Название [статус] закупка→продажа
+    partsList: (t.parts || []).map(p =>
+      `${p.name} [${PARTS_STATUS[p.status] || p.status}] ${csvNum(p.purchase)}→${csvNum(p.sale)}`).join(' | '),
+    worksList: (t.works || []).map(w =>
+      `${w.name} [${WORKS_STATUS[w.status] || w.status}] ${csvNum(w.cost)}→${csvNum(w.price)}`).join(' | '),
+    payList: (t.payments || []).map(p =>
+      `${csvDateTime(p.date)}: ${csvNum(p.amount)}${p.comment ? ' (' + p.comment + ')' : ''}`).join(' | '),
+    exp_parts: csvNum(partsCost(t)),
+    inc_parts: csvNum(partsRevenue(t)),
+    exp_works: csvNum(worksCost(t)),
+    inc_works: csvNum(worksRevenue(t)),
+    exp_total: csvNum(totalCost(t)),
+    paid: csvNum(paidSum(t)),
+    debt: csvNum(debtOf(t)),
+    inc_total: csvNum(totalRevenue(t)),
+    profit: csvNum(netProfit(t)),
+    payStatus: paymentLabel(paySt),
+    comment: t.comment || ''
+  };
+}
+
+function buildCsv(tasks) {
+  const lines = [];
+  lines.push(csvRow(CSV_COLUMNS.map(c => c.title)));
+
+  const records = tasks.map(taskToCsvRecord);
+  records.forEach(r => lines.push(csvRow(CSV_COLUMNS.map(c => r[c.key]))));
+
+  // Итоговая строка
+  const sum = (f) => tasks.reduce((s, t) => s + f(t), 0);
+  const totals = {
+    number: 'ИТОГО',
+    exp_parts: csvNum(sum(partsCost)),
+    inc_parts: csvNum(sum(partsRevenue)),
+    exp_works: csvNum(sum(worksCost)),
+    inc_works: csvNum(sum(worksRevenue)),
+    exp_total: csvNum(sum(totalCost)),
+    paid: csvNum(sum(paidSum)),
+    debt: csvNum(sum(debtOf)),
+    inc_total: csvNum(sum(totalRevenue)),
+    profit: csvNum(sum(netProfit))
+  };
+  lines.push(csvRow(CSV_COLUMNS.map(c => totals[c.key] !== undefined ? totals[c.key] : '')));
+
+  return lines.join('\r\n');
+}
+
+function downloadFile(filename, content, mime) {
+  // BOM нужен, чтобы Excel корректно прочитал UTF-8
+  const blob = new Blob(['\uFEFF' + content], { type: mime || 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function exportCsv() {
+  const tasks = visibleTasksForUser();
+  if (!tasks.length) { alert('Нет задач для выгрузки'); return; }
+  const stamp = new Date().toISOString().slice(0, 10);
+  downloadFile(`crm_zadachi_${stamp}.csv`, buildCsv(tasks), 'text/csv;charset=utf-8');
+  state.notifications.push({
+    id: uid(), taskId: null,
+    message: `📤 Выгружено задач в CSV: ${tasks.length}`,
+    time: new Date().toISOString(), read: false
+  });
+  saveState();
+  renderNotifications();
+}
+
+// --- Разбор CSV ---
+// Поддерживает кавычки, экранированные кавычки ("") и переводы строк внутри ячеек
+function parseCsv(text) {
+  const src = String(text).replace(/^\uFEFF/, '');
+  const rows = [];
+  let row = [];
+  let cell = '';
+  let inQuotes = false;
+  let i = 0;
+
+  while (i < src.length) {
+    const ch = src[i];
+    if (inQuotes) {
+      if (ch === '"') {
+        if (src[i + 1] === '"') { cell += '"'; i += 2; continue; }
+        inQuotes = false; i++; continue;
+      }
+      cell += ch; i++; continue;
+    }
+    if (ch === '"') { inQuotes = true; i++; continue; }
+    if (ch === CSV_SEP || ch === '\t') { row.push(cell); cell = ''; i++; continue; }
+    if (ch === '\r') { i++; continue; }
+    if (ch === '\n') { row.push(cell); rows.push(row); row = []; cell = ''; i++; continue; }
+    cell += ch; i++;
+  }
+  row.push(cell);
+  rows.push(row);
+  return rows.filter(r => r.some(c => String(c).trim() !== ''));
+}
+
+// Число из CSV: принимает и "1 234,56", и "1234.56"
+function csvParseNum(v) {
+  return num(v);
+}
+
+// Разбирает строку вида "Название [статус] 100→200 | ..." обратно в массив
+function parsePartsCell(text) {
+  if (!text) return [];
+  const statusByLabel = {};
+  Object.keys(PARTS_STATUS).forEach(k => { statusByLabel[PARTS_STATUS[k]] = k; });
+  return String(text).split('|').map(s => s.trim()).filter(Boolean).map(chunk => {
+    const m = chunk.match(/^(.*?)\s*\[(.*?)\]\s*([\d.,\s]*)\s*(?:→|->)\s*([\d.,\s]*)$/);
+    if (!m) return { name: chunk, link: '', purchase: '', sale: '', status: 'notordered' };
+    return {
+      name: m[1].trim(),
+      link: '',
+      purchase: m[3].trim() ? String(csvParseNum(m[3])) : '',
+      sale: m[4].trim() ? String(csvParseNum(m[4])) : '',
+      status: statusByLabel[m[2].trim()] || 'notordered'
+    };
+  }).filter(p => p.name);
+}
+
+function parseWorksCell(text) {
+  if (!text) return [];
+  const statusByLabel = {};
+  Object.keys(WORKS_STATUS).forEach(k => { statusByLabel[WORKS_STATUS[k]] = k; });
+  return String(text).split('|').map(s => s.trim()).filter(Boolean).map(chunk => {
+    const m = chunk.match(/^(.*?)\s*\[(.*?)\]\s*([\d.,\s]*)\s*(?:→|->)\s*([\d.,\s]*)$/);
+    if (!m) return { name: chunk, link: '', cost: '', price: '', status: 'notstarted' };
+    return {
+      name: m[1].trim(),
+      link: '',
+      cost: m[3].trim() ? String(csvParseNum(m[3])) : '',
+      price: m[4].trim() ? String(csvParseNum(m[4])) : '',
+      status: statusByLabel[m[2].trim()] || 'notstarted'
+    };
+  }).filter(w => w.name);
+}
+
+// Ищет ключ колонки по заголовку (устойчиво к регистру и лишним пробелам)
+function buildCsvHeaderMap(headerRow) {
+  const map = {};
+  const byTitle = {};
+  CSV_COLUMNS.forEach(c => { byTitle[c.title.toLowerCase().trim()] = c.key; });
+  // синонимы для ручных файлов
+  byTitle['дата'] = 'createdAt';
+  byTitle['номер'] = 'number';
+  byTitle['статус'] = 'column';
+  byTitle['ответственный'] = 'assignee';
+  byTitle['время'] = 'scheduled';
+  byTitle['оплата'] = 'payStatus';
+  byTitle['прибыль'] = 'profit';
+
+  headerRow.forEach((h, idx) => {
+    const key = byTitle[String(h).toLowerCase().trim()];
+    if (key && map[key] === undefined) map[key] = idx;
+  });
+  return map;
+}
+
+const COLUMN_BY_TITLE = {};
+COLUMNS.forEach(c => { COLUMN_BY_TITLE[c.title.toLowerCase()] = c.id; });
+const USER_BY_NAME = {};
+Object.keys(USERS).forEach(k => { USER_BY_NAME[USERS[k].name.toLowerCase()] = k; });
+
+// Превращает разобранный CSV в массив задач
+function csvToTasks(rows) {
+  if (!rows.length) return { tasks: [], errors: ['Файл пуст'] };
+  const map = buildCsvHeaderMap(rows[0]);
+  const errors = [];
+
+  if (map.plate === undefined) {
+    return { tasks: [], errors: ['Не найден столбец «Госномер» — это не файл выгрузки CRM'] };
+  }
+
+  const get = (row, key) => {
+    const idx = map[key];
+    if (idx === undefined) return '';
+    return row[idx] === undefined ? '' : String(row[idx]).trim();
+  };
+
+  const tasks = [];
+  for (let r = 1; r < rows.length; r++) {
+    const row = rows[r];
+    const plate = get(row, 'plate');
+    const numCell = get(row, 'number');
+    // Пропускаем итоговую строку выгрузки
+    if (/^итого/i.test(numCell) || /^итого/i.test(plate)) continue;
+    if (!plate) { if (row.some(c => String(c).trim())) errors.push(`Строка ${r + 1}: нет госномера — пропущена`); continue; }
+
+    const assigneeName = get(row, 'assignee').toLowerCase();
+    const columnTitle = get(row, 'column').toLowerCase();
+    const payStatusTitle = get(row, 'payStatus').toLowerCase();
+
+    const t = {
+      id: uid(),
+      number: parseInt(numCell, 10) || null,
+      column: COLUMN_BY_TITLE[columnTitle] || 'waiting',
+      car: {
+        plate: plate,
+        model: get(row, 'model') || '—',
+        year: get(row, 'year') || '',
+        vin: get(row, 'vin').toUpperCase()
+      },
+      client: {
+        name: get(row, 'client') || '—',
+        phone: get(row, 'phone') || '—',
+        history: []
+      },
+      reason: get(row, 'reason') || '—',
+      comment: get(row, 'comment') || '',
+      scheduledTime: null,
+      assignee: USER_BY_NAME[assigneeName] || null,
+      post: parseInt(get(row, 'post'), 10) || null,
+      parts: parsePartsCell(get(row, 'partsList')),
+      works: parseWorksCell(get(row, 'worksList')),
+      payments: [],
+      log: [{ time: new Date().toISOString(), user: USERS[state.currentUser].name, text: 'Задача импортирована из CSV' }],
+      updatedAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      issued: false,
+      color: null
+    };
+
+    // Время назначенное
+    t.scheduledTime = parseCsvDateTime(get(row, 'scheduled'));
+
+    // Дата создания (восстанавливаем, чтобы сортировка по временной шкале работала)
+    const created = parseCsvDateTime(get(row, 'createdAt'));
+    if (created) t.createdAt = created;
+
+    // Оплаты: "дата: сумма (комментарий) | ..."
+    const payCell = get(row, 'payList');
+    if (payCell) {
+      payCell.split('|').map(s => s.trim()).filter(Boolean).forEach(chunk => {
+        const m = chunk.match(/^(.*?):\s*([\d.,\s]+)(?:\s*\((.*)\))?$/);
+        if (m) {
+          t.payments.push({
+            date: (function(){
+              const pdt = parseCsvDateTime(m[1]);
+              return new Date(pdt || Date.now()).toISOString();
+            })(),
+            amount: csvParseNum(m[2]),
+            comment: (m[3] || '').trim(),
+            user: USERS[state.currentUser].name
+          });
+        }
+      });
+    }
+
+    // Если в файле есть «Оплачено», но нет списка оплат — создаём одну сводную оплату
+    if (!t.payments.length) {
+      const paidCell = csvParseNum(get(row, 'paid'));
+      if (paidCell > 0) {
+        t.payments.push({
+          date: new Date().toISOString(),
+          amount: paidCell,
+          comment: 'Импорт из CSV',
+          user: USERS[state.currentUser].name
+        });
+      }
+    }
+
+    tasks.push(t);
+  }
+
+  return { tasks, errors };
+}
+
+function openImportModal() {
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.innerHTML = `
+    <div class="modal" style="max-width:560px">
+      <h2>📥 Импорт задач из CSV</h2>
+      <div class="readonly-field">
+        Файл должен быть выгрузкой из CRM (CSV с разделителем «;»).<br>
+        Обязательный столбец — <b>Госномер</b>. Совпадение определяется по столбцу <b>№</b>.
+      </div>
+      <label>Файл CSV</label>
+      <input type="file" id="importFile" accept=".csv,text/csv">
+      <label>Режим</label>
+      <select id="importMode">
+        <option value="merge">Дополнить: обновлять задачи с тем же №, остальные добавить</option>
+        <option value="add">Только добавить: все строки как новые задачи</option>
+      </select>
+      <div class="modal-actions">
+        <button onclick="closeModal()">Отмена</button>
+        <button class="primary" onclick="runImport()">Импортировать</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('modalContainer').appendChild(modal);
+}
+
+function runImport() {
+  const input = document.getElementById('importFile');
+  const mode = document.getElementById('importMode').value;
+  if (!input || !input.files || !input.files.length) { alert('Выберите файл CSV'); return; }
+
+  const file = input.files[0];
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    let parsed;
+    try {
+      parsed = csvToTasks(parseCsv(e.target.result));
+    } catch(err) {
+      alert('Не удалось разобрать файл: ' + err.message);
+      return;
+    }
+    if (parsed.errors.length && !parsed.tasks.length) {
+      alert(parsed.errors.join('\n'));
+      return;
+    }
+    applyImport(parsed, mode);
+  };
+  reader.onerror = () => alert('Не удалось прочитать файл');
+  reader.readAsText(file, 'utf-8');
+}
+
+function applyImport(parsed, mode) {
+  let added = 0, updated = 0, skipped = 0;
+
+  parsed.tasks.forEach(t => {
+    if (!t.number) t.number = nextTaskNumber();
+
+    if (mode === 'merge' && t.number) {
+      const existing = state.tasks.find(x => x.number === t.number);
+      if (existing) {
+        // Обновляем содержимое, сохраняя id, лог и историю
+        existing.car = t.car;
+        existing.client = Object.assign({}, existing.client, { name: t.client.name, phone: t.client.phone });
+        existing.reason = t.reason;
+        existing.comment = t.comment;
+        existing.column = t.column;
+        existing.assignee = t.assignee;
+        existing.post = t.post;
+        existing.scheduledTime = t.scheduledTime;
+        existing.parts = t.parts;
+        existing.works = t.works;
+        if (t.payments.length) existing.payments = t.payments;
+        existing.updatedAt = new Date().toISOString();
+        existing.log.push({
+          time: new Date().toISOString(),
+          user: USERS[state.currentUser].name,
+          text: 'Обновлено при импорте CSV'
+        });
+        updated++;
+        return;
+      }
+    }
+
+    // Поднимаем счётчик, чтобы новые номера не конфликтовали
+    if (t.number > (state.taskCounter || 0)) state.taskCounter = t.number;
+    state.tasks.push(t);
+    added++;
+  });
+
+  const msg = [
+    `Импорт завершён:`,
+    `• добавлено: ${added}`,
+    `• обновлено: ${updated}`,
+    skipped ? `• пропущено: ${skipped}` : '',
+    parsed.errors.length ? '• замечания:\n   ' + parsed.errors.slice(0, 5).join('\n   ') : ''
+  ].filter(Boolean).join('\n');
+
+  state.notifications.push({
+    id: uid(), taskId: null,
+    message: `📥 Импорт CSV: добавлено ${added}, обновлено ${updated}`,
+    time: new Date().toISOString(), read: false
+  });
+
+  saveState();
+  closeModal();
+  render();
+  alert(msg);
+}
+
+// ============ ОБЩИЕ ============
+function closeModal() {
+  document.getElementById('modalContainer').innerHTML = '';
+}
+
+// Закрытие по клику вне модалки
+document.addEventListener('click', e => {
+  if (e.target.classList.contains('modal-overlay')) {
+    e.target.remove();
+  }
+  if (state.notifOpen && !e.target.closest('.notification-panel') && !e.target.closest('.bell-btn')) {
+    state.notifOpen = false;
+    renderNotifications();
+  }
+});
+
+// Смена пользователя
+document.getElementById('userSelect').addEventListener('change', e => {
+  state.currentUser = e.target.value;
+  state.notifOpen = false;
+  render();
+});
+
+// Инициализация
+loadSettings();
+loadState();
+render();
+</script>
+</body>
+</html>
