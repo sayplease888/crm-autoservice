@@ -3,10 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CRM Автосервис v2</title>
+<title>CRM Автосервис v7</title>
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-database-compat.js"></script>
+<!-- PDF Libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
@@ -212,7 +215,6 @@ button.small { padding: 3px 8px; font-size: 12px; }
 .char-item:hover { background: #45475a; }
 .char-item .label { color: #89b4fa; font-weight: 600; }
 .char-item .value { color: #cdd6f4; text-align: right; flex: 1; margin-left: 10px; }
-/* Блок «Поиск по артикулам»: строки должны занимать всю ширину и не сжиматься */
 .char-item.parts-search-item { align-items: flex-start; flex-wrap: wrap; }
 .char-item.parts-search-item .label { flex: 0 0 auto; }
 .char-item.parts-search-item .value {
@@ -233,7 +235,6 @@ button.small { padding: 3px 8px; font-size: 12px; }
 .vin-copy { cursor: pointer; }
 .vin-copy:active { color: #a6e3a1; }
 
-/* Лог задачи: каждая запись — отдельная строка, без рамок */
 .log-entry {
   display: block;
   padding: 4px 0 4px 10px;
@@ -255,10 +256,8 @@ button.small { padding: 3px 8px; font-size: 12px; }
   display: block;
   color: #cdd6f4;
 }
-/* Лог в окне задачи — компактный список */
 .task-log-list { display: block; }
 
-/* Панель фильтра калькуляции по исполнителям */
 .calc-assignee-bar {
   display: flex;
   align-items: center;
@@ -285,7 +284,6 @@ button.small { padding: 3px 8px; font-size: 12px; }
   margin-left: auto;
 }
 
-/* ===== ЭКРАН ВХОДА ===== */
 .auth-gate {
   position: fixed;
   inset: 0;
@@ -443,7 +441,6 @@ button.small { padding: 3px 8px; font-size: 12px; }
   font-size: 12px;
 }
 
-/* ===== ВКЛАДКИ ===== */
 .tab-btn {
   background: transparent;
   border: 1px solid #45475a;
@@ -453,7 +450,6 @@ button.small { padding: 3px 8px; font-size: 12px; }
 .tab-btn.active { background: #89b4fa; border-color: #89b4fa; color: #1e1e2e; }
 .tab-btn.active:hover { background: #74a8f5; }
 
-/* ===== СТРОКИ ЗАПЧАСТЕЙ / РАБОТ / ОПЛАТ ===== */
 :root {
   --col-name: 1 1 130px;
   --col-article: 0 0 110px;
@@ -1220,7 +1216,7 @@ function changeTenantPassword(tenant, currentPass, newPass, confirmPass) {
 
   const ref = authRefFor(tenant);
   if (ref && ref.set) {
-    try { ref.set(np).catch(() => {}); } catch (e) { /* офлайн — останется кэш */ }
+    try { ref.set(np).catch(() => {}); } catch (e) { }
   }
   setCachedTenantPassword(tenant, np);
   return { ok: true, error: '' };
@@ -1336,7 +1332,16 @@ function localStorageFallbackKey() {
   return t ? 'crm_autoservice_' + t : 'crm_autoservice_anon';
 }
 
+let _saveTimer = null;
+
 function saveState() {
+  if (_saveTimer) clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(() => {
+    saveStateImmediate();
+  }, 500);
+}
+
+function saveStateImmediate() {
   const ref = dataRef();
   const data = {
     tasks: state.tasks,
@@ -1348,7 +1353,7 @@ function saveState() {
     localStorage.setItem(localStorageFallbackKey(), JSON.stringify(data));
     return;
   }
-  ref.set(data).catch(err => {
+  ref.update(data).catch(err => {
     console.error('Firebase write error:', err);
     localStorage.setItem(localStorageFallbackKey(), JSON.stringify(data));
   });
@@ -1357,6 +1362,30 @@ function saveState() {
 function nextTaskNumber() {
   state.taskCounter = (state.taskCounter || 0) + 1;
   return state.taskCounter;
+}
+
+async function nextTaskNumberAsync() {
+  const ref = dataRef();
+  if (!ref) {
+    return nextTaskNumber();
+  }
+  
+  try {
+    const counterRef = ref.child('taskCounter');
+    const result = await counterRef.transaction((current) => {
+      return (current || 0) + 1;
+    });
+    
+    if (result.committed) {
+      state.taskCounter = result.snapshot.val();
+      return state.taskCounter;
+    } else {
+      return nextTaskNumber();
+    }
+  } catch (err) {
+    console.error('Transaction failed:', err);
+    return nextTaskNumber();
+  }
 }
 
 const PARTS_STATUS = {
@@ -1388,13 +1417,55 @@ function esc(s) {
     .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
+// ===== ХЕЛПЕРЫ ДЛЯ ЗАПЧАСТЕЙ =====
+// Количество: целое, минимум 1
 function partQty(p) {
   const q = parseInt(p ? p.quantity : 1, 10);
   return (isNaN(q) || q < 1) ? 1 : q;
 }
 
-function partsCost(task) { return (task.parts || []).reduce((s,p) => s + num(p.purchase) * partQty(p), 0); }
-function partsRevenue(task) { return (task.parts || []).reduce((s,p) => s + num(p.sale) * partQty(p), 0); }
+// Закупочная цена: понимает разные варианты поля
+function partPurchase(p) {
+  if (!p) return 0;
+  const v =
+    (p.purchase !== undefined && p.purchase !== '' && p.purchase !== null) ? p.purchase :
+    (p.buy !== undefined && p.buy !== '' && p.buy !== null) ? p.buy :
+    (p.cost !== undefined && p.cost !== '' && p.cost !== null) ? p.cost :
+    (p.purchasePrice !== undefined && p.purchasePrice !== '' && p.purchasePrice !== null) ? p.purchasePrice :
+    '';
+  return num(v);
+}
+
+// Цена продажи: понимает разные варианты поля
+function partSale(p) {
+  if (!p) return 0;
+  const v =
+    (p.sale !== undefined && p.sale !== '' && p.sale !== null) ? p.sale :
+    (p.sellPrice !== undefined && p.sellPrice !== '' && p.sellPrice !== null) ? p.sellPrice :
+    (p.sell !== undefined && p.sell !== '' && p.sell !== null) ? p.sell :
+    (p.price !== undefined && p.price !== '' && p.price !== null) ? p.price :
+    (p.salePrice !== undefined && p.salePrice !== '' && p.salePrice !== null) ? p.salePrice :
+    '';
+  return num(v);
+}
+
+// Запчасть имеет осмысленное содержимое
+function partHasContent(p) {
+  if (!p) return false;
+  if (String(p.name || '').trim()) return true;
+  if (String(p.article || '').trim()) return true;
+  if (partPurchase(p) > 0) return true;
+  if (partSale(p) > 0) return true;
+  if (Array.isArray(p.notes) && p.notes.some(n => String(n || '').trim())) return true;
+  return false;
+}
+
+function partsCost(task) {
+  return (task.parts || []).reduce((s,p) => s + partPurchase(p) * partQty(p), 0);
+}
+function partsRevenue(task) {
+  return (task.parts || []).reduce((s,p) => s + partSale(p) * partQty(p), 0);
+}
 function worksCost(task) { return (task.works || []).reduce((s,w) => s + num(w.cost), 0); }
 function worksRevenue(task) { return (task.works || []).reduce((s,w) => s + num(w.price), 0); }
 function worksHours(task) { return (task.works || []).reduce((s,w) => s + num(w.hours), 0); }
@@ -1403,23 +1474,54 @@ function totalRevenue(task) { return partsRevenue(task) + worksRevenue(task); }
 function paidSum(task) { return (task.payments || []).reduce((s,p) => s + num(p.amount), 0); }
 function netProfit(task) { return totalRevenue(task) - totalCost(task); }
 
+// Миграция запчасти: приводит к единому виду и переносит старые поля в purchase/sale
+function migratePart(p) {
+  if (!p || typeof p !== 'object') return p;
+
+  if (p.article === undefined || p.article === null) p.article = '';
+
+  // Количество
+  const q = parseInt(p.quantity, 10);
+  p.quantity = (isNaN(q) || q < 1) ? 1 : q;
+
+  // Примечания
+  if (!Array.isArray(p.notes)) {
+    p.notes = (p.note !== undefined && p.note !== null && String(p.note).trim() !== '')
+      ? [String(p.note)]
+      : [];
+  }
+  p.note = p.notes.length ? p.notes[0] : '';
+
+  // Статус
+  if (!p.status) p.status = 'notordered';
+
+  // Миграция закупки
+  const purchaseEmpty = (p.purchase === undefined || p.purchase === '' || p.purchase === null);
+  if (purchaseEmpty) {
+    if (p.buy !== undefined && p.buy !== '' && p.buy !== null) p.purchase = p.buy;
+    else if (p.cost !== undefined && p.cost !== '' && p.cost !== null) p.purchase = p.cost;
+    else if (p.purchasePrice !== undefined && p.purchasePrice !== '' && p.purchasePrice !== null) p.purchase = p.purchasePrice;
+  }
+  if (p.purchase === undefined || p.purchase === null) p.purchase = '';
+
+  // Миграция цены продажи
+  const saleEmpty = (p.sale === undefined || p.sale === '' || p.sale === null);
+  if (saleEmpty) {
+    if (p.sellPrice !== undefined && p.sellPrice !== '' && p.sellPrice !== null) p.sale = p.sellPrice;
+    else if (p.sell !== undefined && p.sell !== '' && p.sell !== null) p.sale = p.sell;
+    else if (p.price !== undefined && p.price !== '' && p.price !== null) p.sale = p.price;
+    else if (p.salePrice !== undefined && p.salePrice !== '' && p.salePrice !== null) p.sale = p.salePrice;
+  }
+  if (p.sale === undefined || p.sale === null) p.sale = '';
+
+  return p;
+}
+
 function normalizeTasks(tasks) {
   (tasks || []).forEach(t => {
     if (!t.parts) t.parts = [];
-    t.parts.forEach(p => {
-      if (p.article === undefined) p.article = '';
-      if (p.purchase === undefined) p.purchase = '';
-      if (p.sale === undefined) p.sale = '';
-      if (!p.status) p.status = 'notordered';
-      const q = parseInt(p.quantity, 10);
-      p.quantity = (isNaN(q) || q < 1) ? 1 : q;
-      if (!Array.isArray(p.notes)) {
-        p.notes = (p.note !== undefined && p.note !== null && String(p.note).trim() !== '')
-          ? [String(p.note)]
-          : [];
-      }
-      p.note = p.notes.length ? p.notes[0] : '';
-    });
+    t.parts = t.parts.map(migratePart).filter(partHasContent);
+
     if (!t.works) t.works = [];
     t.works.forEach(w => {
       if (w.hours === undefined) w.hours = '';
@@ -1446,6 +1548,7 @@ function normalizeTasks(tasks) {
   unnumbered.forEach(t => { t.number = nextTaskNumber(); });
 }
 
+// ============ СТАТУС ОПЛАТЫ ============
 function paymentState(task) {
   const rev = totalRevenue(task);
   if (rev <= 0) return 'none';
@@ -1471,10 +1574,9 @@ const SETTINGS_KEY = 'crm_autoservice_v2_settings';
 const DEFAULT_SETTINGS = {
   showPost: true,
   showAssignee: true,
-  // Telegram
-  tgEnabled: false,
-  tgToken: '',
-  tgChatId: ''
+  stoName: 'Автосервис',
+  stoAddress: '',
+  stoPhone: ''
 };
 
 let appSettings = Object.assign({}, DEFAULT_SETTINGS);
@@ -1497,7 +1599,7 @@ function openSettings() {
   const modal = document.createElement('div');
   modal.className = 'modal-overlay';
   modal.innerHTML = `
-    <div class="modal" style="max-width:560px">
+    <div class="modal" style="max-width:520px">
       <h2>⚙ Настройки</h2>
       <div class="settings-row">
         <div>
@@ -1521,25 +1623,18 @@ function openSettings() {
       </div>
 
       <div class="settings-divider"></div>
-      <h3 class="settings-section-title">📨 Telegram-уведомления</h3>
-      <label>Токен бота</label>
-      <input type="text" id="tgToken" placeholder="123456:ABC-DEF..." value="${esc(appSettings.tgToken || '')}">
-      <label>Chat ID получателя</label>
-      <input type="text" id="tgChatId" placeholder="123456789" value="${esc(appSettings.tgChatId || '')}">
-      <div class="settings-row" style="margin-top:10px">
-        <div>
-          <div>Отправлять уведомления в Telegram</div>
-          <div class="desc">Если выключено — уведомления только в CRM</div>
-        </div>
-        <label class="switch">
-          <input type="checkbox" id="setTgEnabled" ${appSettings.tgEnabled ? 'checked' : ''}>
-          <span class="slider"></span>
-        </label>
-      </div>
-      <div id="tgTestResult" class="settings-msg"></div>
+      <h3 class="settings-section-title">🏢 Данные СТО (для печати документов)</h3>
+
+      <label>Название СТО</label>
+      <input type="text" id="setStoName" placeholder="Название автосервиса" value="${appSettings.stoName || ''}">
+
+      <label>Адрес</label>
+      <input type="text" id="setStoAddress" placeholder="Адрес СТО" value="${appSettings.stoAddress || ''}">
+
+      <label>Телефон</label>
+      <input type="text" id="setStoPhone" placeholder="+7 (___) ___-__-__" value="${appSettings.stoPhone || ''}">
 
       <div class="modal-actions">
-        <button onclick="testTelegram()">Проверить Telegram</button>
         <button onclick="resetSettings()">Сбросить настройки</button>
         <button class="primary" onclick="applySettings()">Сохранить</button>
       </div>
@@ -1581,9 +1676,9 @@ function openSettings() {
 function applySettings() {
   appSettings.showPost = document.getElementById('setShowPost').checked;
   appSettings.showAssignee = document.getElementById('setShowAssignee').checked;
-  appSettings.tgEnabled = document.getElementById('setTgEnabled').checked;
-  appSettings.tgToken = document.getElementById('tgToken').value.trim();
-  appSettings.tgChatId = document.getElementById('tgChatId').value.trim();
+  appSettings.stoName = document.getElementById('setStoName').value.trim();
+  appSettings.stoAddress = document.getElementById('setStoAddress').value.trim();
+  appSettings.stoPhone = document.getElementById('setStoPhone').value.trim();
   saveSettings();
   closeModal();
 }
@@ -1616,79 +1711,6 @@ function resetTenantPass() {
   resetTenantPassword(tenant);
   closeModal();
   alert('Пароль СТО сброшен.\nТеперь пароль = логин: ' + tenant);
-}
-
-// ============ TELEGRAM ============
-// Очередь: уведомления уходят по одному с паузой ~1.1 сек, чтобы не словить
-// лимит Telegram (1 сообщение в секунду в один чат).
-const tgQueue = [];
-let tgSending = false;
-
-function sendTelegram(text) {
-  if (!appSettings.tgEnabled) return;
-  if (!appSettings.tgToken || !appSettings.tgChatId) return;
-  tgQueue.push(text);
-  processTgQueue();
-}
-
-async function processTgQueue() {
-  if (tgSending) return;
-  tgSending = true;
-  while (tgQueue.length) {
-    const text = tgQueue.shift();
-    try {
-      const res = await fetch(
-        `https://api.telegram.org/bot${appSettings.tgToken}/sendMessage`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            chat_id: appSettings.tgChatId,
-            text: text,
-            parse_mode: 'HTML',
-            disable_web_page_preview: true
-          })
-        }
-      );
-      const data = await res.json();
-      if (!data.ok) console.warn('Telegram error:', data.description);
-    } catch (e) {
-      console.warn('Telegram send failed:', e);
-    }
-    await new Promise(r => setTimeout(r, 1100));
-  }
-  tgSending = false;
-}
-
-async function testTelegram() {
-  const token = document.getElementById('tgToken').value.trim();
-  const chatId = document.getElementById('tgChatId').value.trim();
-  const out = document.getElementById('tgTestResult');
-  if (!token || !chatId) {
-    out.textContent = '❌ Заполните токен и chat_id';
-    out.className = 'settings-msg error';
-    return;
-  }
-  out.textContent = '⏳ Отправка...';
-  out.className = 'settings-msg';
-  try {
-    const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: chatId, text: '✅ Тестовое сообщение из CRM' })
-    });
-    const data = await res.json();
-    if (data.ok) {
-      out.textContent = '✅ Сообщение отправлено';
-      out.className = 'settings-msg ok';
-    } else {
-      out.textContent = '❌ ' + data.description;
-      out.className = 'settings-msg error';
-    }
-  } catch (e) {
-    out.textContent = '❌ ' + e.message;
-    out.className = 'settings-msg error';
-  }
 }
 
 // ============ ПОИСК АВТОЗАПЧАСТЕЙ ПО АРТИКУЛУ ============
@@ -1734,11 +1756,13 @@ function partsSummaryHtml(task) {
     const name = p.name || (normArticle(p.article) ? 'Артикул ' + normArticle(p.article) : '(без названия)');
     const art = normArticle(p.article);
     const qty = partQty(p);
+    const pu = partPurchase(p);
+    const sa = partSale(p);
     return `<div class="parts-summary-line">
       ${orderedCheckHtml(p)}
       <span class="parts-summary-name">${esc(name)}${p.article ? ' <b class="art">['+esc(normArticle(p.article))+']</b>' : ''}${qty > 1 ? ' ×'+qty : ''}</span>
       <span class="parts-summary-search">${art ? partSearchButtonsHtml(p.article) : ''}</span>
-      <span class="parts-summary-qty">${money(num(p.purchase)*qty)} → ${money(num(p.sale)*qty)}</span>
+      <span class="parts-summary-qty">${money(pu*qty)} → ${money(sa*qty)}</span>
     </div>`;
   }).join('');
   return `<div class="parts-summary"><div class="parts-summary-head">🔩 Запчасти задачи (${parts.length})</div>${rows}</div>`;
@@ -2184,7 +2208,6 @@ function toLocalInput(iso) {
   return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-// ===== СЛОТЫ ВРЕМЕНИ С ШАГОМ 30 МИНУТ =====
 const SLOT_START_HOUR = 8;
 const SLOT_END_HOUR = 20;
 const SLOT_STEP_MIN = 30;
@@ -2364,6 +2387,8 @@ function addPartRow(part) {
   const notes = Array.isArray(part?.notes) && part.notes.length
     ? part.notes
     : (part?.note ? [part.note] : ['']);
+  const purchaseVal = part ? (part.purchase !== undefined ? part.purchase : '') : '';
+  const saleVal = part ? (part.sale !== undefined ? part.sale : '') : '';
   const div = document.createElement('div');
   div.className = 'part-row';
   div.dataset.partId = id;
@@ -2376,8 +2401,8 @@ function addPartRow(part) {
       <input type="number" step="1" min="1" class="qty-input" value="${qty}" oninput="updatePartRowTotal(this)">
       <button type="button" class="qty-btn" onclick="stepPartQty(this,1)" title="Больше">+</button>
     </span>
-    <input type="number" step="0.01" min="0" class="num" placeholder="Закупка" value="${part?.purchase!==undefined?esc(part.purchase):''}" oninput="updatePartRowTotal(this)">
-    <input type="number" step="0.01" min="0" class="num" placeholder="Продажа" value="${part?.sale!==undefined?esc(part.sale):''}" oninput="updatePartRowTotal(this)">
+    <input type="number" step="0.01" min="0" class="num" placeholder="Закупка" value="${esc(purchaseVal)}" oninput="updatePartRowTotal(this)">
+    <input type="number" step="0.01" min="0" class="num" placeholder="Продажа" value="${esc(saleVal)}" oninput="updatePartRowTotal(this)">
     <select class="work-status" onchange="updatePartOrderedCheck(this)">
       <option value="notordered" ${part?.status==='notordered'?'selected':''}>Не заказано</option>
       <option value="ordered" ${part?.status==='ordered'?'selected':''}>Заказано</option>
@@ -2553,6 +2578,8 @@ function openNewTaskModal() {
       <input id="nYear" type="number" value="2020">
       <label>VIN</label>
       <input id="nVin" maxlength="17" placeholder="17 символов">
+      <label>Пробег (км)</label>
+      <input id="nMileage" type="number" placeholder="Пробег на момент приёмки">
       <h3>Клиент</h3>
       <label>ФИО</label>
       <input id="nClientName" placeholder="Иванов Иван">
@@ -2563,6 +2590,8 @@ function openNewTaskModal() {
       <textarea id="nReason" placeholder="Опишите причину"></textarea>
       <label>Комментарий</label>
       <textarea id="nComment" placeholder="Комментарий"></textarea>
+      <label>Описание состояния авто при приёмке</label>
+      <textarea id="nDamage" placeholder="Видимые повреждения, царапины, вмятины и т.д." rows="3"></textarea>
       <div class="modal-actions">
         <button onclick="closeModal()">Отмена</button>
         <button class="primary" onclick="createTaskFromForm()">Создать</button>
@@ -2572,20 +2601,23 @@ function openNewTaskModal() {
   document.getElementById('modalContainer').appendChild(modal);
 }
 
-function createTaskFromForm() {
+async function createTaskFromForm() {
   const plate = document.getElementById('nPlate').value.trim();
   const model = document.getElementById('nModel').value.trim();
   if (!plate || !model) { alert('Заполните госномер и модель'); return; }
 
+  const taskNumber = await nextTaskNumberAsync();
+
   const task = {
     id: uid(),
-    number: nextTaskNumber(),
+    number: taskNumber,
     column: 'waiting',
     car: {
       plate,
       model,
       year: document.getElementById('nYear').value,
-      vin: document.getElementById('nVin').value.trim().toUpperCase()
+      vin: document.getElementById('nVin').value.trim().toUpperCase(),
+      mileage: document.getElementById('nMileage').value.trim() || ''
     },
     client: {
       name: document.getElementById('nClientName').value.trim() || '—',
@@ -2594,6 +2626,7 @@ function createTaskFromForm() {
     },
     reason: document.getElementById('nReason').value.trim() || '—',
     comment: document.getElementById('nComment').value.trim() || '',
+    damageDescription: document.getElementById('nDamage').value.trim() || '',
     scheduledTime: null,
     assignee: null,
     post: null,
@@ -2617,10 +2650,12 @@ function createTaskFromForm() {
   render();
 }
 
-function createRandomTask() {
+async function createRandomTask() {
+  const taskNumber = await nextTaskNumberAsync();
+  
   const task = {
     id: uid(),
-    number: nextTaskNumber(),
+    number: taskNumber,
     column: 'waiting',
     car: {
       plate: randomPlate(),
@@ -2687,6 +2722,14 @@ function openTaskView(taskId) {
         <div class="char-item" ondblclick="openCharEditor('${taskId}','vin')">
           <span class="label">VIN</span>
           <span class="value"><span class="vin-copy" onclick="event.stopPropagation();copyVin('${task.car.vin}')">${task.car.vin}</span> 📋</span>
+        </div>
+        <div class="char-item">
+          <span class="label">📏 Пробег</span>
+          <span class="value">${task.car.mileage ? task.car.mileage + ' км' : '—'}</span>
+        </div>
+        <div class="char-item">
+          <span class="label">🔍 Состояние при приёмке</span>
+          <span class="value">${task.damageDescription || '—'}</span>
         </div>
         <div class="char-item" ondblclick="openCharEditor('${taskId}','time')">
           <span class="label">⏰ Время назначенное</span>
@@ -2771,6 +2814,8 @@ function openTaskView(taskId) {
           ${task.column === 'issue' ? `<span class="badge ${task.issued?'badge-green':'badge-red'}">${task.issued?'ВЫДАНО':'НЕ ВЫДАНО'}</span>` : ''}
         </div>
         <div>
+          <button class="primary" onclick="printWorkOrder('${taskId}')">🖨️ Заказ-наряд</button>
+          <button class="primary" onclick="printActOfWork('${taskId}')">🖨️ Акт работ</button>
           ${canEdit ? `<button class="warning" onclick="openEditTask('${taskId}')">✏️ Редактировать</button>` : ''}
           ${task.car.vin ? `<button class="primary" onclick="openAutotradeVin('${task.car.vin}')">🔗 Autotrade (VIN)</button>` : ''}
           ${!isWorker ? `<button class="danger" onclick="deleteTask('${taskId}')">🗑 Удалить задачу</button>` : ''}
@@ -2863,14 +2908,6 @@ function confirmDeleteTask(taskId) {
     read: false
   });
   if (state.notifications.length > 100) state.notifications = state.notifications.slice(-100);
-
-  // ↓↓↓ Telegram
-  sendTelegram(
-    `🗑 <b>Удаление задачи</b>\n` +
-    `${esc(task.car.plate)} · ${esc(task.car.model)}\n` +
-    `Клиент: ${esc(task.client.name)}\n` +
-    (reason ? `Причина: ${esc(reason)}` : '')
-  );
 
   saveState();
   closeModal();
@@ -3075,6 +3112,8 @@ function addCePartRow(part) {
   const notes = Array.isArray(part?.notes) && part.notes.length
     ? part.notes
     : (part?.note ? [part.note] : ['']);
+  const purchaseVal = part ? (part.purchase !== undefined ? part.purchase : '') : '';
+  const saleVal = part ? (part.sale !== undefined ? part.sale : '') : '';
   const div = document.createElement('div');
   div.className = 'part-row';
   div.innerHTML = `
@@ -3085,8 +3124,8 @@ function addCePartRow(part) {
       <input type="number" step="1" min="1" class="qty-input" value="${qty}" oninput="updatePartRowTotal(this)">
       <button type="button" class="qty-btn" onclick="stepPartQty(this,1)" title="Больше">+</button>
     </span>
-    <input type="number" step="0.01" min="0" class="num" placeholder="Закупка" value="${part?.purchase!==undefined?esc(part.purchase):''}" oninput="updatePartRowTotal(this)">
-    <input type="number" step="0.01" min="0" class="num" placeholder="Продажа" value="${part?.sale!==undefined?esc(part.sale):''}" oninput="updatePartRowTotal(this)">
+    <input type="number" step="0.01" min="0" class="num" placeholder="Закупка" value="${esc(purchaseVal)}" oninput="updatePartRowTotal(this)">
+    <input type="number" step="0.01" min="0" class="num" placeholder="Продажа" value="${esc(saleVal)}" oninput="updatePartRowTotal(this)">
     <select class="work-status" onchange="updatePartOrderedCheck(this)">
       <option value="notordered" ${part?.status==='notordered'?'selected':''}>Не заказано</option>
       <option value="ordered" ${part?.status==='ordered'?'selected':''}>Заказано</option>
@@ -3338,12 +3377,15 @@ function openEditTask(taskId) {
       <label>Модель</label><input id="e_model" value="${task.car.model}">
       <label>Год</label><input id="e_year" type="number" value="${task.car.year}">
       <label>VIN</label><input id="e_vin" maxlength="17" value="${task.car.vin}">
+      <label>Пробег (км)</label><input id="e_mileage" type="number" value="${task.car.mileage || ''}">
       <label>Клиент ФИО</label><input id="e_clientName" value="${task.client.name}">
       <label>Клиент телефон</label><input id="e_clientPhone" value="${task.client.phone}">
       <label>Причина</label><textarea id="e_reason">${task.reason}</textarea>
       <div class="readonly-field"><b>Комментарий (только чтение):</b><br>${task.comment || '—'}</div>
       <label>Добавить комментарий (сохранится история)</label>
       <textarea id="e_newComment" placeholder="Новый комментарий"></textarea>
+      <label>Описание состояния авто при приёмке</label>
+      <textarea id="e_damage">${task.damageDescription || ''}</textarea>
       <div class="modal-actions">
         <button onclick="closeModal()">Отмена</button>
         <button class="primary" onclick="saveEditTask('${taskId}')">Сохранить</button>
@@ -3364,9 +3406,11 @@ function saveEditTask(taskId) {
   if (task.car.model !== nv('e_model')) { changes.push(`Модель: ${task.car.model}→${nv('e_model')}`); task.car.model = nv('e_model'); }
   if (String(task.car.year) !== nv('e_year')) { changes.push(`Год: ${task.car.year}→${nv('e_year')}`); task.car.year = nv('e_year'); }
   if (task.car.vin !== nv('e_vin').toUpperCase()) { changes.push(`VIN изменён`); task.car.vin = nv('e_vin').toUpperCase(); }
+  if ((task.car.mileage || '') !== nv('e_mileage')) { changes.push(`Пробег: ${task.car.mileage || '—'}→${nv('e_mileage')}`); task.car.mileage = nv('e_mileage'); }
   if (task.client.name !== nv('e_clientName')) { changes.push(`Клиент: ${task.client.name}→${nv('e_clientName')}`); task.client.name = nv('e_clientName'); }
   if (task.client.phone !== nv('e_clientPhone')) { changes.push(`Телефон: ${task.client.phone}→${nv('e_clientPhone')}`); task.client.phone = nv('e_clientPhone'); }
   if (task.reason !== nv('e_reason')) { changes.push(`Причина изменена`); task.reason = nv('e_reason'); }
+  if ((task.damageDescription || '') !== nv('e_damage')) { changes.push(`Описание состояния обновлено`); task.damageDescription = nv('e_damage'); }
 
   const nc = nv('e_newComment');
   if (nc) {
@@ -3396,13 +3440,6 @@ function openAutotradeVin(vin) {
 
 // ============ РАСПИСАНИЕ ============
 let scheduleDate = null;
-
-function schedDateStr(d) {
-  const y = d.getFullYear();
-  const m = String(d.getMonth()+1).padStart(2,'0');
-  const day = String(d.getDate()).padStart(2,'0');
-  return `${y}-${m}-${day}`;
-}
 
 function shiftScheduleDate(delta) {
   const base = scheduleDate ? new Date(scheduleDate) : new Date();
@@ -3682,9 +3719,6 @@ function sortCalc(field) {
 
 // ============ УВЕДОМЛЕНИЯ ============
 function notifyAboutTask(task, message) {
-  // ↓↓↓ Отправка в Telegram (все события, проходящие через notifyAboutTask)
-  sendTelegram(`🔧 <b>CRM Автосервис</b>\n${esc(message)}`);
-
   const notif = {
     id: uid(),
     taskId: task.id,
@@ -3811,8 +3845,10 @@ function csvDateTime(iso) {
 function parseCsvDateTime(s) {
   const v = String(s || '').trim();
   if (!v || v === '—') return null;
+
   let m = v.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2}))?/);
   if (m) return new Date(+m[1], +m[2] - 1, +m[3], +(m[4] || 0), +(m[5] || 0)).toISOString();
+
   m = v.match(/^(\d{2})\.(\d{2})(?:\.(\d{4}))?(?:,?\s+(\d{1,2}):(\d{2}))?/);
   if (m) {
     const year = m[3] ? +m[3] : new Date().getFullYear();
@@ -3838,7 +3874,7 @@ function taskToCsvRecord(t) {
     post: t.post || '',
     scheduled: csvDateTime(t.scheduledTime),
     partsList: (t.parts || []).map(p =>
-      `${p.name}${p.article ? ' ['+normArticle(p.article)+']' : ''}${partQty(p) > 1 ? ' ×'+partQty(p) : ''} [${PARTS_STATUS[p.status] || p.status}] ${csvNum(p.purchase)}→${csvNum(p.sale)}`).join(' | '),
+      `${p.name}${p.article ? ' ['+normArticle(p.article)+']' : ''}${partQty(p) > 1 ? ' ×'+partQty(p) : ''} [${PARTS_STATUS[p.status] || p.status}] ${csvNum(partPurchase(p))}→${csvNum(partSale(p))}`).join(' | '),
     partsNote: (t.parts || []).filter(p => (p.notes && p.notes.length) || p.note).map(p => {
       const ns = (p.notes && p.notes.length) ? p.notes : [p.note];
       return `${p.name || p.article || '—'}: ${ns.join('; ')}`;
@@ -3909,10 +3945,6 @@ function exportCsv() {
     message: `📤 Выгружено задач в CSV: ${tasks.length}`,
     time: new Date().toISOString(), read: false
   });
-
-  // ↓↓↓ Telegram
-  sendTelegram(`📤 Выгружено задач в CSV: ${tasks.length}`);
-
   saveState();
   renderNotifications();
 }
@@ -4287,9 +4319,6 @@ function applyImport(parsed, mode) {
     time: new Date().toISOString(), read: false
   });
 
-  // ↓↓↓ Telegram
-  sendTelegram(`📥 Импорт CSV: добавлено ${added}, обновлено ${updated}`);
-
   saveState();
   closeModal();
   render();
@@ -4344,6 +4373,7 @@ document.getElementById('userSelect').addEventListener('change', e => {
   render();
 });
 
+// ============ УПРАВЛЕНИЕ ЭКРАНОМ ВХОДА ============
 function renderAuthGate() {
   const gate = document.getElementById('authGate');
   const user = currentUser();
@@ -4384,6 +4414,7 @@ function logoutBtn() {
   logout();
 }
 
+// Инициализация
 renderAuthGate();
 const _initialUser = currentUser();
 if (_initialUser) {
@@ -4391,6 +4422,463 @@ if (_initialUser) {
   loadState();
   render();
 }
+
+// ============= ПЕЧАТЬ ДОКУМЕНТОВ =============
+
+// Печать заказ-наряда
+function printWorkOrder(taskId) {
+  const task = state.tasks.find(t => t.id === taskId);
+  if (!task) return;
+
+  const stoName = appSettings.stoName || 'Автосервис';
+  const stoAddress = appSettings.stoAddress || '';
+  const stoPhone = appSettings.stoPhone || '';
+
+  const docHtml = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <title>Заказ-наряд №${task.number}</title>
+      <style>
+        @media print {
+          @page { margin: 15mm; }
+          body { margin: 0; }
+        }
+        body {
+          font-family: 'Times New Roman', serif;
+          font-size: 12pt;
+          line-height: 1.4;
+          color: #000;
+          background: #fff;
+          padding: 20px;
+        }
+        h1 {
+          text-align: center;
+          font-size: 18pt;
+          margin: 0 0 10px 0;
+        }
+        .header-info {
+          text-align: center;
+          font-size: 10pt;
+          margin-bottom: 20px;
+        }
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          margin: 10px 0;
+        }
+        th, td {
+          border: 1px solid #000;
+          padding: 5px 8px;
+          text-align: left;
+        }
+        th {
+          background: #f0f0f0;
+          font-weight: bold;
+        }
+        .section-title {
+          font-weight: bold;
+          margin-top: 15px;
+          margin-bottom: 5px;
+        }
+        .signature-block {
+          margin-top: 30px;
+          display: flex;
+          justify-content: space-between;
+        }
+        .signature-line {
+          width: 45%;
+          border-bottom: 1px solid #000;
+          padding-bottom: 5px;
+          margin-top: 20px;
+        }
+        .damage-area {
+          min-height: 80px;
+          border: 1px solid #000;
+          padding: 10px;
+          margin: 10px 0;
+        }
+        .info-row {
+          display: flex;
+          justify-content: space-between;
+          margin: 5px 0;
+        }
+      </style>
+    </head>
+    <body>
+      <h1>ЗАКАЗ-НАРЯД №${task.number}</h1>
+      <div class="header-info">
+        <strong>${stoName}</strong><br>
+        ${stoAddress ? stoAddress + '<br>' : ''}
+        ${stoPhone ? 'Тел: ' + stoPhone : ''}
+      </div>
+
+      <div class="info-row">
+        <span><strong>Дата приёмки:</strong> ${new Date(task.createdAt).toLocaleDateString('ru-RU')}</span>
+        <span><strong>Время:</strong> ${new Date(task.createdAt).toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'})}</span>
+      </div>
+
+      <div class="section-title">ДАННЫЕ ЗАКАЗЧИКА</div>
+      <table>
+        <tr>
+          <th width="30%">ФИО</th>
+          <td>${task.client.name}</td>
+        </tr>
+        <tr>
+          <th>Телефон</th>
+          <td>${task.client.phone}</td>
+        </tr>
+      </table>
+
+      <div class="section-title">ДАННЫЕ АВТОМОБИЛЯ</div>
+      <table>
+        <tr>
+          <th width="30%">Марка, модель</th>
+          <td>${task.car.model}</td>
+        </tr>
+        <tr>
+          <th>Год выпуска</th>
+          <td>${task.car.year}</td>
+        </tr>
+        <tr>
+          <th>Госномер</th>
+          <td>${task.car.plate}</td>
+        </tr>
+        <tr>
+          <th>VIN</th>
+          <td>${task.car.vin || '—'}</td>
+        </tr>
+        <tr>
+          <th>Пробег при приёмке</th>
+          <td>${task.car.mileage ? task.car.mileage + ' км' : '—'}</td>
+        </tr>
+      </table>
+
+      <div class="section-title">ОПИСАНИЕ СОСТОЯНИЯ АВТОМОБИЛЯ ПРИ ПРИЁМКЕ</div>
+      <div class="damage-area">
+        ${task.damageDescription || ''}
+      </div>
+
+      <div class="section-title">ПРИЧИНА ОБРАЩЕНИЯ</div>
+      <p>${task.reason}</p>
+
+      ${task.works && task.works.length ? `
+      <div class="section-title">ПЕРЕЧЕНЬ РАБОТ</div>
+      <table>
+        <thead>
+          <tr>
+            <th width="5%">№</th>
+            <th width="50%">Наименование работы</th>
+            <th width="15%">Нормо-часы</th>
+            <th width="15%">Себестоимость</th>
+            <th width="15%">Стоимость</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${task.works.map((w, idx) => `
+            <tr>
+              <td>${idx + 1}</td>
+              <td>${w.name}</td>
+              <td>${num(w.hours) > 0 ? num(w.hours) : '—'}</td>
+              <td>${num(w.cost) > 0 ? money(num(w.cost)) : '—'}</td>
+              <td>${num(w.price) > 0 ? money(num(w.price)) : '—'}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+      ` : ''}
+
+      ${task.parts && task.parts.length ? `
+      <div class="section-title">ЗАПЧАСТИ</div>
+      <table>
+        <thead>
+          <tr>
+            <th width="5%">№</th>
+            <th width="40%">Наименование</th>
+            <th width="20%">Артикул</th>
+            <th width="10%">Кол-во</th>
+            <th width="12.5%">Цена</th>
+            <th width="12.5%">Сумма</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${task.parts.map((p, idx) => {
+            const qty = partQty(p);
+            const price = partSale(p);
+            return `
+            <tr>
+              <td>${idx + 1}</td>
+              <td>${p.name}</td>
+              <td>${p.article ? normArticle(p.article) : '—'}</td>
+              <td>${qty}</td>
+              <td>${price > 0 ? money(price) : '—'}</td>
+              <td>${price > 0 ? money(price * qty) : '—'}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+      ` : ''}
+
+      <div class="section-title">ИТОГОВАЯ СТОИМОСТЬ</div>
+      <table>
+        <tr>
+          <th width="70%">Работы</th>
+          <td>${money(worksRevenue(task))}</td>
+        </tr>
+        <tr>
+          <th>Запчасти</th>
+          <td>${money(partsRevenue(task))}</td>
+        </tr>
+        <tr>
+          <th><strong>ИТОГО</strong></th>
+          <td><strong>${money(totalRevenue(task))}</strong></td>
+        </tr>
+      </table>
+
+      <p style="margin-top: 20px; font-size: 11pt;">
+        Заказчик ознакомлен с перечнем работ, стоимостью и сроками выполнения.
+        Претензий по комплектности и состоянию автомобиля не имеет.
+      </p>
+
+      <div class="signature-block">
+        <div>
+          <div><strong>Приёмщик:</strong></div>
+          <div class="signature-line"></div>
+          <div style="text-align: center; font-size: 10pt; margin-top: 5px;">(подпись)</div>
+        </div>
+        <div>
+          <div><strong>Заказчик:</strong></div>
+          <div class="signature-line"></div>
+          <div style="text-align: center; font-size: 10pt; margin-top: 5px;">(подпись / ${task.client.name})</div>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const printWindow = window.open('', '_blank');
+  printWindow.document.write(docHtml);
+  printWindow.document.close();
+  printWindow.focus();
+  setTimeout(() => {
+    printWindow.print();
+  }, 250);
+}
+
+// Печать акта выполненных работ
+function printActOfWork(taskId) {
+  const task = state.tasks.find(t => t.id === taskId);
+  if (!task) return;
+
+  const stoName = appSettings.stoName || 'Автосервис';
+  const stoAddress = appSettings.stoAddress || '';
+  const stoPhone = appSettings.stoPhone || '';
+
+  const docHtml = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <title>Акт выполненных работ к заказ-наряду №${task.number}</title>
+      <style>
+        @media print {
+          @page { margin: 15mm; }
+          body { margin: 0; }
+        }
+        body {
+          font-family: 'Times New Roman', serif;
+          font-size: 12pt;
+          line-height: 1.4;
+          color: #000;
+          background: #fff;
+          padding: 20px;
+        }
+        h1 {
+          text-align: center;
+          font-size: 18pt;
+          margin: 0 0 10px 0;
+        }
+        .header-info {
+          text-align: center;
+          font-size: 10pt;
+          margin-bottom: 20px;
+        }
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          margin: 10px 0;
+        }
+        th, td {
+          border: 1px solid #000;
+          padding: 5px 8px;
+          text-align: left;
+        }
+        th {
+          background: #f0f0f0;
+          font-weight: bold;
+        }
+        .section-title {
+          font-weight: bold;
+          margin-top: 15px;
+          margin-bottom: 5px;
+        }
+        .signature-block {
+          margin-top: 30px;
+          display: flex;
+          justify-content: space-between;
+        }
+        .signature-line {
+          width: 45%;
+          border-bottom: 1px solid #000;
+          padding-bottom: 5px;
+          margin-top: 20px;
+        }
+        .info-row {
+          display: flex;
+          justify-content: space-between;
+          margin: 5px 0;
+        }
+      </style>
+    </head>
+    <body>
+      <h1>АКТ ВЫПОЛНЕННЫХ РАБОТ</h1>
+      <p style="text-align: center;">к заказ-наряду №${task.number}</p>
+
+      <div class="header-info">
+        <strong>${stoName}</strong><br>
+        ${stoAddress ? stoAddress + '<br>' : ''}
+        ${stoPhone ? 'Тел: ' + stoPhone : ''}
+      </div>
+
+      <div class="info-row">
+        <span><strong>Дата выдачи:</strong> ${new Date().toLocaleDateString('ru-RU')}</span>
+        <span><strong>Время:</strong> ${new Date().toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'})}</span>
+      </div>
+
+      <div class="section-title">ЗАКАЗЧИК</div>
+      <p><strong>ФИО:</strong> ${task.client.name}<br>
+         <strong>Телефон:</strong> ${task.client.phone}</p>
+
+      <div class="section-title">АВТОМОБИЛЬ</div>
+      <p><strong>Модель:</strong> ${task.car.model}<br>
+         <strong>Госномер:</strong> ${task.car.plate}<br>
+         <strong>VIN:</strong> ${task.car.vin || '—'}</p>
+
+      ${task.works && task.works.length ? `
+      <div class="section-title">ФАКТИЧЕСКИ ВЫПОЛНЕННЫЕ РАБОТЫ</div>
+      <table>
+        <thead>
+          <tr>
+            <th width="5%">№</th>
+            <th width="55%">Наименование работы</th>
+            <th width="20%">Нормо-часы</th>
+            <th width="20%">Стоимость</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${task.works.map((w, idx) => `
+            <tr>
+              <td>${idx + 1}</td>
+              <td>${w.name}</td>
+              <td>${num(w.hours) > 0 ? num(w.hours) : '—'}</td>
+              <td>${num(w.price) > 0 ? money(num(w.price)) : '—'}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+      ` : '<p>Работы не указаны.</p>'}
+
+      ${task.parts && task.parts.length ? `
+      <div class="section-title">ИСПОЛЬЗОВАННЫЕ ЗАПЧАСТИ</div>
+      <table>
+        <thead>
+          <tr>
+            <th width="5%">№</th>
+            <th width="45%">Наименование</th>
+            <th width="20%">Артикул</th>
+            <th width="10%">Кол-во</th>
+            <th width="20%">Сумма</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${task.parts.map((p, idx) => {
+            const qty = partQty(p);
+            const price = partSale(p);
+            return `
+            <tr>
+              <td>${idx + 1}</td>
+              <td>${p.name}</td>
+              <td>${p.article ? normArticle(p.article) : '—'}</td>
+              <td>${qty}</td>
+              <td>${price > 0 ? money(price * qty) : '—'}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+      ` : ''}
+
+      <div class="section-title">ИТОГОВАЯ СУММА</div>
+      <table>
+        <tr>
+          <th width="70%">Работы</th>
+          <td>${money(worksRevenue(task))}</td>
+        </tr>
+        <tr>
+          <th>Запчасти</th>
+          <td>${money(partsRevenue(task))}</td>
+        </tr>
+        <tr>
+          <th><strong>ВСЕГО К ОПЛАТЕ</strong></th>
+          <td><strong>${money(totalRevenue(task))}</strong></td>
+        </tr>
+      </table>
+
+      <p style="margin-top: 30px; font-size: 11pt; font-weight: bold;">
+        Услуги выполнены полностью и в срок. Заказчик претензий по объёму, качеству и срокам оказания услуг не имеет.
+      </p>
+
+      <div class="signature-block">
+        <div>
+          <div><strong>Исполнитель (СТО):</strong></div>
+          <div class="signature-line"></div>
+          <div style="text-align: center; font-size: 10pt; margin-top: 5px;">(подпись)</div>
+        </div>
+        <div>
+          <div><strong>Заказчик:</strong></div>
+          <div class="signature-line"></div>
+          <div style="text-align: center; font-size: 10pt; margin-top: 5px;">(подпись / ${task.client.name})</div>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const printWindow = window.open('', '_blank');
+  printWindow.document.write(docHtml);
+  printWindow.document.close();
+  printWindow.focus();
+  setTimeout(() => {
+    printWindow.print();
+  }, 250);
+}
+
+// Сохранение данных перед закрытием страницы
+window.addEventListener('beforeunload', () => {
+  if (_saveTimer) {
+    clearTimeout(_saveTimer);
+    saveStateImmediate();
+  }
+});
+
+// Периодическое сохранение для дополнительной защиты
+setInterval(() => {
+  if (_saveTimer) {
+    clearTimeout(_saveTimer);
+    saveStateImmediate();
+  }
+}, 30000); // каждые 30 секунд
+
 </script>
 </body>
 </html>
