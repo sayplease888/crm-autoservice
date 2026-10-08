@@ -623,6 +623,12 @@ button.small { padding: 3px 8px; font-size: 12px; }
 .rows-head span.del-col { flex: var(--col-del); min-width: var(--col-del); }
 .rows-head span.hours-col { flex: var(--col-hours); min-width: var(--col-hours); }
 
+/* Исполнитель работы */
+:root { --col-wassignee: 0 0 132px; }
+.part-row select.work-assignee { flex: var(--col-wassignee); min-width: var(--col-wassignee); }
+.rows-head span.assignee-col { flex: var(--col-wassignee); min-width: var(--col-wassignee); }
+select.work-assignee.auto { border-color: rgba(61,214,140,0.5); color: var(--green); }
+
 .hours-control {
   display: inline-flex;
   align-items: center;
@@ -1045,6 +1051,573 @@ button.small { padding: 3px 8px; font-size: 12px; }
 .pay-item .pay-date { color: #89b4fa; font-weight: 600; }
 .pay-item .pay-comment { flex: 1; color: #a6adc8; font-size: 11px; }
 .pay-item .pay-sum { color: #a6e3a1; font-weight: 600; }
+
+/* ========== НОВАЯ МОДАЛКА ЗАДАЧИ (из target_modal) ========== */
+:root {
+  --bg-modal: linear-gradient(145deg, #0E1A2B 0%, #101E33 100%);
+  --bg-card: #13253F;
+  --border-card: #1E4E8C;
+  --border-card-soft: #1A3A66;
+  --accent: #2E7CF6;
+  --cyan: #3DD5C4;
+  --green: #3DD68C;
+  --text: #E8EEF7;
+  --text-dim: #7A8FAE;
+  --input-bg: #0B1729;
+  --shadow-glow: 0 0 40px rgba(30, 136, 229, 0.25);
+}
+
+.task-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 10, 18, 0.9);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 16px;
+  z-index: 1000;
+  overflow-y: auto;
+}
+.task-modal-overlay.hidden { display: none; }
+
+.task-modal {
+  position: relative;
+  width: 100%;
+  max-width: 860px;
+  margin: auto;
+  flex-shrink: 0;
+  background: var(--bg-modal);
+  border: 1px solid var(--border-card);
+  border-radius: 16px;
+  box-shadow: var(--shadow-glow), 0 30px 80px rgba(0,0,0,0.6);
+  padding: 18px 22px 16px;
+  animation: modalIn 0.35s ease-out;
+  color: var(--text);
+}
+
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(20px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.task-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  position: relative;
+}
+.task-modal-header__icon {
+  width: 44px; height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #2E7CF6, #1B4FB0);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+  box-shadow: 0 6px 20px rgba(46,124,246,0.45);
+  flex-shrink: 0;
+}
+.task-modal-header__title h1 { font-size: 18px; font-weight: 700; color: #E8EEF7; }
+.task-modal-header__title p { font-size: 12px; color: var(--text-dim); margin-top: 1px; }
+
+.task-modal-close {
+  position: absolute; top: -4px; right: -4px;
+  width: 30px; height: 30px;
+  border-radius: 50%; border: none;
+  background: transparent; color: var(--text-dim);
+  font-size: 20px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+.task-modal-close:hover { background: rgba(255,255,255,0.06); color: var(--text); }
+
+.task-modal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.task-block {
+  position: relative;
+  background: var(--bg-card);
+  border: 1px solid var(--border-card-soft);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: border-color 0.25s;
+  display: flex;
+  flex-direction: column;
+  min-height: 60px;
+  flex-shrink: 0;
+}
+.task-block:hover { border-color: var(--border-card); }
+
+.task-block__header {
+  display: flex; align-items: center; gap: 8px;
+  margin: 10px 14px 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(30, 78, 140, 0.3);
+  flex-shrink: 0;
+  transition: border-color 0.25s, margin 0.25s, padding 0.25s;
+}
+.task-block__num {
+  width: 22px; height: 22px; border-radius: 6px;
+  background: linear-gradient(135deg, #2E7CF6, #1B4FB0);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: #fff; flex-shrink: 0;
+}
+.task-block__icon {
+  width: 26px; height: 26px; border-radius: 8px;
+  background: rgba(46,124,246,0.15);
+  border: 1px solid rgba(46,124,246,0.35);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; flex-shrink: 0;
+}
+.task-block__title { font-size: 13px; font-weight: 600; }
+.task-block__title-sep {
+  color: var(--text-dim);
+  margin: 0 6px;
+  font-weight: 400;
+  font-size: 16px;
+}
+.task-block__title-accent {
+  color: var(--cyan);
+  font-weight: 600;
+}
+.task-block__title-plate {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #FFFFFF;
+  color: #0A0A0A;
+  padding: 4px 14px;
+  border-radius: 6px;
+  font-weight: 800;
+  font-size: 22px;
+  letter-spacing: 2px;
+  font-family: "JetBrains Mono", "Courier New", monospace;
+  border: 2px solid #C8C8CC;
+  margin-left: 4px;
+  line-height: 1.1;
+  box-shadow:
+    inset 0 0 0 2px #FFFFFF,
+    inset 0 0 0 4px #0A0A0A33;
+  vertical-align: middle;
+}
+.task-block__title-plate::before {
+  content: 'RUS';
+  font-size: 12px;
+  color: #0039A6;
+  font-weight: 800;
+  margin-right: 2px;
+  letter-spacing: 0.5px;
+}
+
+.task-block__header--clickable {
+  cursor: pointer;
+  user-select: none;
+  transition: opacity 0.2s;
+}
+.task-block__header--clickable:hover { opacity: 0.85; }
+
+.task-block__toggle {
+  margin-left: auto;
+  width: 22px; height: 22px;
+  border-radius: 6px;
+  background: rgba(46, 124, 246, 0.12);
+  border: 1px solid rgba(46, 124, 246, 0.3);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px;
+  color: var(--accent);
+  transition: transform 0.25s ease;
+  flex-shrink: 0;
+}
+
+.task-block--collapsed .task-block__toggle {
+  transform: rotate(-90deg);
+}
+
+.task-block__content {
+  overflow: hidden;
+  transition: max-height 0.35s ease, opacity 0.25s ease;
+  max-height: 2000px;
+  opacity: 1;
+  display: flex;
+  flex: 1;
+  align-items: stretch;
+  min-height: 0;
+  flex-direction: row;
+}
+.task-block--collapsed .task-block__content {
+  max-height: 0;
+  opacity: 0;
+}
+
+.task-block--collapsed .task-block__header {
+  margin-bottom: 10px;
+  padding-bottom: 0;
+  border-bottom-color: transparent;
+}
+
+.task-block__image {
+  flex: 0 0 auto;
+  width: 22%;
+  max-width: 260px;
+  align-self: flex-start;
+  overflow: hidden;
+  position: relative;
+  background: var(--input-bg);
+}
+.task-block__image img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+  align-self: flex-start;
+}
+.task-block__image::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.task-block__fields {
+  flex: 1;
+  min-width: 0;
+  padding: 0 14px 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.task-field { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
+.task-field__icon {
+  width: 26px; height: 26px; border-radius: 8px;
+  background: rgba(46,124,246,0.1);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; flex-shrink: 0; color: var(--accent);
+}
+.task-field__label {
+  font-size: 11px;
+  color: var(--text-dim);
+  min-width: 108px;
+  flex-shrink: 0;
+}
+.task-field__value {
+  flex: 1;
+  background: var(--input-bg);
+  border: 1px solid rgba(30, 78, 140, 0.5);
+  border-radius: 8px;
+  padding: 6px 9px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 30px;
+  min-width: 0;
+  color: var(--text);
+}
+.task-field__value span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.task-field__value--readonly { background: rgba(11, 23, 41, 0.5); }
+.task-field__value--multiline {
+  align-items: flex-start;
+  min-height: 46px;
+  padding: 6px 9px;
+}
+.task-field__value--multiline span {
+  white-space: normal;
+  line-height: 1.35;
+  color: var(--text);
+  font-size: 11px;
+}
+.task-chevron { color: #4A5C7A; font-size: 10px; flex-shrink: 0; margin-left: 6px; }
+.task-copy-btn {
+  background: transparent; border: none;
+  color: var(--accent); cursor: pointer;
+  font-size: 12px; padding: 1px; flex-shrink: 0;
+}
+.task-copy-btn:hover { color: var(--cyan); }
+
+.task-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 2px 8px; border-radius: 20px;
+  font-size: 10px; font-weight: 600;
+  white-space: nowrap;
+}
+.task-badge--green {
+  background: rgba(61, 214, 140, 0.15); color: var(--green);
+  border: 1px solid rgba(61, 214, 140, 0.35);
+}
+.task-badge--cyan {
+  background: rgba(61, 213, 196, 0.15); color: var(--cyan);
+  border: 1px solid rgba(61, 213, 196, 0.35);
+}
+.task-badge--red {
+  background: rgba(243, 139, 168, 0.15); color: #f38ba8;
+  border: 1px solid rgba(243, 139, 168, 0.35);
+}
+.task-badge--yellow {
+  background: rgba(249, 226, 175, 0.15); color: #f9e2af;
+  border: 1px solid rgba(249, 226, 175, 0.35);
+}
+
+.task-finance-value { font-size: 13px; font-weight: 700; color: var(--cyan); }
+
+/* ===== СПИСКИ ЗАПЧАСТЕЙ И РАБОТ В БЛОКЕ 2 ===== */
+.item-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 4px 0 2px;
+}
+.item-list__group {
+  border: 1px solid rgba(30, 78, 140, 0.4);
+  border-radius: 8px;
+  padding: 4px 6px 5px;
+  background: rgba(11, 23, 41, 0.5);
+}
+.item-list__group-title {
+  font-size: 10px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin: 2px 0 4px;
+}
+.item-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: 1px solid rgba(30, 78, 140, 0.35);
+  background: var(--input-bg);
+  flex-wrap: wrap;
+  cursor: pointer;
+}
+.item-row:hover { border-color: var(--accent); }
+/* Подсветка всего DIV по статусу: красный / жёлтый / зелёный */
+.item-row--red    { border-left: 3px solid #f38ba8; background: rgba(243, 139, 168, 0.16); }
+.item-row--yellow { border-left: 3px solid #f9e2af; background: rgba(249, 226, 175, 0.14); }
+.item-row--green  { border-left: 3px solid #a6e3a1; background: rgba(166, 227, 161, 0.14); }
+.item-row--red:hover    { background: rgba(243, 139, 168, 0.28); }
+.item-row--yellow:hover { background: rgba(249, 226, 175, 0.26); }
+.item-row--green:hover  { background: rgba(166, 227, 161, 0.26); }
+
+/* Группы запчастей/работ на канбан-доске */
+.task-groups { display: flex; flex-direction: column; gap: 4px; margin: 3px 0; }
+.task-group { border-radius: 6px; padding: 3px 5px; border: 1px solid #313244; }
+.task-group--parts { background: rgba(137, 180, 250, 0.10); border-left: 3px solid #89b4fa; }
+.task-group--works { background: rgba(166, 227, 161, 0.10); border-left: 3px solid #a6e3a1; }
+.task-group__title { font-size: 9px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-dim); margin-bottom: 2px; }
+.task-group .task-badges { margin: 0; }
+.task-group__empty { font-size: 10px; color: var(--text-dim); }
+
+/* Модель авто крупным шрифтом в калькуляции */
+.calc-car-model { display: block; font-size: 15px; font-weight: 700; color: #cdd6f4; line-height: 1.25; }
+.calc-car-plate { display: block; font-size: 11px; color: var(--text-dim); }
+
+/* Переключатель видимости столбцов калькуляции */
+.calc-cols { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
+.calc-cols label { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text-dim); cursor: pointer; }
+.calc-cols .calc-cols-title { font-size: 11px; color: #a6adc8; margin-right: 4px; }
+th.col-toggle { cursor: default; }
+th.col-toggle:hover { background: transparent; }
+
+/* Комментарии — каждый с новой строки */
+.task-field__value--multiline .cmt-line { display: block; width: 100%; white-space: pre-wrap; }
+
+/* Фильтр по статусам (мультивыбор) */
+.filter-checks { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.filter-checks label { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: #cdd6f4; cursor: pointer; }
+.item-row__name {
+  flex: 1 1 120px;
+  min-width: 90px;
+  font-size: 11px;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.item-row__art {
+  font-family: 'Consolas','Courier New',monospace;
+  font-size: 10px;
+  color: var(--accent);
+  font-weight: 700;
+}
+.item-row__meta {
+  font-size: 10px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.item-row__who {
+  font-size: 10px;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+.item-row__btns { display: inline-flex; gap: 3px; align-items: center; }
+.item-row__btn {
+  padding: 2px 6px;
+  font-size: 9px;
+  font-weight: 700;
+  border-radius: 4px;
+  border: 1px solid #585b70;
+  background: #45475a;
+  color: #cdd6f4;
+  cursor: pointer;
+  line-height: 1.2;
+}
+.item-row__btn:hover { background: #89b4fa; color: #1e1e2e; border-color: #89b4fa; }
+.item-row__btn--edit { border-color: rgba(46,124,246,0.5); color: #89b4fa; }
+.item-row__btn--del { border-color: rgba(243,139,168,0.5); color: #f38ba8; }
+.item-list__empty { font-size: 11px; color: #4A5C7A; padding: 4px 2px; }
+
+.task-hidden-btn {
+  background: rgba(122,143,174,0.15);
+  border: 1px solid rgba(122,143,174,0.4);
+  color: #bac2de;
+}
+.task-hidden-btn:hover { background: rgba(122,143,174,0.28); }
+
+.task-status-toggle {
+  display: inline-flex; background: var(--input-bg);
+  border: 1px solid rgba(30, 78, 140, 0.5);
+  border-radius: 20px; padding: 2px; gap: 2px;
+}
+.task-status-toggle button {
+  background: transparent; border: none;
+  color: var(--text-dim); font-size: 9px;
+  font-weight: 700; padding: 4px 9px;
+  border-radius: 16px; cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.3px;
+}
+.task-status-toggle button.active { background: var(--green); color: #0A1A14; }
+
+.task-search-input {
+  background: transparent;
+  border: none;
+  color: var(--text);
+  outline: none;
+  width: 100%;
+  font-size: 11px;
+  font-family: inherit;
+}
+.task-search-input::placeholder { color: #4A5C7A; }
+
+.task-fields-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.task-mini-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--input-bg);
+  border: 1px solid rgba(30, 78, 140, 0.5);
+  border-radius: 8px;
+  padding: 8px 10px;
+  min-height: 44px;
+  transition: border-color 0.2s;
+  cursor: pointer;
+}
+.task-mini-card:hover { border-color: var(--accent); }
+
+.task-mini-card__icon {
+  width: 26px; height: 26px;
+  border-radius: 7px;
+  background: rgba(46, 124, 246, 0.15);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.task-mini-card__info { flex: 1; min-width: 0; }
+
+.task-mini-card__label {
+  font-size: 10px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-bottom: 2px;
+}
+
+.task-mini-card__value {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.task-mini-card__value span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.task-modal-footer {
+  display: flex; justify-content: space-between;
+  gap: 10px; margin-top: 16px; padding-top: 12px;
+  border-top: 1px solid rgba(30, 78, 140, 0.3);
+  flex-shrink: 0;
+}
+.task-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 6px; padding: 9px 20px; border-radius: 10px;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: all 0.2s; border: 1px solid transparent;
+  font-family: inherit;
+}
+.task-btn--ghost {
+  background: transparent;
+  border-color: rgba(122, 143, 174, 0.4);
+  color: var(--text);
+}
+.task-btn--ghost:hover { background: rgba(255,255,255,0.04); }
+.task-btn--primary {
+  background: linear-gradient(135deg, #2E7CF6, #1B4FB0);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(46,124,246,0.4);
+}
+.task-btn--primary:hover { transform: translateY(-1px); }
+.task-btn--danger {
+  background: rgba(243, 139, 168, 0.15);
+  border-color: rgba(243, 139, 168, 0.35);
+  color: #f38ba8;
+}
+.task-btn--danger:hover { background: rgba(243, 139, 168, 0.25); }
+.task-btn--warning {
+  background: rgba(249, 226, 175, 0.15);
+  border-color: rgba(249, 226, 175, 0.35);
+  color: #f9e2af;
+}
+.task-btn--warning:hover { background: rgba(249, 226, 175, 0.25); }
+
+@media (max-width: 640px) {
+  .task-block__content { flex-direction: column; }
+  .task-block__image {
+    flex: 0 0 100px;
+    width: 100%;
+    height: 100px;
+  }
+  .task-block__fields { padding: 12px; }
+  .task-field__label { min-width: 90px; font-size: 10px; }
+  .task-fields-grid { grid-template-columns: 1fr; }
+  .task-block__title { font-size: 12px; }
+  .task-block__title-plate { font-size: 16px; padding: 3px 10px; }
+  .task-block__title-plate::before { font-size: 9px; }
+}
 </style>
 </head>
 <body>
@@ -1078,9 +1651,8 @@ button.small { padding: 3px 8px; font-size: 12px; }
 <div class="board" id="board"></div>
 <div class="filter-bar" id="filterBar">
   <label class="filter-label">Фильтр по статусу:</label>
-  <select id="statusFilter" onchange="onStatusFilterChange(this.value)">
-    <option value="">Все статусы</option>
-  </select>
+  <span class="filter-checks" id="statusFilterChecks"></span>
+  <button type="button" class="tab-btn" onclick="onStatusFilterChange('')">Сбросить</button>
   <span class="filter-count" id="filterCount"></span>
 </div>
 <div class="calc-wrap" id="calcView" style="display:none"></div>
@@ -1249,7 +1821,7 @@ function logout() {
   state.lastRead = {};
   state.taskCounter = 0;
   modalHistory = [];
-  closeModal();
+  closeModalAll();
   renderAuthGate();
 }
 
@@ -1282,8 +1854,10 @@ let state = {
   activeTab: 'board',
   taskCounter: 0,
   calcSort: { field: 'taskNumber', dir: 'asc' },
-  statusFilter: '',
-  calcAssignee: ''
+  kanbanFilter: [],
+  calcStatusFilter: '',
+  calcAssignee: '',
+  calcHiddenCols: {}
 };
 
 let _dataRef = null;
@@ -1418,13 +1992,11 @@ function esc(s) {
 }
 
 // ===== ХЕЛПЕРЫ ДЛЯ ЗАПЧАСТЕЙ =====
-// Количество: целое, минимум 1
 function partQty(p) {
   const q = parseInt(p ? p.quantity : 1, 10);
   return (isNaN(q) || q < 1) ? 1 : q;
 }
 
-// Закупочная цена: понимает разные варианты поля
 function partPurchase(p) {
   if (!p) return 0;
   const v =
@@ -1436,7 +2008,6 @@ function partPurchase(p) {
   return num(v);
 }
 
-// Цена продажи: понимает разные варианты поля
 function partSale(p) {
   if (!p) return 0;
   const v =
@@ -1449,7 +2020,6 @@ function partSale(p) {
   return num(v);
 }
 
-// Запчасть имеет осмысленное содержимое
 function partHasContent(p) {
   if (!p) return false;
   if (String(p.name || '').trim()) return true;
@@ -1474,17 +2044,14 @@ function totalRevenue(task) { return partsRevenue(task) + worksRevenue(task); }
 function paidSum(task) { return (task.payments || []).reduce((s,p) => s + num(p.amount), 0); }
 function netProfit(task) { return totalRevenue(task) - totalCost(task); }
 
-// Миграция запчасти: приводит к единому виду и переносит старые поля в purchase/sale
 function migratePart(p) {
   if (!p || typeof p !== 'object') return p;
 
   if (p.article === undefined || p.article === null) p.article = '';
 
-  // Количество
   const q = parseInt(p.quantity, 10);
   p.quantity = (isNaN(q) || q < 1) ? 1 : q;
 
-  // Примечания
   if (!Array.isArray(p.notes)) {
     p.notes = (p.note !== undefined && p.note !== null && String(p.note).trim() !== '')
       ? [String(p.note)]
@@ -1492,10 +2059,8 @@ function migratePart(p) {
   }
   p.note = p.notes.length ? p.notes[0] : '';
 
-  // Статус
   if (!p.status) p.status = 'notordered';
 
-  // Миграция закупки
   const purchaseEmpty = (p.purchase === undefined || p.purchase === '' || p.purchase === null);
   if (purchaseEmpty) {
     if (p.buy !== undefined && p.buy !== '' && p.buy !== null) p.purchase = p.buy;
@@ -1504,7 +2069,6 @@ function migratePart(p) {
   }
   if (p.purchase === undefined || p.purchase === null) p.purchase = '';
 
-  // Миграция цены продажи
   const saleEmpty = (p.sale === undefined || p.sale === '' || p.sale === null);
   if (saleEmpty) {
     if (p.sellPrice !== undefined && p.sellPrice !== '' && p.sellPrice !== null) p.sale = p.sellPrice;
@@ -1530,8 +2094,11 @@ function normalizeTasks(tasks) {
       if (!w.status) w.status = 'notstarted';
       if (!w.link) w.link = '';
       if (w.comment === undefined) w.comment = '';
+      if (w.assignee === undefined || w.assignee === null) w.assignee = '';
     });
+    if (t.hidden === undefined) t.hidden = false;
     if (!t.payments) t.payments = [];
+    if (t.payments) t.payments.forEach(p => { if (p.method === undefined || p.method === null) p.method = ''; });
     if (!t.log) t.log = [];
     if (!t.client) t.client = { name: '—', phone: '—', history: [] };
     if (!t.client.history) t.client.history = [];
@@ -1566,6 +2133,42 @@ function paymentBadge(task) {
   const st = paymentState(task);
   const cls = st === 'paid' ? 'paid' : (st === 'unpaid' ? 'unpaid' : 'none');
   return `<span class="pay-badge ${cls}">${paymentLabel(st)}</span>`;
+}
+
+// Содержимое модального окна "Финансы задачи" — для печати в блоке 4
+function financeBlockHtml(task) {
+  const pc = partsCost(task), pr = partsRevenue(task);
+  const wc = worksCost(task), wr = worksRevenue(task);
+  const cost = totalCost(task), rev = totalRevenue(task), profit = netProfit(task);
+  const paid = paidSum(task);
+  const left = rev - paid;
+  const partsList = (task.parts || []).filter(partHasContent);
+  const worksList = (task.works || []);
+  const partsLine = partsList.length
+    ? partsList.map(p => `${esc(p.name || 'Без названия')}${p.article ? ' [' + esc(normArticle(p.article)) + ']' : ''}${partQty(p) > 1 ? ' ×' + partQty(p) : ''}`).join('<br>')
+    : '<span style="color:#6c7086">— запчасти не добавлены —</span>';
+  const worksLine = worksList.length
+    ? worksList.map(w => `${esc(w.name || 'Без названия')}${num(w.hours) > 0 ? ' · ' + num(w.hours) + ' ч' : ''}`).join('<br>')
+    : '<span style="color:#6c7086">— работы не добавлены —</span>';
+  return `
+    <h3>Расходы (закупочная стоимость)</h3>
+    <div class="sum-line"><span>Общая стоимость (себестоимость)</span><b>${money(cost)}</b></div>
+    <h3>Оплата</h3>
+    <div class="sum-line"><span>Сумма долга</span><b>${money(left > 0 ? left : 0)}</b></div>
+    <div class="sum-line"><span>Оплачено клиентом</span><b>${money(paid)}</b></div>
+    <div class="sum-line"><span>Статус оплаты</span><b>${paymentBadge(task)}</b></div>
+    <h3>Запчасти (закупка)</h3>
+    <div class="readonly-field">${partsLine}</div>
+    <div class="sum-line"><span>Запчасти (закупка) — сумма</span><b>${money(pc)}</b></div>
+    <h3>Работы (себестоимость)</h3>
+    <div class="readonly-field">${worksLine}</div>
+    <div class="sum-line"><span>Работы (себестоимость) — сумма</span><b>${money(wc)}</b></div>
+    <h3>Доходы (цена продажи)</h3>
+    <div class="sum-line"><span>Запчасти (продажа)</span><b>${money(pr)}</b></div>
+    <div class="sum-line"><span>Работы (цена для клиента)</span><b>${money(wr)}</b></div>
+    <div class="sum-line total"><span>Всего доходов</span><b>${money(rev)}</b></div>
+    <div class="readonly-field">Маржинальность: ${rev > 0 ? ((profit / rev) * 100).toFixed(1) + '%' : '—'}</div>
+  `;
 }
 
 // ============ НАСТРОЙКИ ВИДИМОСТИ ============
@@ -1842,6 +2445,7 @@ function parseTimeToMinutes(t) {
 // ============ РЕНДЕР ============
 function render() {
   renderBoard();
+  renderFilterBar();
   renderCalculator();
   renderNotifications();
   updateBadge();
@@ -1860,41 +2464,98 @@ function switchTab(tab) {
   render();
 }
 
-function visibleTasksForUser() {
+// ===== ФИЛЬТРЫ СТАТУСОВ КАНБАН-ДОСКИ =====
+const KANBAN_FILTERS = [
+  { key: 'unpaid',     title: 'Неоплаченные' },
+  { key: 'notordered', title: 'Незаказанные' },
+  { key: 'ordered',    title: 'Заказанные' },
+  { key: 'nowork',     title: 'Не в работе' },
+  { key: 'inwork',     title: 'В работе' }
+];
+
+function taskMatchesKanbanFilter(t, key) {
+  const parts = t.parts || [];
+  const works = t.works || [];
+  switch (key) {
+    case 'unpaid':     return paymentState(t) === 'unpaid';
+    case 'notordered': return parts.some(p => p.status === 'notordered');
+    case 'ordered':    return parts.some(p => p.status === 'ordered');
+    case 'nowork':     return works.some(w => w.status === 'notstarted');
+    case 'inwork':     return works.some(w => w.status === 'inwork');
+  }
+  return true;
+}
+
+function currentKanbanFilters() {
+  return Array.isArray(state.kanbanFilter) ? state.kanbanFilter : [];
+}
+
+function tasksBaseForUser() {
   const u = state.currentUser;
-  let list;
-  if (USERS[u].role === 'chief') {
-    list = state.tasks;
-  } else {
-    list = state.tasks.filter(t => !t.assignee || t.assignee === u);
-  }
-  if (state.statusFilter) {
-    list = list.filter(t => t.column === state.statusFilter);
-  }
+  if (USERS[u].role === 'chief') return state.tasks;
+  return state.tasks.filter(t => !t.assignee || t.assignee === u);
+}
+
+function visibleTasksForUser() {
+  let list = tasksBaseForUser();
+  const fl = currentKanbanFilters();
+  if (fl.length) list = list.filter(t => fl.some(k => taskMatchesKanbanFilter(t, k)));
+  // скрытые задачи не отображаются на канбан-доске, но участвуют в калькуляции
+  list = list.filter(t => !t.hidden);
+  return list;
+}
+
+// Задачи для калькуляции: включая скрытые (но с учётом прав и фильтра по статусу)
+function visibleTasksForCalc() {
+  let list = tasksBaseForUser();
+  const f = state.calcStatusFilter || '';
+  if (f === 'hidden') list = list.filter(t => !!t.hidden);
+  else if (f) list = list.filter(t => t.column === f);
   return list;
 }
 
 function renderFilterBar() {
-  const sel = document.getElementById('statusFilter');
-  if (!sel) return;
-  const current = state.statusFilter || '';
-  const opts = ['<option value="">Все статусы</option>'].concat(
-    COLUMNS.map(c => `<option value="${c.id}" ${current === c.id ? 'selected' : ''}>${c.title}</option>`)
-  ).join('');
-  sel.innerHTML = opts;
-
-  const cnt = document.getElementById('filterCount');
-  if (cnt) {
-    const total = state.tasks.length;
-    const shown = visibleTasksForUser().length;
-    cnt.textContent = state.statusFilter
-      ? `Показано: ${shown} из ${total}`
-      : `Всего задач: ${total}`;
+  const bar = document.getElementById('filterBar');
+  if (!bar) return;
+  const isCalc = state.activeTab === 'calc';
+  let inner = '';
+  if (isCalc) {
+    inner += `<label class="filter-label">Фильтр по статусу:</label>
+      <select onchange="onCalcStatusFilterChange(this.value)">
+        <option value="">Все статусы</option>
+        ${COLUMNS.map(c => `<option value="${c.id}" ${state.calcStatusFilter === c.id ? 'selected' : ''}>${c.title}</option>`).join('')}
+        <option value="hidden" ${state.calcStatusFilter === 'hidden' ? 'selected' : ''}>🙈 скрытая</option>
+      </select>`;
+  } else {
+    const fl = currentKanbanFilters();
+    inner += `<label class="filter-label">Фильтр по статусу:</label>
+      <span class="filter-checks">
+        ${KANBAN_FILTERS.map(f => `<label><input type="checkbox" ${fl.indexOf(f.key) >= 0 ? 'checked' : ''} onchange="toggleKanbanFilter('${f.key}', this.checked)"> ${f.title}</label>`).join('')}
+      </span>
+      <button type="button" class="tab-btn" onclick="onStatusFilterChange('')">Сбросить</button>`;
   }
+  const total = state.tasks.length;
+  const shown = isCalc ? visibleTasksForCalc().length : visibleTasksForUser().length;
+  inner += `<span class="filter-count">Показано: ${shown} из ${total}</span>`;
+  bar.innerHTML = inner;
+}
+
+function toggleKanbanFilter(key, on) {
+  const fl = currentKanbanFilters().slice();
+  const i = fl.indexOf(key);
+  if (on && i < 0) fl.push(key);
+  if (!on && i >= 0) fl.splice(i, 1);
+  state.kanbanFilter = fl;
+  render();
 }
 
 function onStatusFilterChange(value) {
-  state.statusFilter = value || '';
+  state.kanbanFilter = [];
+  render();
+}
+
+function onCalcStatusFilterChange(value) {
+  state.calcStatusFilter = value || '';
   render();
 }
 
@@ -1909,7 +2570,6 @@ function renderBoard() {
   const board = document.getElementById('board');
   board.innerHTML = '';
   const visible = visibleTasksForUser();
-  renderFilterBar();
 
   COLUMNS.forEach(col => {
     const colEl = document.createElement('div');
@@ -1990,6 +2650,18 @@ function partStatusBadge(p) {
   return `<span class="badge ${cls} item-badge" title="Запчасть: ${esc(p.name)}">🔩 ${esc(p.name)}: ${label}</span>`;
 }
 
+// Цветовая группа статуса: красный / жёлтый / зелёный
+function statusColorGroup(kind, status) {
+  if (kind === 'part') {
+    if (status === 'instock') return 'green';
+    if (status === 'ordered') return 'yellow';
+    return 'red';
+  }
+  if (status === 'finished') return 'green';
+  if (status === 'inwork') return 'yellow';
+  return 'red';
+}
+
 function workStatusBadge(w) {
   const cls = w.status === 'finished' ? 'badge-green'
             : w.status === 'inwork' ? 'badge-yellow'
@@ -1997,6 +2669,48 @@ function workStatusBadge(w) {
   const label = WORKS_STATUS[w.status] || w.status || '—';
   const hours = num(w.hours) > 0 ? ` · ${num(w.hours)} ч` : '';
   return `<span class="badge ${cls} item-badge" title="Работа: ${esc(w.name)}">🛠 ${esc(w.name)}: ${label}${hours}</span>`;
+}
+
+// ===== СПИСКИ В БЛОКЕ 2 (запчасти и работы в соседних колонках) =====
+function partsItemsHtml(task) {
+  const parts = (task.parts || []).filter(partHasContent);
+  if (!parts.length) return `<div class="item-list__empty">Запчасти ещё не добавлены</div>`;
+  return `<div class="item-list">` + parts.map((p, i) => {
+    const color = statusColorGroup('part', p.status);
+    const label = PARTS_STATUS[p.status] || p.status || '—';
+    const qty = partQty(p);
+    const art = p.article ? `<span class="item-row__art">[${esc(normArticle(p.article))}]</span>` : '';
+    const sum = money(partSale(p) * qty);
+    const drom = p.article ? `<button type="button" class="item-row__btn" title="Поиск на Drom по артикулу" onclick='event.stopPropagation();openPartSearch(\&quot;drom\&quot;, \&quot;${esc(p.article)}\&quot;)'>Drom</button>` : '';
+    const at = p.article ? `<button type="button" class="item-row__btn" title="Поиск на Autotrade по артикулу" onclick='event.stopPropagation();openPartSearch(\&quot;autotrade\&quot;, \&quot;${esc(p.article)}\&quot;)'>Autotrade</button>` : '';
+    return `
+      <div class="item-row item-row--${color}" title="${esc(p.name || '')} — нажмите, чтобы редактировать" onclick="event.stopPropagation();openPartModal('${task.id}', ${i})">
+        <span class="item-row__name">🔩 ${esc(p.name || 'Без названия')} ${art}${qty > 1 ? ' ×' + qty : ''}</span>
+        <span class="badge badge-${color}" style="font-size:9px;padding:1px 5px;">${esc(label)}</span>
+        <span class="item-row__meta">${sum}</span>
+        <span class="item-row__btns">${drom}${at}</span>
+      </div>`;
+  }).join('') + `</div>`;
+}
+
+function worksItemsHtml(task) {
+  const works = (task.works || []);
+  if (!works.length) return `<div class="item-list__empty">Работы ещё не добавлены</div>`;
+  return `<div class="item-list">` + works.map((w, i) => {
+    const color = statusColorGroup('work', w.status);
+    const label = WORKS_STATUS[w.status] || w.status || '—';
+    const hours = num(w.hours) > 0 ? ` · ${num(w.hours)} ч` : '';
+    // Исполнитель работы по умолчанию — исполнитель задачи
+    const whoKey = w.assignee || task.assignee;
+    const who = whoKey && USERS[whoKey] ? USERS[whoKey].name : '—';
+    return `
+      <div class="item-row item-row--${color}" title="${esc(w.name || '')} — нажмите, чтобы редактировать" onclick="event.stopPropagation();openWorkModal('${task.id}', ${i})">
+        <span class="item-row__name">🛠 ${esc(w.name || 'Без названия')}</span>
+        <span class="badge badge-${color}" style="font-size:9px;padding:1px 5px;">${esc(label)}</span>
+        <span class="item-row__meta">${money(w.price)}${hours}</span>
+        <span class="item-row__who">👤 ${esc(who)}</span>
+      </div>`;
+  }).join('') + `</div>`;
 }
 
 function issuedBadgeHtml(task) {
@@ -2012,13 +2726,20 @@ function taskStatusBadgesHtml(task) {
   const issued = issuedBadgeHtml(task);
   const hasAny = parts.length || works.length || issued;
   if (!hasAny) {
-    return `<div class="task-row"><span class="badge badge-gray">Нет запчастей и работ</span></div>`;
+    return `<div class="task-group task-group--parts"><div class="task-group__title">🔩 Запчасти / 🛠 Работы</div>
+      <div class="task-group__empty">Нет запчастей и работ</div></div>`;
   }
   return `
-    <div class="task-badges">
-      ${issued}
-      ${parts.join('')}
-      ${works.join('')}
+    <div class="task-groups">
+      ${issued ? `<div class="task-group task-group--works"><div class="task-group__title">📦 Выдача</div><div class="task-badges">${issued}</div></div>` : ''}
+      <div class="task-group task-group--parts">
+        <div class="task-group__title">🔩 Запчасти (${parts.length})</div>
+        ${parts.length ? `<div class="task-badges">${parts.join('')}</div>` : `<div class="task-group__empty">Запчасти не добавлены</div>`}
+      </div>
+      <div class="task-group task-group--works">
+        <div class="task-group__title">🛠 Работы (${works.length})</div>
+        ${works.length ? `<div class="task-badges">${works.join('')}</div>` : `<div class="task-group__empty">Работы не добавлены</div>`}
+      </div>
     </div>
   `;
 }
@@ -2692,140 +3413,662 @@ async function createRandomTask() {
   render();
 }
 
-// ============ ПРОСМОТР ЗАДАЧИ ============
+// ============ ПРОСМОТР ЗАДАЧИ (НОВАЯ СТРУКТУРА) ============
 function openTaskView(taskId) {
   const task = state.tasks.find(t => t.id === taskId);
   if (!task) return;
 
-  const modal = document.createElement('div');
-  modal.className = 'modal-overlay';
-  modal.id = 'taskViewModal';
+  // Не допускаем накопления нескольких карточек задачи — оставляем одну
+  const container = document.getElementById('modalContainer');
+  if (container) {
+    Array.from(container.querySelectorAll('.task-modal-overlay')).forEach(el => container.removeChild(el));
+    trimModalHistory();
+  }
+
   const isWorker = USERS[state.currentUser].role === 'worker';
   const canEdit = !isWorker || (task.assignee === state.currentUser || !task.assignee);
   const canEditIssue = !isWorker;
+  const paySt = paymentState(task);
+
+  const modal = document.createElement('div');
+  modal.className = 'task-modal-overlay';
+  modal.id = 'taskViewModal';
+
+  // Определяем статус блоков (свёрнуты/развёрнуты)
+  const collapsedBlocks = {
+    blockCar: true,
+    blockClient: true,
+    blockOrg: true,
+    blockFinance: true,
+    blockHistory: true
+  };
 
   modal.innerHTML = `
-    <div class="modal" style="max-width:800px">
-      <div class="modal-titlebar">
-        <h2>Задача ${task.car.plate}</h2>
-        <div class="modal-title-actions">
-          ${issuedBadgeHtml(task)}
-          ${canGoBack() ? `<button class="back-btn" onclick="modalBack()">← Назад</button>` : ''}
-          <button class="close-x" onclick="closeModal()" title="Закрыть">×</button>
+    <div class="task-modal">
+      <!-- HEADER -->
+      <header class="task-modal-header">
+        <div class="task-modal-header__icon">🔧</div>
+        <div class="task-modal-header__title">
+          <h1>Задача №${task.number || '—'}${task.hidden ? ' <span class="badge badge-gray">скрытая</span>' : ''}</h1>
+          <p>${esc(task.car.plate)} · ${esc(task.car.model)}</p>
         </div>
-      </div>
-      <div class="char-list">
-        <div class="char-item" ondblclick="openCharEditor('${taskId}','car')">
-          <span class="label">🚗 Авто</span>
-          <span class="value">${task.car.plate} · ${task.car.model} · ${task.car.year}</span>
-        </div>
-        <div class="char-item" ondblclick="openCharEditor('${taskId}','vin')">
-          <span class="label">VIN</span>
-          <span class="value"><span class="vin-copy" onclick="event.stopPropagation();copyVin('${task.car.vin}')">${task.car.vin}</span> 📋</span>
-        </div>
-        <div class="char-item">
-          <span class="label">📏 Пробег</span>
-          <span class="value">${task.car.mileage ? task.car.mileage + ' км' : '—'}</span>
-        </div>
-        <div class="char-item">
-          <span class="label">🔍 Состояние при приёмке</span>
-          <span class="value">${task.damageDescription || '—'}</span>
-        </div>
-        <div class="char-item" ondblclick="openCharEditor('${taskId}','time')">
-          <span class="label">⏰ Время назначенное</span>
-          <span class="value">${formatTime(task.scheduledTime)}</span>
-        </div>
-        <div class="char-item">
-          <span class="label">📦 Статус выдачи</span>
-          <span class="value">${task.issued
-            ? '<span class="badge badge-green">ВЫДАНО</span>'
-            : '<span class="badge badge-red">НЕ ВЫДАНО</span>'}</span>
-        </div>
-        ${appSettings.showAssignee ? `
-        <div class="char-item" ondblclick="openCharEditor('${taskId}','assignee')">
-          <span class="label">👤 Ответственный</span>
-          <span class="value">${task.assignee ? USERS[task.assignee].name : '—'}</span>
-        </div>` : ''}
-        ${appSettings.showPost ? `
-        <div class="char-item" ondblclick="openCharEditor('${taskId}','post')">
-          <span class="label">🅿️ Пост</span>
-          <span class="value">${task.post ? 'Пост №'+task.post : '—'}</span>
-        </div>` : ''}
-        <div class="char-item" ondblclick="openCharEditor('${taskId}','parts')">
-          <span class="label">🔩 Запчасти</span>
-          <span class="value">${task.parts && task.parts.length ? task.parts.map(p=>esc(p.name)).join(', ') : '—'}<br>
-            <small>Закупка: ${money(partsCost(task))} · Продажа: ${money(partsRevenue(task))}</small>
-          </span>
-        </div>
-        ${(task.parts && task.parts.some(p => normArticle(p.article))) ? `
-        <div class="char-item parts-search-item">
-          <div class="label">🔎 Поиск по артикулам</div>
-          <div class="value">
-            ${task.parts.map((p, idx) => normArticle(p.article) ? `
-              <div class="article-line">
-                ${orderedCheckHtml(p)}
-                <span class="article-code">${esc(normArticle(p.article))}</span>
-                <span class="article-name">${esc(p.name)}${partQty(p) > 1 ? ' ×' + partQty(p) : ''}</span>
-                ${partSearchButtonsHtml(p.article)}
-                <button type="button" class="article-del-btn" title="Удалить запчасть"
-                        onclick="removePartFromTask('${taskId}', ${idx})">✕</button>
-              </div>
-            ` : '').join('')}
+        <button class="task-modal-close" onclick="closeModal()" aria-label="Закрыть">×</button>
+      </header>
+
+      <!-- СПИСОК БЛОКОВ -->
+      <div class="task-modal-list">
+
+        <!-- ========== 1. АВТО + ГОСНОМЕР (выпадающий) ========== -->
+        <section class="task-block task-block--collapsed" id="blockCar">
+          <div class="task-block__header task-block__header--clickable" onclick="toggleTaskBlock('blockCar')">
+            <div class="task-block__num">1</div>
+            <div class="task-block__icon">🚗</div>
+            <div class="task-block__title">
+              <span id="headerCarModel">${esc(task.car.model)}</span>
+              <span class="task-block__title-sep">·</span>
+              <span class="task-block__title-plate" id="headerCarPlate">${esc(task.car.plate)}</span>
+            </div>
+            <div class="task-block__toggle">▾</div>
           </div>
-        </div>` : ''}
-        <div class="char-item" ondblclick="openCharEditor('${taskId}','works')">
-          <span class="label">🛠 Работы</span>
-          <span class="value">${task.works && task.works.length ? task.works.map(w=>esc(w.name)).join(', ') : '—'}<br>
-            <small>Себестоимость: ${money(worksCost(task))} · Цена: ${money(worksRevenue(task))}</small>
-          </span>
-        </div>
-        <div class="char-item" ondblclick="openCharEditor('${taskId}','payments')">
-          <span class="label">💳 Оплата</span>
-          <span class="value">${paymentBadge(task)} Оплачено: ${money(paidSum(task))} из ${money(totalRevenue(task))}<br>
-            <small>${(task.payments||[]).length ? (task.payments||[]).length + ' платеж(ей)' : 'оплат нет'}</small>
-          </span>
-        </div>
-        <div class="char-item" ondblclick="openCharEditor('${taskId}','finance')">
-          <span class="label">💰 Финансы задачи</span>
-          <span class="value">Расходы: ${money(totalCost(task))} · Доходы: ${money(totalRevenue(task))}<br>
-            <small>Чистая прибыль: ${money(netProfit(task))}</small>
-          </span>
-        </div>
-        <div class="char-item" ondblclick="openCharEditor('${taskId}','client')">
-          <span class="label">👥 Клиент</span>
-          <span class="value">${task.client.name} · ${task.client.phone}</span>
-        </div>
-        <div class="char-item" ondblclick="openCharEditor('${taskId}','reason')">
-          <span class="label">📋 Причина обращения</span>
-          <span class="value">${task.reason}</span>
-        </div>
-        <div class="char-item" ondblclick="openCharEditor('${taskId}','comment')">
-          <span class="label">💬 Комментарий</span>
-          <span class="value">${task.comment || '—'}</span>
-        </div>
-        <div class="char-item" ondblclick="openCharEditor('${taskId}','log')">
-          <span class="label">📜 Лог задачи</span>
-          <span class="value">${task.log.length} записей</span>
-        </div>
+
+          <div class="task-block__content">
+            <div class="task-block__image">
+              <img src="https://i.ibb.co/v6YykYBc/2026-10-07-22-44-25.png" alt="Автомобиль">
+            </div>
+
+            <div class="task-block__fields">
+              <div class="task-field" ondblclick="openCharEditor('${taskId}','car')">
+                <div class="task-field__icon">🚘</div>
+                <div class="task-field__label">Авто</div>
+                <div class="task-field__value">
+                  <span>${esc(task.car.model)} · ${esc(task.car.year)}</span>
+                  <span class="task-chevron">▾</span>
+                </div>
+              </div>
+
+              <div class="task-field" ondblclick="openCharEditor('${taskId}','car')">
+                <div class="task-field__icon">🔖</div>
+                <div class="task-field__label">Госномер</div>
+                <div class="task-field__value">
+                  <span>${esc(task.car.plate)}</span>
+                  <span class="task-chevron">▾</span>
+                </div>
+              </div>
+
+              <div class="task-field" ondblclick="openCharEditor('${taskId}','vin')">
+                <div class="task-field__icon">🔢</div>
+                <div class="task-field__label">VIN</div>
+                <div class="task-field__value">
+                  <span>${esc(task.car.vin || '—')}</span>
+                  ${task.car.vin ? `<button class="task-copy-btn" onclick="event.stopPropagation();copyVin('${esc(task.car.vin)}')">📋</button>` : ''}
+                </div>
+              </div>
+
+              <div class="task-field">
+                <div class="task-field__icon">📏</div>
+                <div class="task-field__label">Пробег</div>
+                <div class="task-field__value task-field__value--readonly">
+                  <span>${task.car.mileage ? task.car.mileage + ' км' : '—'}</span>
+                  <span class="task-chevron">👁</span>
+                </div>
+              </div>
+
+              <div class="task-field">
+                <div class="task-field__icon">📋</div>
+                <div class="task-field__label">Состояние</div>
+                <div class="task-field__value">
+                  <span class="task-badge task-badge--green">${task.damageDescription ? 'Есть замечания' : 'Хорошее'}</span>
+                  <span class="task-chevron">👁</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========== 5. КЛИЕНТ (выпадающий) ========== -->
+        <section class="task-block task-block--collapsed" id="blockClient">
+          <div class="task-block__header task-block__header--clickable" onclick="toggleTaskBlock('blockClient')">
+            <div class="task-block__num">5</div>
+            <div class="task-block__icon">👥</div>
+            <div class="task-block__title">
+              <span id="headerClientName">${esc(task.client.name)}</span>
+              <span class="task-block__title-sep">·</span>
+              <span class="task-block__title-accent" id="headerClientReason">${esc(task.reason)}</span>
+              ${task.comment ? `<span class="task-block__title-sep">·</span><span class="task-block__title-accent" id="headerClientComment">💬 ${esc((task.comment.split(/\r?\n/)[0]||'').substring(0, 40))}${task.comment.length > 40 ? '…' : ''} · комментариев: ${(task.comment.split(/\r?\n/).filter(s => s.trim()).length)}</span>` : ''}
+            </div>
+            <div class="task-block__toggle">▾</div>
+          </div>
+
+          <div class="task-block__content">
+            <div class="task-block__image">
+              <img src="https://i.ibb.co/6Sv39Bq/2026-10-07-23-03-21.png" alt="Клиент">
+            </div>
+
+            <div class="task-block__fields">
+              <div class="task-field" ondblclick="openCharEditor('${taskId}','client')">
+                <div class="task-field__icon">👤</div>
+                <div class="task-field__label">Клиент</div>
+                <div class="task-field__value">
+                  <span>${esc(task.client.name)}</span>
+                  <span class="task-chevron">›</span>
+                </div>
+              </div>
+
+              <div class="task-field" ondblclick="openCharEditor('${taskId}','reason')">
+                <div class="task-field__icon">📝</div>
+                <div class="task-field__label">Причина обращения</div>
+                <div class="task-field__value">
+                  <span>${esc(task.reason)}</span>
+                  <span class="task-chevron">›</span>
+                </div>
+              </div>
+
+              <div class="task-field" ondblclick="openCharEditor('${taskId}','comment')">
+                <div class="task-field__icon">💬</div>
+                <div class="task-field__label">Комментарий${task.comment ? ` · ${(task.comment.split(/\r?\n/).filter(s => s.trim()).length)}` : ''}</div>
+                <div class="task-field__value task-field__value--multiline" id="commentFieldValue">
+                  ${(task.comment ? String(task.comment).split(/\r?\n/) : ['—']).map(line => `<span class="cmt-line">${esc(line === '' ? '\u00A0' : line)}</span>`).join('')}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========== 2. РАБОТЫ И ЗАПЧАСТИ ========== -->
+        <section class="task-block">
+          <div class="task-block__header">
+            <div class="task-block__num">2</div>
+            <div class="task-block__icon">🔧</div>
+            <div class="task-block__title">Работы и запчасти</div>
+          </div>
+
+          <div class="task-block__content">
+            <div class="task-block__image">
+              <img src="https://i.ibb.co/5gF2VR48/2026-10-07-23-02-37.png" alt="Работы и запчасти">
+            </div>
+
+            <div class="task-block__fields">
+              <div class="task-fields-grid">
+                <!-- ЛЕВАЯ КОЛОНКА — ЗАПЧАСТИ -->
+                <div class="item-list__group">
+                  <div class="item-list__group-title">🔩 Запчасти (${(task.parts||[]).filter(partHasContent).length})</div>
+                  ${partsItemsHtml(task)}
+                  <button type="button" class="item-row__btn" style="margin-top:5px;"
+                          onclick="event.stopPropagation();openCharEditor('${taskId}','parts')">➕ Добавить запчасть</button>
+                </div>
+
+                <!-- ПРАВАЯ КОЛОНКА — РАБОТЫ -->
+                <div class="item-list__group">
+                  <div class="item-list__group-title">🛠 Работы (${(task.works||[]).length})</div>
+                  ${worksItemsHtml(task)}
+                  <button type="button" class="item-row__btn" style="margin-top:5px;"
+                          onclick="event.stopPropagation();openCharEditor('${taskId}','works')">➕ Добавить работу</button>
+                </div>
+              </div>
+
+              <div class="task-field" style="padding-left: 34px;">
+                <div class="task-field__value" style="flex: 1;">
+                  <input type="text" class="task-search-input" placeholder="Поиск по артикулам..." oninput="filterTaskParts(this, '${taskId}')">
+                  <span class="task-chevron">🔍</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========== 3. ОРГАНИЗАЦИЯ РАБОТ (выпадающий) ========== -->
+        <section class="task-block task-block--collapsed" id="blockOrg">
+          <div class="task-block__header task-block__header--clickable" onclick="toggleTaskBlock('blockOrg')">
+            <div class="task-block__num">3</div>
+            <div class="task-block__icon">📅</div>
+            <div class="task-block__title">
+              <span>Организация работ</span>
+              <span class="task-block__title-sep">·</span>
+              <span class="task-block__title-accent">${task.scheduledTime ? formatTime(task.scheduledTime) : '—'}</span>
+            </div>
+            <div class="task-block__toggle">▾</div>
+          </div>
+
+          <div class="task-block__content">
+            <div class="task-block__image">
+              <img src="https://i.ibb.co/JjmXjDCs/2026-10-07-23-02-55.png" alt="Организация работ">
+            </div>
+
+            <div class="task-block__fields">
+              <div class="task-field" ondblclick="openCharEditor('${taskId}','time')">
+                <div class="task-field__icon">🕐</div>
+                <div class="task-field__label">Время</div>
+                <div class="task-field__value">
+                  <span>${task.scheduledTime ? formatTime(task.scheduledTime) : '—'}</span>
+                  <span class="task-chevron">📅</span>
+                </div>
+              </div>
+
+              ${appSettings.showAssignee ? `
+              <div class="task-field" ondblclick="openCharEditor('${taskId}','assignee')">
+                <div class="task-field__icon">👤</div>
+                <div class="task-field__label">Ответственный</div>
+                <div class="task-field__value">
+                  <span>${task.assignee ? USERS[task.assignee].name : '—'}</span>
+                  <span class="task-chevron">›</span>
+                </div>
+              </div>` : ''}
+
+              ${appSettings.showPost ? `
+              <div class="task-field" ondblclick="openCharEditor('${taskId}','post')">
+                <div class="task-field__icon">🅿️</div>
+                <div class="task-field__label">Пост</div>
+                <div class="task-field__value">
+                  <span>${task.post ? 'Пост №'+task.post : '—'}</span>
+                  <span class="task-chevron">›</span>
+                </div>
+              </div>` : ''}
+
+              <div class="task-field">
+                <div class="task-field__icon">📦</div>
+                <div class="task-field__label">Статус</div>
+                <div class="task-status-toggle">
+                  <button class="${task.issued ? 'active' : ''}" onclick="setTaskIssued('${taskId}', true)">ВЫДАНО</button>
+                  <button class="${!task.issued ? 'active' : ''}" onclick="setTaskIssued('${taskId}', false)">НЕ ВЫДАНО</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========== 4. ФИНАНСЫ (выпадающий) ========== -->
+        <section class="task-block task-block--collapsed" id="blockFinance">
+          <div class="task-block__header task-block__header--clickable" onclick="toggleTaskBlock('blockFinance')">
+            <div class="task-block__num">4</div>
+            <div class="task-block__icon">💰</div>
+            <div class="task-block__title">
+              <span>Финансы</span>
+              <span class="task-block__title-sep">·</span>
+              <span class="task-block__title-accent">${money(totalRevenue(task))}</span>
+              <span class="task-block__title-sep">·</span>
+              <span class="task-badge ${paySt === 'paid' ? 'task-badge--green' : paySt === 'unpaid' ? 'task-badge--red' : ''}" style="margin-left:2px;">${paymentLabel(paySt)}</span>
+            </div>
+            <div class="task-block__toggle">▾</div>
+          </div>
+
+          <div class="task-block__content">
+            <div class="task-block__image">
+              <img src="https://i.ibb.co/rf3Z8F9D/2026-10-07-23-03-09.png" alt="Финансы">
+            </div>
+
+            <div class="task-block__fields">
+              ${financeBlockHtml(task)}
+
+              <div class="task-field">
+                <div class="task-field__icon">➕</div>
+                <div class="task-field__label">Добавить оплату</div>
+                <div class="task-field__value" style="background:transparent;border:none;padding:0;">
+                  <button type="button" class="task-btn task-btn--primary" style="padding:6px 14px;font-size:12px;"
+                          onclick="event.stopPropagation();openCharEditor('${taskId}','payments')">💳 Добавить оплату</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========== 6. ИСТОРИЯ (выпадающий) ========== -->
+        <section class="task-block task-block--collapsed" id="blockHistory">
+          <div class="task-block__header task-block__header--clickable" onclick="toggleTaskBlock('blockHistory')">
+            <div class="task-block__num">6</div>
+            <div class="task-block__icon">🕐</div>
+            <div class="task-block__title">
+              <span>Лог задачи</span>
+              <span class="task-block__title-sep">·</span>
+              <span class="task-block__title-accent">${task.log.length} записей</span>
+            </div>
+            <div class="task-block__toggle">▾</div>
+          </div>
+
+          <div class="task-block__content">
+            <div class="task-block__image">
+              <img src="https://i.ibb.co/xKqVLJzD/2026-10-07-23-03-31.png" alt="История">
+            </div>
+
+            <div class="task-block__fields">
+              <div class="task-field" ondblclick="openCharEditor('${taskId}','log')">
+                <div class="task-field__icon">📜</div>
+                <div class="task-field__label">Лог задачи</div>
+                <div class="task-field__value">
+                  <span>${task.log.length} записей</span>
+                  <span class="task-chevron">›</span>
+                </div>
+              </div>
+
+              <div class="task-field">
+                <div class="task-field__icon">🕐</div>
+                <div class="task-field__label">Последнее</div>
+                <div class="task-field__value task-field__value--readonly">
+                  <span>${task.log.length ? formatTime(task.log[task.log.length-1].time) + ' — ' + esc(task.log[task.log.length-1].text.substring(0, 40)) : '—'}</span>
+                  <span class="task-chevron">👁</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
       </div>
-      <div class="modal-actions" style="justify-content:space-between">
-        <div>
-          ${canEditIssue && task.column === 'issue' ? `<button class="${task.issued?'warning':'success'}" onclick="toggleIssued('${task.id}')">${task.issued?'НЕ ВЫДАНО':'ВЫДАНО'}</button>` : ''}
-          ${task.column === 'issue' ? `<span class="badge ${task.issued?'badge-green':'badge-red'}">${task.issued?'ВЫДАНО':'НЕ ВЫДАНО'}</span>` : ''}
+
+      <!-- FOOTER -->
+      <footer class="task-modal-footer">
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+          ${canEditIssue && task.column === 'issue' ? `<button class="task-btn ${task.issued?'task-btn--warning':'task-btn--primary'}" onclick="toggleIssued('${task.id}')">${task.issued?'НЕ ВЫДАНО':'ВЫДАНО'}</button>` : ''}
+          ${task.car.vin ? `<button class="task-btn task-btn--ghost" onclick="openAutotradeVin('${task.car.vin}')">🔗 Autotrade (VIN)</button>` : ''}
         </div>
-        <div>
-          <button class="primary" onclick="printWorkOrder('${taskId}')">🖨️ Заказ-наряд</button>
-          <button class="primary" onclick="printActOfWork('${taskId}')">🖨️ Акт работ</button>
-          ${canEdit ? `<button class="warning" onclick="openEditTask('${taskId}')">✏️ Редактировать</button>` : ''}
-          ${task.car.vin ? `<button class="primary" onclick="openAutotradeVin('${task.car.vin}')">🔗 Autotrade (VIN)</button>` : ''}
-          ${!isWorker ? `<button class="danger" onclick="deleteTask('${taskId}')">🗑 Удалить задачу</button>` : ''}
-          <button onclick="closeModal()">Закрыть</button>
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+          <button class="task-btn task-btn--ghost" onclick="printWorkOrder('${taskId}')">🖨️ Заказ-наряд</button>
+          <button class="task-btn task-btn--ghost" onclick="printActOfWork('${taskId}')">🖨️ Акт работ</button>
+          ${canEdit ? `<button class="task-btn task-btn--warning" onclick="openEditTask('${taskId}')">✏️ Редактировать</button>` : ''}
+          ${!isWorker ? `<button class="task-btn task-hidden-btn" onclick="toggleTaskHidden('${taskId}')">${task.hidden ? '👁 Показать на доске' : '🙈 Скрыть задачу'}</button>` : ''}
+          ${!isWorker ? `<button class="task-btn task-btn--danger" onclick="deleteTask('${taskId}')">🗑 Удалить</button>` : ''}
+          <button class="task-btn task-btn--primary" onclick="closeModal()">Закрыть</button>
         </div>
-      </div>
+      </footer>
     </div>
   `;
   document.getElementById('modalContainer').appendChild(modal);
   pushModalHistory(() => openTaskView(taskId), 'Задача ' + task.car.plate);
+
+  // Восстанавливаем состояние свёрнутых блоков
+  Object.keys(collapsedBlocks).forEach(id => {
+    const el = document.getElementById(id);
+    if (el && collapsedBlocks[id]) {
+      el.classList.add('task-block--collapsed');
+    }
+  });
+}
+
+// ============ ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ НОВОЙ МОДАЛКИ ============
+function toggleTaskBlock(blockId) {
+  const block = document.getElementById(blockId);
+  if (!block) return;
+  block.classList.toggle('task-block--collapsed');
+}
+
+// ============ СКРЫТИЕ ЗАДАЧИ С КАНБАН-ДОСКИ ============
+function toggleTaskHidden(taskId) {
+  const task = state.tasks.find(t => t.id === taskId);
+  if (!task) return;
+  task.hidden = !task.hidden;
+  task.updatedAt = new Date().toISOString();
+  task.log.push({
+    time: new Date().toISOString(),
+    user: USERS[state.currentUser].name,
+    text: task.hidden
+      ? 'Задача скрыта с канбан-доски (статус: скрытая, отображается в калькуляции)'
+      : 'Задача снова отображается на канбан-доске'
+  });
+  saveState();
+  closeModal();
+  render();
+  setTimeout(() => openTaskView(taskId), 80);
+}
+
+// ============ МОДАЛКА РЕДАКТИРОВАНИЯ ЗАПЧАСТИ (формат «Заказ / Ремонт запчастей») ============
+function openPartModal(taskId, index) {
+  const task = state.tasks.find(t => t.id === taskId);
+  if (!task || !task.parts || !task.parts[index]) return;
+  const p = task.parts[index];
+  const qty = partQty(p);
+  const notes = Array.isArray(p.notes) && p.notes.length ? p.notes : (p.note ? [p.note] : ['']);
+  const statusOpts = Object.keys(PARTS_STATUS)
+    .map(k => `<option value="${k}" ${p.status === k ? 'selected' : ''}>${PARTS_STATUS[k]}</option>`).join('');
+
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.innerHTML = `
+    <div class="modal" data-task-id="${taskId}">
+      <div class="modal-titlebar">
+        <h2>🔩 Заказ / Ремонт запчастей</h2>
+        <div class="modal-title-actions">
+          <button class="back-btn" onclick="modalBack()">← Назад</button>
+          <button class="close-x" onclick="closeModal()" title="Закрыть">×</button>
+        </div>
+      </div>
+      <div class="readonly-field"><b>Авто:</b> ${esc(task.car.plate)} · ${esc(task.car.model)}</div>
+      <div class="rows-head">
+        <span>Название</span><span class="article">Артикул</span><span class="qty-col">Кол-во</span><span class="num">Закупка ₽</span><span class="num">Продажа ₽</span><span class="work-status">Статус</span><span class="row-total">Итог</span><span class="search-col">Поиск</span><span class="del-col"></span>
+      </div>
+      <div id="pm_row"></div>
+      <h3>Примечания</h3>
+      <div id="pm_notes"></div>
+      <button type="button" class="small" onclick="addPmNoteLine()">➕ Добавить примечание</button>
+      <div class="modal-actions">
+        <button onclick="closeModal()">Отмена</button>
+        <button class="primary" onclick="savePartModal('${taskId}', ${index})">Сохранить</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('modalContainer').appendChild(modal);
+  pushModalHistory(() => openTaskView(taskId), 'Запчасть');
+
+  const row = document.getElementById('pm_row');
+  row.appendChild(buildPartRowEl(p, 'pm'));
+  const notesWrap = document.getElementById('pm_notes');
+  notes.forEach((n, i) => notesWrap.insertAdjacentHTML('beforeend', partNoteLineHtml(n, i)));
+}
+
+function buildPartRowEl(part, idPrefix) {
+  const qty = partQty(part);
+  const purchaseVal = part ? (part.purchase !== undefined ? part.purchase : '') : '';
+  const saleVal = part ? (part.sale !== undefined ? part.sale : '') : '';
+  const div = document.createElement('div');
+  div.className = 'part-row';
+  div.dataset.partId = (idPrefix || 'part') + '_row';
+  div.innerHTML = `
+    <input type="text" class="name-input" placeholder="Название запчасти" value="${esc(part?.name||'')}">
+    <input type="text" class="article" placeholder="Артикул" value="${esc(part?.article||'')}" oninput="updatePartSearchButtons(this)">
+    <span class="qty-control">
+      <button type="button" class="qty-btn" onclick="stepPartQty(this,-1)" title="Меньше">−</button>
+      <input type="number" step="1" min="1" class="qty-input" value="${qty}" oninput="updatePartRowTotal(this)">
+      <button type="button" class="qty-btn" onclick="stepPartQty(this,1)" title="Больше">+</button>
+    </span>
+    <input type="number" step="0.01" min="0" class="num" placeholder="Закупка" value="${esc(purchaseVal)}" oninput="updatePartRowTotal(this)">
+    <input type="number" step="0.01" min="0" class="num" placeholder="Продажа" value="${esc(saleVal)}" oninput="updatePartRowTotal(this)">
+    <select class="work-status" onchange="updatePartOrderedCheck(this)">
+      <option value="notordered" ${part?.status==='notordered'?'selected':''}>Не заказано</option>
+      <option value="ordered" ${part?.status==='ordered'?'selected':''}>Заказано</option>
+      <option value="instock" ${part?.status==='instock'?'selected':''}>На складе</option>
+    </select>
+    <span class="row-total">—</span>
+    ${partSearchButtonsHtml(part?.article || '')}
+    <span class="del-col"></span>
+  `;
+  return div;
+}
+
+function addPmNoteLine() {
+  const wrap = document.getElementById('pm_notes');
+  if (!wrap) return;
+  wrap.insertAdjacentHTML('beforeend', partNoteLineHtml('', 1));
+}
+
+function savePartModal(taskId, index) {
+  const task = state.tasks.find(t => t.id === taskId);
+  if (!task || !task.parts || !task.parts[index]) return;
+  const row = document.querySelector('#pm_row .part-row');
+  if (!row) return;
+  const name = row.querySelector('input.name-input').value.trim();
+  const article = row.querySelector('input.article').value.trim();
+  const qtyInput = row.querySelector('input.qty-input');
+  const qty = qtyInput ? (parseInt(qtyInput.value, 10) || 1) : 1;
+  const numInputs = row.querySelectorAll('input.num');
+  const purchase = numInputs[0] ? numInputs[0].value.trim() : '';
+  const sale = numInputs[1] ? numInputs[1].value.trim() : '';
+  const status = row.querySelector('select.work-status').value;
+  const notes = Array.from(document.querySelectorAll('#pm_notes input.note-input'))
+    .map(n => n.value.trim()).filter(v => v !== '');
+
+  const updated = {
+    name, article, notes, note: notes.length ? notes[0] : '', link: '',
+    quantity: qty < 1 ? 1 : qty, purchase, sale, status
+  };
+
+  if (!partHasContent(updated)) {
+    if (!confirm('Запчасть пустая — удалить её из задачи?')) return;
+    task.parts.splice(index, 1);
+    task.log.push({
+      time: new Date().toISOString(), user: USERS[state.currentUser].name,
+      text: `Удалена запчасть: ${name || article || '(без названия)'}`
+    });
+  } else {
+    task.parts[index] = updated;
+    task.log.push({
+      time: new Date().toISOString(), user: USERS[state.currentUser].name,
+      text: `Запчасть изменена: ${updated.name || '(без названия)'}${article ? ' [' + normArticle(article) + ']' : ''} — ${PARTS_STATUS[status] || status}, закупка ${money(purchase)}, продажа ${money(sale)}, кол-во ${qty}`
+    });
+  }
+  task.updatedAt = new Date().toISOString();
+  saveState();
+  closeModal();
+  render();
+  setTimeout(() => openTaskView(taskId), 80);
+}
+
+// ============ МОДАЛКА РЕДАКТИРОВАНИЯ РАБОТЫ (структура как при добавлении работ «В работе») ============
+function openWorkModal(taskId, index) {
+  const task = state.tasks.find(t => t.id === taskId);
+  if (!task || !task.works || !task.works[index]) return;
+  const w = task.works[index];
+  const taskAssigneeName = task.assignee && USERS[task.assignee] ? USERS[task.assignee].name : '—';
+
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.innerHTML = `
+    <div class="modal" data-task-id="${taskId}">
+      <div class="modal-titlebar">
+        <h2>🛠 Работа</h2>
+        <div class="modal-title-actions">
+          <button class="back-btn" onclick="modalBack()">← Назад</button>
+          <button class="close-x" onclick="closeModal()" title="Закрыть">×</button>
+        </div>
+      </div>
+      <div class="readonly-field"><b>Авто:</b> ${esc(task.car.plate)} · ${esc(task.car.model)}<br>
+        <b>Исполнитель задачи:</b> ${esc(taskAssigneeName)}</div>
+      <div class="rows-head">
+        <span>Название работы</span><span class="hours-col">Часы</span><span class="num">Себест. ₽</span><span class="num">Цена ₽</span><span class="work-status">Статус</span><span class="assignee-col">Исполнитель</span><span class="row-total">Итог</span><span class="del-col"></span>
+      </div>
+      <div id="wm_worksList"></div>
+      <button type="button" class="small" onclick="addCeWorkRow()">➕ Добавить ещё</button>
+      <h3>Итого по работам</h3>
+      <div class="sum-line"><span>Всего часов</span><b id="ce_worksHours">${num(worksHours(task))} ч</b></div>
+      <div class="sum-line"><span>Себестоимость работ</span><b id="ce_worksCost">${money(worksCost(task))}</b></div>
+      <div class="sum-line"><span>Стоимость для клиента</span><b id="ce_worksRevenue">${money(worksRevenue(task))}</b></div>
+      <div class="modal-actions">
+        <button onclick="closeModal()">Отмена</button>
+        <button class="primary" onclick="saveWorkModal('${taskId}', ${index})">Сохранить</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('modalContainer').appendChild(modal);
+  pushModalHistory(() => openTaskView(taskId), 'Работа');
+
+  // Одна строка-запись в структуре как при добавлении работ в «В работе»
+  const list = document.getElementById('wm_worksList');
+  if (list) list.id = 'ce_worksList';
+  addCeWorkRow(w);
+}
+
+function saveWorkModal(taskId, index) {
+  const task = state.tasks.find(t => t.id === taskId);
+  if (!task || !task.works || !task.works[index]) return;
+  const list = document.getElementById('ce_worksList');
+  const rows = list ? list.querySelectorAll('.part-row') : [];
+
+  // Первая строка — редактируемая работа (остальные — добавленные новые)
+  const collect = (r) => {
+    const nameInput = r.querySelector('input.name-input');
+    const hoursInput = r.querySelector('input.hours-input');
+    const numInputs = r.querySelectorAll('input.num');
+    const statusSelect = r.querySelector('select.work-status');
+    const assigneeSelect = r.querySelector('select.work-assignee');
+    return {
+      name: nameInput ? nameInput.value.trim() : '',
+      hours: hoursInput ? hoursInput.value.trim() : '',
+      cost: numInputs[0] ? numInputs[0].value.trim() : '',
+      price: numInputs[1] ? numInputs[1].value.trim() : '',
+      status: statusSelect ? statusSelect.value : 'notstarted',
+      assignee: assigneeSelect ? (assigneeSelect.value || '') : ''
+    };
+  };
+
+  const first = rows[0] ? collect(rows[0]) : { name: '' };
+
+  const works = task.works;
+  if (!first.name) {
+    if (!confirm('Название работы пустое — удалить работу?')) return;
+    works.splice(index, 1);
+    task.log.push({
+      time: new Date().toISOString(), user: USERS[state.currentUser].name,
+      text: 'Работа удалена (пустое название)'
+    });
+  } else {
+    const updated = Object.assign({}, works[index], first);
+    works[index] = updated;
+    const who = updated.assignee && USERS[updated.assignee] ? USERS[updated.assignee].name
+      : (task.assignee && USERS[task.assignee] ? USERS[task.assignee].name + ' (из задачи)' : '—');
+    task.log.push({
+      time: new Date().toISOString(), user: USERS[state.currentUser].name,
+      text: `Работа изменена: ${updated.name} — ${WORKS_STATUS[updated.status] || updated.status}, себест. ${money(updated.cost)}, цена ${money(updated.price)}, исполнитель: ${who}`
+    });
+  }
+
+  // Добавленные в этой же модалке строки
+  const newWorks = [];
+  for (let i = 1; i < rows.length; i++) {
+    const r = collect(rows[i]);
+    if (r.name) newWorks.push(Object.assign({ link: '', comment: '' }, r));
+  }
+  if (newWorks.length) {
+    task.works = (task.works || []).concat(newWorks);
+    task.log.push({
+      time: new Date().toISOString(), user: USERS[state.currentUser].name,
+      text: `Добавлено работ: ${newWorks.map(w => w.name).join(', ')}`
+    });
+  }
+
+  task.updatedAt = new Date().toISOString();
+  saveState();
+  closeModal();
+  render();
+  setTimeout(() => openTaskView(taskId), 80);
+}
+
+function setTaskIssued(taskId, issued) {
+  const task = state.tasks.find(t => t.id === taskId);
+  if (!task) return;
+  if (task.issued === issued) return;
+  task.issued = issued;
+  task.log.push({
+    time: new Date().toISOString(),
+    user: USERS[state.currentUser].name,
+    text: `Статус выдачи: ${issued ? 'ВЫДАНО' : 'НЕ ВЫДАНО'}`
+  });
+  task.updatedAt = new Date().toISOString();
+  saveState();
+  closeModal();
+  render();
+  setTimeout(() => openTaskView(taskId), 100);
+}
+
+function filterTaskParts(input, taskId) {
+  // Заглушка для поиска по артикулам - можно расширить при необходимости
+  // alert('Поиск: ' + input.value);
+}
+
+function copyVin(vin) {
+  navigator.clipboard.writeText(vin).then(() => {
+    const btn = event?.target;
+    if (btn) {
+      const old = btn.textContent;
+      btn.textContent = '✓';
+      setTimeout(() => btn.textContent = old, 1200);
+    }
+  }).catch(()=>{});
 }
 
 function removePartFromTask(taskId, index) {
@@ -2845,10 +4088,6 @@ function removePartFromTask(taskId, index) {
   closeModal();
   render();
   setTimeout(() => openTaskView(taskId), 50);
-}
-
-function copyVin(vin) {
-  navigator.clipboard.writeText(vin).then(() => alert('VIN скопирован: ' + vin)).catch(()=>{});
 }
 
 function toggleIssued(taskId) {
@@ -2971,7 +4210,11 @@ function openCharEditor(taskId, field) {
       title = '🛠 Работы';
       content = `
         <div class="rows-head">
-          <span>Название работы</span><span class="hours-col">Часы</span><span class="num">Себестоимость ₽</span><span class="num">Цена работы ₽</span><span class="work-status">Статус</span><span class="row-total">Итог</span><span class="del-col"></span>
+          <span>Название работы</span><span class="hours-col">Часы</span><span class="num">Себестоимость ₽</span><span class="num">Цена работы ₽</span><span class="work-status">Статус</span><span class="assignee-col">Исполнитель</span><span class="row-total">Итог</span><span class="del-col"></span>
+        </div>
+        <div class="readonly-field">
+          Исполнитель задачи: <b>${task.assignee && USERS[task.assignee] ? esc(USERS[task.assignee].name) : '—'}</b>.
+          Если у работы исполнитель не выбран — берётся исполнитель задачи.
         </div>
         <div id="ce_worksList"></div>
         <button type="button" class="small" onclick="addCeWorkRow()">➕ Добавить ещё</button>
@@ -3000,6 +4243,7 @@ function openCharEditor(taskId, field) {
               <span class="pay-date">${formatTime(p.date)}</span>
               <span class="pay-comment">${esc(p.comment||'')} ${p.user ? '· '+esc(p.user) : ''}</span>
               <span class="pay-sum">${money(p.amount)}</span>
+              <span class="badge badge-gray" style="font-size:9px;">${esc(p.method || '—')}</span>
               <button type="button" class="danger small" onclick="removePayment('${taskId}',${i})">✕</button>
             </div>
           `).join('') : '<div class="empty-msg">Оплат пока нет</div>'}
@@ -3007,6 +4251,11 @@ function openCharEditor(taskId, field) {
         <h3>Добавить оплату</h3>
         <label>Сумма, ₽ *</label>
         <input type="number" step="0.01" min="0" id="ce_payAmount" placeholder="0.00">
+        <label>Способ оплаты</label>
+        <select id="ce_payMethod">
+          <option value="Наличные">Наличные</option>
+          <option value="Перевод">Перевод</option>
+        </select>
         <label>Дата оплаты</label>
         <input type="datetime-local" id="ce_payDate" value="${toLocalInput(new Date().toISOString())}">
         <label>Комментарий</label>
@@ -3016,27 +4265,7 @@ function openCharEditor(taskId, field) {
     }
     case 'finance': {
       title = '💰 Финансы задачи';
-      const pc = partsCost(task), pr = partsRevenue(task);
-      const wc = worksCost(task), wr = worksRevenue(task);
-      const cost = totalCost(task), rev = totalRevenue(task), profit = netProfit(task);
-      const paid = paidSum(task);
-      content = `
-        <h3>Расходы (закупочная стоимость)</h3>
-        <div class="sum-line"><span>Запчасти (закупка)</span><b>${money(pc)}</b></div>
-        <div class="sum-line"><span>Работы (себестоимость)</span><b>${money(wc)}</b></div>
-        <div class="sum-line total"><span>Всего расходов</span><b>${money(cost)}</b></div>
-        <h3>Доходы (цена продажи)</h3>
-        <div class="sum-line"><span>Запчасти (продажа)</span><b>${money(pr)}</b></div>
-        <div class="sum-line"><span>Работы (цена для клиента)</span><b>${money(wr)}</b></div>
-        <div class="sum-line total"><span>Всего доходов</span><b>${money(rev)}</b></div>
-        <h3>Оплата</h3>
-        <div class="sum-line"><span>Статус оплаты</span><b>${paymentBadge(task)}</b></div>
-        <div class="sum-line"><span>Оплачено клиентом</span><b>${money(paid)}</b></div>
-        <div class="sum-line"><span>Остаток к оплате</span><b>${money(rev - paid)}</b></div>
-        <h3>Итог</h3>
-        <div class="sum-line total ${profit < 0 ? 'neg' : ''}"><span>Чистая прибыль</span><b>${money(profit)}</b></div>
-        <div class="readonly-field">Маржинальность: ${rev > 0 ? ((profit / rev) * 100).toFixed(1) + '%' : '—'}</div>
-      `;
+      content = financeBlockHtml(task);
       break;
     }
     case 'client':
@@ -3077,7 +4306,7 @@ function openCharEditor(taskId, field) {
   }
 
   modal.innerHTML = `
-    <div class="modal">
+    <div class="modal" data-task-id="${taskId}">
       <div class="modal-titlebar">
         <h2>${title}</h2>
         <div class="modal-title-actions">
@@ -3140,9 +4369,27 @@ function addCePartRow(part) {
   updatePartRowTotal(div.querySelector('input.num'));
 }
 
+function workAssigneeSelectHtml(work, taskAssignee) {
+  const val = work?.assignee || '';
+  const auto = val ? '' : ' auto';
+  const opts = Object.keys(USERS).filter(k => USERS[k].role === 'worker')
+    .map(k => `<option value="${k}" ${val === k ? 'selected' : ''}>${USERS[k].name}</option>`).join('');
+  const autoLabel = taskAssignee && USERS[taskAssignee]
+    ? `👤 ${USERS[taskAssignee].name} (задача)`
+    : '👤 Как в задаче';
+  return `<select class="work-assignee${auto}" title="Исполнитель работы">
+    <option value="">${esc(autoLabel)}</option>
+    ${opts}
+  </select>`;
+}
+
 function addCeWorkRow(work) {
   const list = document.getElementById('ce_worksList');
   if (!list) return;
+  const modal = list.closest('.modal');
+  const taskId = modal ? modal.dataset.taskId : null;
+  const ctask = taskId ? state.tasks.find(t => t.id === taskId) : null;
+  const taskAssignee = ctask ? ctask.assignee : null;
   const div = document.createElement('div');
   div.className = 'part-row';
   div.innerHTML = `
@@ -3159,6 +4406,7 @@ function addCeWorkRow(work) {
       <option value="inwork" ${work?.status==='inwork'?'selected':''}>В работе</option>
       <option value="finished" ${work?.status==='finished'?'selected':''}>Завершено</option>
     </select>
+    ${workAssigneeSelectHtml(work, taskAssignee)}
     <span class="row-total">—</span>
     <button type="button" class="danger small" onclick="this.parentElement.remove()">✕</button>
   `;
@@ -3255,9 +4503,13 @@ function collectWorkRows(selector) {
     const hours = hoursInput ? hoursInput.value.trim() : '';
     const cost = numInputs[0] ? numInputs[0].value.trim() : '';
     const price = numInputs[1] ? numInputs[1].value.trim() : '';
-    const statusSelect = r.querySelector('select');
+    const statusSelect = r.querySelector('select.work-status');
     const status = statusSelect ? statusSelect.value : 'notstarted';
-    if (name) works.push({ name, hours, cost, price, status, link: '' });
+    const assigneeSelect = r.querySelector('select.work-assignee');
+    const assignee = assigneeSelect ? (assigneeSelect.value || '') : '';
+    const cmInput = r.querySelector('input.work-comment');
+    const comment = cmInput ? cmInput.value.trim() : '';
+    if (name) works.push({ name, hours, cost, price, status, assignee, comment, link: '' });
   });
   return works;
 }
@@ -3319,14 +4571,17 @@ function saveChar(taskId, field) {
     if (!amountRaw || amount <= 0) { alert('Укажите сумму оплаты больше нуля'); return; }
     const dateVal = document.getElementById('ce_payDate').value;
     const comment = document.getElementById('ce_payComment').value.trim();
+    const methodEl = document.getElementById('ce_payMethod');
+    const method = methodEl ? methodEl.value : 'Наличные';
     task.payments = task.payments || [];
     task.payments.push({
       date: dateVal ? new Date(dateVal).toISOString() : new Date().toISOString(),
       amount: amount,
       comment: comment,
+      method: method,
       user: user
     });
-    logText = `Внесена оплата: ${money(amount)}${comment ? ' (' + comment + ')' : ''}. Всего оплачено: ${money(paidSum(task))}`;
+    logText = `Внесена оплата: ${money(amount)} (${method})${comment ? ' — ' + comment : ''}. Всего оплачено: ${money(paidSum(task))}`;
   } else if (field === 'finance') {
     // только просмотр
   } else if (field === 'client') {
@@ -3556,6 +4811,14 @@ const CALC_FIELDS = [
   { field: 'status',    title: 'Статус задачи',       type: 'task' }
 ];
 
+// Столбцы, которые нельзя отключить: авто/клиент (содержательный столбец №2) и №
+const CALC_FIXED_COLS = ['plate', 'number'];
+
+function activeCalcFields() {
+  const hidden = state.calcHiddenCols || {};
+  return CALC_FIELDS.filter(f => CALC_FIXED_COLS.indexOf(f.field) >= 0 || !hidden[f.field]);
+}
+
 function debtOf(task) {
   const d = totalRevenue(task) - paidSum(task);
   return d > 0 ? d : 0;
@@ -3579,7 +4842,8 @@ function calcTaskRow(t) {
     profit: netProfit(t),
     payStatus: paymentLabel(paySt),
     payStatusCode: paySt,
-    status: (COLUMNS.find(c => c.id === t.column) || {}).title || '—'
+    status: t.hidden ? 'скрытая' : ((COLUMNS.find(c => c.id === t.column) || {}).title || '—'),
+    statusHidden: !!t.hidden
   };
 }
 
@@ -3587,7 +4851,7 @@ function renderCalculator() {
   const el = document.getElementById('calcView');
   if (!el) return;
 
-  const tasks = visibleTasksForUser();
+  const tasks = visibleTasksForCalc();
 
   const assigneeFilter = state.calcAssignee || '';
   const filtered = !assigneeFilter ? tasks
@@ -3615,6 +4879,51 @@ function renderCalculator() {
   const doneCount = filtered.filter(t => t.column === 'done' || t.column === 'issue').length;
 
   const arrow = (f) => field === f ? (dir === 'asc' ? ' ▲' : ' ▼') : '';
+  const cols = activeCalcFields();
+  const colSet = new Set(cols.map(c => c.field));
+  const hidden = state.calcHiddenCols || {};
+  const on = (f) => colSet.has(f);
+
+  const cell = (f, task, row) => {
+    if (f === 'number') return `<td class="num calc-num-col">${task.number || '—'}</td>`;
+    if (f === 'plate') return `<td><span class="calc-car-model">${esc(task.car.model || '')}</span><span class="calc-car-plate">${esc(row.plate)} · ${esc(task.client.name)}</span></td>`;
+    if (f === 'reason') return `<td>${esc(row.reason)}</td>`;
+    if (f === 'exp_parts') return `<td class="num exp">${money(row.exp_parts)}</td>`;
+    if (f === 'inc_parts') return `<td class="num inc">${money(row.inc_parts)}</td>`;
+    if (f === 'exp_works') return `<td class="num exp">${money(row.exp_works)}</td>`;
+    if (f === 'inc_works') return `<td class="num inc">${money(row.inc_works)}</td>`;
+    if (f === 'exp_total') return `<td class="num exp">${money(row.exp_total)}</td>`;
+    if (f === 'paid') return `<td class="num paid">${money(row.paid)}</td>`;
+    if (f === 'debt') return `<td class="num debt ${row.debt > 0 ? 'owed' : ''}">${money(row.debt)}</td>`;
+    if (f === 'inc_total') return `<td class="num inc">${money(row.inc_total)}</td>`;
+    if (f === 'profit') return `<td class="num profit ${row.profit < 0 ? 'neg' : 'pos'}">${money(row.profit)}</td>`;
+    if (f === 'payStatus') {
+      const payCls = row.payStatusCode === 'paid' ? 'paid' : (row.payStatusCode === 'unpaid' ? 'unpaid' : 'none');
+      return `<td><span class="pay-badge ${payCls}">${esc(row.payStatus)}</span></td>`;
+    }
+    if (f === 'status') return `<td><span class="badge ${row.statusHidden ? 'badge-gray' : 'badge-blue'}">${esc(row.status)}</span></td>`;
+    return '';
+  };
+
+  const totalCell = (f) => {
+    if (f === 'number') return `<td class="num"></td>`;
+    if (f === 'plate') return `<td>ИТОГО (${rows.length} задач)</td>`;
+    if (f === 'reason') return `<td></td>`;
+    if (f === 'exp_parts') return `<td class="num exp">${money(expParts)}</td>`;
+    if (f === 'inc_parts') return `<td class="num inc">${money(incParts)}</td>`;
+    if (f === 'exp_works') return `<td class="num exp">${money(expWorks)}</td>`;
+    if (f === 'inc_works') return `<td class="num inc">${money(incWorks)}</td>`;
+    if (f === 'exp_total') return `<td class="num exp">${money(expTotal)}</td>`;
+    if (f === 'paid') return `<td class="num paid">${money(paid)}</td>`;
+    if (f === 'debt') return `<td class="num debt ${debt > 0 ? 'owed' : ''}">${money(debt)}</td>`;
+    if (f === 'inc_total') return `<td class="num inc">${money(incTotal)}</td>`;
+    if (f === 'profit') return `<td class="num ${profit < 0 ? 'exp' : 'inc'}">${money(profit)}</td>`;
+    if (f === 'payStatus') return `<td colspan="${cols.length - cols.indexOf(cols.find(c => c.field === 'payStatus')) - 2}"></td>`;
+    if (f === 'status') return `<td></td>`;
+    return '';
+  };
+
+  const plateIdx = cols.findIndex(c => c.field === 'plate');
 
   el.innerHTML = `
     <div class="calc-assignee-bar">
@@ -3627,6 +4936,15 @@ function renderCalculator() {
         <option value="__none__" ${assigneeFilter === '__none__' ? 'selected' : ''}>Без исполнителя</option>
       </select>
       <span class="calc-assignee-count">Показано задач: ${filtered.length} из ${tasks.length}</span>
+    </div>
+    <div class="calc-cols">
+      <span class="calc-cols-title">👁 Столбцы:</span>
+      ${CALC_FIELDS.map(f => {
+        const isFixed = CALC_FIXED_COLS.indexOf(f.field) >= 0;
+        if (isFixed) return `<label title="Этот столбец нельзя отключить"><input type="checkbox" checked disabled> ${f.title}</label>`;
+        return `<label><input type="checkbox" ${hidden[f.field] ? '' : 'checked'} onchange="toggleCalcColumn('${f.field}', this.checked)"> ${f.title}</label>`;
+      }).join('')}
+      <button type="button" class="tab-btn" onclick="resetCalcColumns()">Все столбцы</button>
     </div>
     <div class="calc-summary">
       <div class="calc-card red">
@@ -3658,53 +4976,35 @@ function renderCalculator() {
     <table class="calc-table">
       <thead>
         <tr>
-          ${CALC_FIELDS.map(f => `<th class="${f.type === 'num' ? 'num' : ''}" onclick="sortCalc('${f.field}')">${f.title}${arrow(f.field)}</th>`).join('')}
+          ${cols.map(f => `<th class="${f.type === 'num' ? 'num' : ''}" onclick="sortCalc('${f.field}')">${f.title}${arrow(f.field)}</th>`).join('')}
           <th class="del-cell"></th>
         </tr>
       </thead>
       <tbody>
-        ${rows.length === 0 ? `<tr><td colspan="${CALC_FIELDS.length+1}" class="empty-msg">Нет задач для калькуляции</td></tr>` : ''}
-        ${rows.map(r => {
-          const row = r.row;
-          const task = r.task;
-          const profitCls = row.profit < 0 ? 'neg' : 'pos';
-          const payCls = row.payStatusCode === 'paid' ? 'paid' : (row.payStatusCode === 'unpaid' ? 'unpaid' : 'none');
-          return `<tr class="clickable" onclick="openTaskView('${task.id}')">
-            <td class="num calc-num-col">${task.number || '—'}</td>
-            <td><b>${esc(row.plate)}</b><span class="calc-status">${esc(task.client.name)}</span></td>
-            <td>${esc(row.reason)}</td>
-            <td class="num exp">${money(row.exp_parts)}</td>
-            <td class="num inc">${money(row.inc_parts)}</td>
-            <td class="num exp">${money(row.exp_works)}</td>
-            <td class="num inc">${money(row.inc_works)}</td>
-            <td class="num exp">${money(row.exp_total)}</td>
-            <td class="num paid">${money(row.paid)}</td>
-            <td class="num debt ${row.debt > 0 ? 'owed' : ''}">${money(row.debt)}</td>
-            <td class="num inc">${money(row.inc_total)}</td>
-            <td class="num profit ${profitCls}">${money(row.profit)}</td>
-            <td><span class="pay-badge ${payCls}">${esc(row.payStatus)}</span></td>
-            <td><span class="badge badge-blue">${esc(row.status)}</span></td>
-            <td class="del-cell"><button type="button" class="danger small" onclick="event.stopPropagation();deleteTask('${task.id}')">🗑</button></td>
-          </tr>`;
-        }).join('')}
+        ${rows.length === 0 ? `<tr><td colspan="${cols.length+1}" class="empty-msg">Нет задач для калькуляции</td></tr>` : ''}
+        ${rows.map(r => `<tr class="clickable" onclick="openTaskView('${r.task.id}')">${cols.map(f => cell(f.field, r.task, r.row)).join('')}<td class="del-cell"><button type="button" class="danger small" onclick="event.stopPropagation();deleteTask('${r.task.id}')">🗑</button></td></tr>`).join('')}
       </tbody>
       <tfoot>
         <tr>
-          <td colspan="3">ИТОГО (${rows.length} задач)</td>
-          <td class="num exp">${money(expParts)}</td>
-          <td class="num inc">${money(incParts)}</td>
-          <td class="num exp">${money(expWorks)}</td>
-          <td class="num inc">${money(incWorks)}</td>
-          <td class="num exp">${money(expTotal)}</td>
-          <td class="num paid">${money(paid)}</td>
-          <td class="num debt ${debt > 0 ? 'owed' : ''}">${money(debt)}</td>
-          <td class="num inc">${money(incTotal)}</td>
-          <td class="num ${profit < 0 ? 'exp' : 'inc'}">${money(profit)}</td>
-          <td colspan="3"></td>
+          <td colspan="${plateIdx + 1}">ИТОГО (${rows.length} задач)</td>
+          ${cols.map((f, i) => i > plateIdx ? totalCell(f.field) : '').join('')}
+          <td class="del-cell"></td>
         </tr>
       </tfoot>
     </table>
   `;
+}
+
+function toggleCalcColumn(field, visible) {
+  if (!state.calcHiddenCols) state.calcHiddenCols = {};
+  if (visible) delete state.calcHiddenCols[field];
+  else state.calcHiddenCols[field] = true;
+  renderCalculator();
+}
+
+function resetCalcColumns() {
+  state.calcHiddenCols = {};
+  renderCalculator();
 }
 
 function sortCalc(field) {
@@ -4335,12 +5635,17 @@ function pushModalHistory(reopenFn, title) {
 }
 
 function modalBack() {
+  const container = document.getElementById('modalContainer');
   if (modalHistory.length < 2) {
     closeModal();
     return;
   }
-  const reopen = modalHistory[modalHistory.length - 2].open;
-  closeModal();
+  const prev = modalHistory[modalHistory.length - 2];
+  const reopen = prev.open;
+  modalHistory.length = Math.max(0, modalHistory.length - 2);
+  modalDepth = Math.max(0, modalDepth - 1);
+  const last = container ? container.lastElementChild : null;
+  if (last) container.removeChild(last);
   reopen();
 }
 
@@ -4348,15 +5653,40 @@ function canGoBack() {
   return modalHistory.length > 0;
 }
 
+// Закрывает только текущее (верхнее) модальное окно, не трогая открытые под ним
 function closeModal() {
-  document.getElementById('modalContainer').innerHTML = '';
+  const container = document.getElementById('modalContainer');
+  if (!container) return;
+  const last = container.lastElementChild;
+  if (last) container.removeChild(last);
+  trimModalHistory();
+}
+
+// Закрыть вообще все окна (выход из системы и т.п.)
+function closeModalAll() {
+  const container = document.getElementById('modalContainer');
+  if (container) container.innerHTML = '';
   modalHistory = [];
   modalDepth = 0;
 }
 
+function trimModalHistory() {
+  const container = document.getElementById('modalContainer');
+  const count = container ? container.children.length : 0;
+  if (modalHistory.length > count) modalHistory.length = count;
+  modalDepth = Math.max(0, count);
+}
+
 document.addEventListener('dblclick', e => {
-  if (e.target.classList && e.target.classList.contains('modal-overlay')) {
-    closeModal();
+  if (e.target.classList && (e.target.classList.contains('modal-overlay') || e.target.classList.contains('task-modal-overlay'))) {
+    // Закрываем только то окно, по фону которого кликнули
+    const container = document.getElementById('modalContainer');
+    if (container && e.target.parentElement === container) {
+      container.removeChild(e.target);
+      trimModalHistory();
+    } else {
+      closeModal();
+    }
   }
 });
 
@@ -4877,7 +6207,7 @@ setInterval(() => {
     clearTimeout(_saveTimer);
     saveStateImmediate();
   }
-}, 30000); // каждые 30 секунд
+}, 30000);
 
 </script>
 </body>
