@@ -106,6 +106,8 @@ button.small { padding: 3px 8px; font-size: 12px; }
   outline-offset: -1px;
   transition: transform 0.15s, opacity 0.15s, box-shadow 0.15s, border-color 0.15s;
   user-select: none;
+  -webkit-user-select: none;   /* ← добавить для Safari iOS */
+  touch-action: pan-y;         /* ← добавить: вертикальный скролл разрешён, горизонтальный — наш */
   display: block;
   overflow: hidden;
   isolation: isolate;
@@ -117,7 +119,12 @@ button.small { padding: 3px 8px; font-size: 12px; }
   border-color: #89b4fa;
   outline-color: #89b4fa;
 }
-.task.dragging { opacity: 0.4; cursor: grabbing; box-shadow: 0 8px 24px rgba(137,180,250,0.35); }
+.task.dragging {
+  opacity: 0.4;
+  cursor: grabbing;
+  box-shadow: 0 8px 24px rgba(137,180,250,0.35);
+  touch-action: none;   /* ← добавить сюда */
+}
 
 .task-brand-bg {
   position: absolute;
@@ -551,7 +558,9 @@ select.work-assignee.auto { border-color: rgba(61,214,140,0.5); color: var(--gre
 }
 .filter-count { font-size: 11px; color: #6c7086; margin-left: auto; }
 
-.calc-wrap { flex: 1; overflow: auto; padding: 15px; }
+.calc-wrap {
+  overflow-x: hidden;    /* горизонтальная прокрутка не нужна */
+}
 .calc-summary { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
 .calc-card {
   background: #181825; border: 2px solid #313244;
@@ -565,20 +574,56 @@ select.work-assignee.auto { border-color: rgba(61,214,140,0.5); color: var(--gre
 .calc-hint { font-size: 11px; color: #6c7086; margin-bottom: 10px; }
 
 .calc-table {
-  width: 100%; border-collapse: collapse; font-size: 12px;
-  background: #181825; border-radius: 8px; overflow: hidden;
+  width: 100%;
+  table-layout: fixed;   /* ключевое: ширины считаются по нашим правилам, а не по содержимому */
+  border-collapse: collapse;
+  font-size: 11px;
 }
-.calc-table th {
-  background: #313244; color: #89b4fa;
-  padding: 8px 10px; text-align: left;
-  font-size: 11px; text-transform: uppercase; letter-spacing: 0.3px;
-  white-space: nowrap; cursor: pointer; user-select: none;
+.calc-table th,
+.calc-table td {
+  width: auto;              /* по умолчанию — равномерно */
+  white-space: normal;      /* разрешаем перенос */
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  vertical-align: middle;
+  padding: 6px 6px;
+}
+.calc-table td:nth-child(2),
+.calc-table th:nth-child(2) {
+  width: auto;             /* «Авто / Клиент» — пусть растягивается */
+  white-space: normal;
+  min-width: 140px;
+}
+.calc-table td:last-child,
+.calc-table th:last-child {
+  width: 40px;             /* колонка с корзиной */
+  white-space: nowrap;
 }
 .calc-table th:hover { background: #45475a; }
 .calc-table td { padding: 7px 10px; border-top: 1px solid #313244; }
 .calc-table tbody tr.clickable { cursor: pointer; }
 .calc-table tbody tr.clickable:hover { background: #313244; }
-.calc-table td.num, .calc-table th.num { text-align: right; font-variant-numeric: tabular-nums; }
+/* Столбец «№» — совсем узкий */
+.calc-table td.calc-num-col {
+  width: 34px;
+  white-space: nowrap;
+}
+/* Столбец «Причина» — пусть занимает остаток, но с минимальной шириной */
+.calc-table td:nth-child(3),
+.calc-table th:nth-child(3) {
+  width: auto;
+  min-width: 90px;
+}
+/* Столбец «Оплата» (badge) */
+.calc-table td .pay-badge {
+  white-space: nowrap;
+}
+.calc-table th.num,
+.calc-table td.num {
+  width: 70px;
+  text-align: right;
+  white-space: nowrap;      /* суммы не переносим */
+}
 .calc-table td.exp { color: #f38ba8; font-weight: 600; }
 .calc-table td.inc { color: #a6e3a1; font-weight: 600; }
 .calc-table td.paid { color: #6c7086; }
@@ -595,7 +640,12 @@ select.work-assignee.auto { border-color: rgba(61,214,140,0.5); color: var(--gre
 .calc-table tfoot td.num { text-align: right; font-variant-numeric: tabular-nums; }
 .calc-table tfoot td.exp { color: #f38ba8; }
 .calc-table tfoot td.inc { color: #a6e3a1; }
-.calc-table td.del-cell, .calc-table th.del-cell { text-align: center; width: 40px; }
+/* Удаление — 34px */
+.calc-table th.del-cell,
+.calc-table td.del-cell {
+  width: 34px;
+  padding: 4px;
+}
 .calc-status { font-size: 10px; color: #6c7086; display: block; margin-top: 2px; }
 .calc-num-col { font-variant-numeric: tabular-nums; color: #89b4fa; font-weight: 700; }
 .pay-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; }
@@ -665,6 +715,171 @@ select.work-assignee.auto { border-color: rgba(61,214,140,0.5); color: var(--gre
   padding: 18px 22px 16px;
   animation: modalIn 0.35s ease-out;
   color: var(--text);
+}
+/* ===== КАЛЬКУЛЯЦИЯ НА МОБИЛЬНЫХ ===== */
+@media (max-width: 900px) {
+  
+  .calc-wrap {
+    padding: 8px;
+    overflow-x: hidden;
+  }
+
+  /* Карточки сверху — в один столбец и компактнее */
+  .calc-summary {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .calc-card {
+    min-width: 0;
+    padding: 8px 10px;
+    border-width: 1px;
+  }
+  .calc-card .calc-card-title { font-size: 10px; }
+  .calc-card .calc-card-value { font-size: 14px; margin-top: 2px; }
+
+  /* Панель фильтров и исполнителей */
+  .calc-assignee-bar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    gap: 8px;
+    padding: 8px 10px;
+    margin-bottom: 8px;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+  .calc-assignee-bar::-webkit-scrollbar { height: 4px; }
+  .calc-assignee-bar::-webkit-scrollbar-thumb { background: #45475a; border-radius: 2px; }
+
+  .calc-assignee-bar label {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    font-size: 11px;
+  }
+ .calc-assignee-bar select {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    padding: 5px 8px;
+    font-size: 11px;
+  }
+ .calc-assignee-count {
+    flex: 0 0 auto;
+    margin-left: 0;
+    white-space: nowrap;
+    font-size: 10px;
+  }
+
+  .calc-cols {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    overflow-y: hidden;
+    white-space: nowrap;
+  }
+    .calc-cols > * {
+    flex: 0 0 auto !important;
+    white-space: nowrap;
+  }
+  .calc-cols label {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    font-size: 10px;
+  }
+  .calc-cols .calc-cols-title { font-size: 10px; }
+
+    .calc-cols button.tab-btn {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    padding: 4px 8px;
+    font-size: 10px;
+  }
+
+  /* Обёртка для горизонтальной прокрутки только таблицы */
+  .calc-table-scroll {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .calc-cols::-webkit-scrollbar { height: 4px; }
+  .calc-cols::-webkit-scrollbar-thumb { background: #45475a; border-radius: 2px; }
+
+  /* Таблица: фиксированные минимальные ширины, не сжимается в кашу */
+  .calc-table {
+    width: auto;
+    min-width: 100%;
+    table-layout: auto;
+    font-size: 11px;
+  }
+  .calc-table th,
+  .calc-table td {
+    padding: 6px 8px;
+    white-space: nowrap;
+    word-break: normal;
+  }
+
+  /* Числовые — узкие */
+  .calc-table th.num,
+  .calc-table td.num {
+    width: 80px;
+    text-align: right;
+  }
+  .calc-table td.calc-num-col { width: 36px; }
+
+  /* Авто/Клиент — шире, с переносом */
+  .calc-table td:nth-child(2),
+  .calc-table th:nth-child(2) {
+    width: 160px;
+    white-space: normal;
+    word-break: break-word;
+  }
+  .calc-car-model { font-size: 12px; }
+  .calc-car-plate { font-size: 10px; }
+
+  /* Причина — тоже переносится */
+  .calc-table td:nth-child(3),
+  .calc-table th:nth-child(3) {
+    width: 120px;
+    white-space: normal;
+    word-break: break-word;
+  }
+
+  /* Корзина */
+  .calc-table th.del-cell,
+  .calc-table td.del-cell {
+    width: 34px;
+    padding: 4px;
+  }
+
+  /* Заголовки мельче */
+  .calc-table th {
+    font-size: 10px;
+    padding: 6px 6px;
+  }
+
+  /* Скролл-хинт */
+  .calc-scroll-hint {
+    display: block;
+    font-size: 10px;
+    color: #6c7086;
+    text-align: right;
+    margin-top: 4px;
+  }
+}
+
+/* На очень узких экранах уменьшаем ещё */
+@media (max-width: 480px) {
+  .calc-table { font-size: 10px; }
+  .calc-table th { font-size: 9px; }
+  .calc-table th.num,
+  .calc-table td.num { width: 68px; }
+  .calc-table td:nth-child(2),
+  .calc-table th:nth-child(2) { width: 140px; }
+  .calc-table td:nth-child(3),
+  .calc-table th:nth-child(3) { width: 100px; }
+  .calc-card { padding: 6px 8px; }
+  .calc-card .calc-card-value { font-size: 13px; }
 }
 @keyframes modalIn {
   from { opacity: 0; transform: translateY(20px) scale(0.98); }
@@ -816,14 +1031,58 @@ select.work-assignee.auto { border-color: rgba(61,214,140,0.5); color: var(--gre
 .task-group__title { font-size: 9px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-dim); margin-bottom: 2px; }
 .task-group .task-badges { margin: 0; }
 .task-group__empty { font-size: 10px; color: var(--text-dim); }
-.calc-car-model { display: block; font-size: 15px; font-weight: 700; color: #cdd6f4; line-height: 1.25; }
-.calc-car-plate { display: block; font-size: 11px; color: var(--text-dim); }
+/* Карточка «Авто / Клиент» — модель и номер/клиент в одну строку с переносом */
+.calc-car-model {
+  font-size: 12px;
+  white-space: normal;
+  word-break: break-word;
+}
+.calc-car-plate {
+  font-size: 10px;
+  white-space: normal;
+  word-break: break-word;
+}
+.calc-table th {
+  font-size: 10px;
+  padding: 6px 4px;
+  white-space: normal;
+  word-break: break-word;
+}
 .calc-cols { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
 .calc-cols label { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text-dim); cursor: pointer; }
-.calc-cols .calc-cols-title { font-size: 11px; color: #a6adc8; margin-right: 4px; }
+  .calc-cols .calc-cols-title {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    font-size: 10px;
+  }
 th.col-toggle { cursor: default; }
 th.col-toggle:hover { background: transparent; }
 .task-field__value--multiline .cmt-line { display: block; width: 100%; white-space: pre-wrap; }
+/* ==== Блок «Комментарии и лог» ==== */
+.task-field--stack {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+.task-field--stack .task-field__value {
+  width: 100%;
+}
+.log-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 4px 0 6px;
+  max-height: 180px;
+  overflow-y: auto;
+  padding: 4px 6px;
+  background: var(--input-bg);
+  border: 1px solid rgba(30, 78, 140, 0.4);
+  border-radius: 8px;
+}
+.log-list .log-entry {
+  padding: 4px 6px;
+  border-left: 2px solid #45475a;
+}
 .filter-checks { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .filter-checks label { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: #cdd6f4; cursor: pointer; }
 .item-row__name { flex: 1 1 120px; min-width: 90px; font-size: 11px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -904,6 +1163,104 @@ th.col-toggle:hover { background: transparent; }
   .task-block__title { font-size: 12px; }
   .task-block__title-plate { font-size: 16px; padding: 3px 10px; }
   .task-block__title-plate::before { font-size: 9px; }
+}
+/* ===== МОБИЛЬНАЯ ОПТИМИЗАЦИЯ: МЕНЮ И ФИЛЬТРЫ В ОДНУ СТРОКУ ===== */
+@media (max-width: 900px) {
+  header {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    gap: 8px;
+    padding: 8px 12px;
+    -webkit-overflow-scrolling: touch;
+  }
+  header::-webkit-scrollbar { height: 4px; }
+  header::-webkit-scrollbar-thumb { background: #45475a; border-radius: 2px; }
+
+  header h1 {
+    font-size: 15px;
+    white-space: nowrap;
+    flex: 0 0 auto;
+  }
+  header h1 small { display: none; }
+
+  header select,
+  header button {
+    flex: 0 0 auto;
+    padding: 5px 8px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  header .user-info {
+    flex: 0 0 auto;
+    margin-left: 0;
+    gap: 6px;
+    white-space: nowrap;
+  }
+  header .user-info #currentUserLabel,
+  header .user-info .tenant-label {
+    display: none;
+  }
+
+  /* Фильтры статусов в одну строку */
+  .filter-bar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    gap: 8px;
+    padding: 6px 12px;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+  .filter-bar::-webkit-scrollbar { height: 4px; }
+  .filter-bar::-webkit-scrollbar-thumb { background: #45475a; border-radius: 2px; }
+
+  .filter-label {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    font-size: 11px;
+  }
+  .filter-checks {
+    flex-wrap: nowrap;
+    gap: 10px;
+    flex: 0 0 auto;
+  }
+  .filter-checks label {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    font-size: 12px;
+  }
+  .filter-bar button.tab-btn {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+  .filter-count {
+    flex: 0 0 auto;
+    margin-left: 0;
+    white-space: nowrap;
+  }
+}
+
+/* ===== На совсем узком экране (< 640px) — скрываем второстепенные кнопки шапки ===== */
+@media (max-width: 640px) {
+  /* Кнопки по data-атрибутам нет, поэтому скрываем по тексту через nth-of-type.
+     Если порядок кнопок в шапке меняется — подгони индексы. */
+  header > button:nth-of-type(3), /* ➕ Новая задача — оставляем */
+  header > button:nth-of-type(4), /* 🎲 Случайная задача — скрыть */
+  header > button:nth-of-type(5), /* 📅 Расписание постов — скрыть */
+  header > button:nth-of-type(6), /* 📤 Экспорт CSV — скрыть */
+  header > button:nth-of-type(7)  /* 📥 Импорт CSV — скрыть */
+  {
+    /* по умолчанию показываем всё; раскомментируй display:none, если нужно скрыть */
+    /* display: none; */
+  }
+
+  header select#userSelect {
+    max-width: 120px;
+  }
 }
 </style>
 </head>
@@ -1382,6 +1739,10 @@ function nowStr() {
   const d = new Date();
   return d.toLocaleString('ru-RU', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
 }
+function toTitleFromId(colId) {
+  const c = COLUMNS.find(x => x.id === colId);
+  return c ? c.title : colId;
+}
 function formatTime(iso) {
   if (!iso) return '—';
   const d = new Date(iso);
@@ -1508,6 +1869,36 @@ function financeBlockHtml(task) {
     <div class="sum-line"><span>Работы (цена для клиента)</span><b>${money(wr)}</b></div>
     <div class="sum-line total"><span>Всего доходов</span><b>${money(rev)}</b></div>
     <div class="readonly-field">Маржинальность: ${rev > 0 ? ((profit / rev) * 100).toFixed(1) + '%' : '—'}</div>
+  `;
+}
+function historyExtrasHtml(task, taskId) {
+  const comments = task.comment ? String(task.comment).split(/\r?\n/).filter(s => s.trim()) : [];
+  const block = (icon, label, value) => {
+    if (!value || !String(value).trim()) return '';
+    return `<div class="task-field task-field--stack">
+      <div class="task-field__icon">${icon}</div>
+      <div class="task-field__label">${label}</div>
+      <div class="task-field__value task-field__value--multiline"><span>${esc(value)}</span></div>
+    </div>`;
+  };
+  return `
+    <div class="task-field">
+      <div class="task-field__icon">💬</div>
+      <div class="task-field__label">Комментарии (${comments.length})</div>
+      <button type="button" class="task-btn task-btn--primary" data-action="addComment" style="padding:4px 10px;font-size:11px;">➕ Добавить комментарий</button>
+    </div>
+    ${comments.length
+      ? `<div class="log-list">${comments.slice().reverse().map(c => `<div class="log-entry"><span class="log-text">${esc(c)}</span></div>`).join('')}</div>`
+      : `<div class="item-list__empty">Комментариев пока нет</div>`}
+    ${block('⏳', 'Ожидаемое действие', task.pendingAction)}
+    ${block('✅', 'Что необходимо согласовать', task.approvalNote)}
+    ${block('🛠', 'Проделанные работы', task.workDone)}
+    ${block('📋', 'Рекомендации для обслуживания', task.recommendations)}
+    <div class="task-field">
+      <div class="task-field__icon">📜</div>
+      <div class="task-field__label">Лог задачи</div>
+      <button type="button" class="task-btn task-btn--ghost" data-action="viewLog" style="padding:4px 10px;font-size:11px;">Открыть лог (${task.log.length})</button>
+    </div>
   `;
 }
 function migratePart(p) {
@@ -2127,25 +2518,116 @@ function renderTask(task) {
     dragEl = null;
     resetDrag();
   });
+// ==== TOUCH DRAG (мобильные) ====
+let touchHoldTimer = null;
+let touchDragActive = false;
+let touchStartX = 0, touchStartY = 0;
+let touchMoved = false;
+
+el.addEventListener('touchstart', e => {
+  if (e.target.closest('.task-comment-note')) return;
+  if (e.target.closest('button')) return;
+  if (e.touches.length !== 1) return;
+  const t = e.touches[0];
+  touchStartX = t.clientX;
+  touchStartY = t.clientY;
+  touchMoved = false;
+  touchDragActive = false;
+
+  touchHoldTimer = setTimeout(() => {
+    touchDragActive = true;
+    dragTaskId = task.id;
+    dragEl = el;
+    el.classList.add('dragging');
+    if (navigator.vibrate) navigator.vibrate(30);
+  }, 250); // долгое нажатие 250 мс
+}, { passive: true });
+
+el.addEventListener('touchmove', e => {
+  if (e.touches.length !== 1) return;
+  const t = e.touches[0];
+
+  // ---- 1. Если drag ещё не активирован (долгое нажатие не сработало) ----
+  if (!touchDragActive) {
+    const dx = t.clientX - touchStartX;
+    const dy = t.clientY - touchStartY;
+    if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
+      if (touchHoldTimer) { clearTimeout(touchHoldTimer); touchHoldTimer = null; }
+    }
+    return;
+  }
+
+  // ---- 2. Drag активен: блокируем скролл страницы ----
+  e.preventDefault();
+  touchMoved = true;
+
+  // ---- 3. Автоскролл доски ----
+  const board = document.getElementById('board');
+  const br = board.getBoundingClientRect();
+  const EDGE = 70;        // ширина «горячей зоны» у края, px
+  const STEP = 14;        // на сколько сдвигать за один touchmove, px
+
+  // Левый край
+  if (t.clientX < br.left + EDGE) {
+    // чем ближе к краю — тем быстрее скролл (пропорционально)
+    const intensity = (br.left + EDGE - t.clientX) / EDGE; // 0..1
+    board.scrollLeft -= Math.max(4, STEP * intensity);
+  }
+  // Правый край
+  else if (t.clientX > br.right - EDGE) {
+    const intensity = (t.clientX - (br.right - EDGE)) / EDGE; // 0..1
+    board.scrollLeft += Math.max(4, STEP * intensity);
+  }
+
+  // ---- 4. Двигаем карточку под палец ----
+  moveDragToCursor(t.clientX, t.clientY);
+}, { passive: false });
+
+el.addEventListener('touchend', e => {
+  if (touchHoldTimer) { clearTimeout(touchHoldTimer); touchHoldTimer = null; }
+  if (!touchDragActive) return;
+  touchDragActive = false;
+  el.classList.remove('dragging');
+  document.querySelectorAll('.column.drag-over').forEach(c => c.classList.remove('drag-over'));
+
+  if (dragEl) {
+    const colBody = dragEl.closest('.column-body');
+    const newCol = colBody ? colBody.dataset.col : task.column;
+    tryMoveTask(task.id, newCol);
+  }
+  dragTaskId = null;
+  dragEl = null;
+}, { passive: true });
+
+el.addEventListener('touchcancel', () => {
+  if (touchHoldTimer) { clearTimeout(touchHoldTimer); touchHoldTimer = null; }
+  touchDragActive = false;
+  if (dragEl) dragEl.classList.remove('dragging');
+  document.querySelectorAll('.column.drag-over').forEach(c => c.classList.remove('drag-over'));
+  dragTaskId = null;
+  dragEl = null;
+});
 
   // Одинарный клик — открытие задачи
-  el.addEventListener('click', e => {
-    if (e.target.closest('.task-comment-note')) return;
-    if (e.target.closest('button')) return;
-    if (dragReady) return;
-    try {
-      openTaskView(task.id);
-    } catch (err) {
-      console.error('openTaskView error:', err);
-      alert('Ошибка открытия задачи: ' + err.message);
-    }
-  });
+el.addEventListener('click', e => {
+  if (e.target.closest('.task-comment-note')) return;
+  if (e.target.closest('button')) return;
+  if (dragReady) return;
+  if (touchMoved) { touchMoved = false; return; }  // <-- добавить
+  try {
+    openTaskView(task.id);
+  } catch (err) {
+    console.error('openTaskView error:', err);
+    alert('Ошибка открытия задачи: ' + err.message);
+  }
+});
 
   const note = el.querySelector('.task-comment-note');
   if (note) {
     note.addEventListener('click', e => {
       e.stopPropagation();
       e.preventDefault();
+      
       openCommentModal(task.id);
     });
   }
@@ -2719,6 +3201,27 @@ function confirmMove(taskId, newCol) {
   }
   const fromTitle = COLUMNS.find(c=>c.id===oldCol).title;
   const toTitle = COLUMNS.find(c=>c.id===newCol).title;
+  // ==== Перенос заметок в комментарии ====
+const noteParts = [];
+if (newCol === 'waiting' && task.pendingAction) {
+  noteParts.push({ label: 'Ожидаемое действие', value: task.pendingAction });
+}
+if (newCol === 'approval' && task.approvalNote) {
+  noteParts.push({ label: 'Что необходимо согласовать', value: task.approvalNote });
+}
+if (newCol === 'issue') {
+  if (task.workDone) noteParts.push({ label: 'Проделанные работы', value: task.workDone });
+  if (task.recommendations) noteParts.push({ label: 'Рекомендации для обслуживания', value: task.recommendations });
+}
+if (newCol === 'done' && task.doneComment) {
+  noteParts.push({ label: 'Комментарий по завершении', value: task.doneComment });
+}
+if (noteParts.length) {
+  const stamp = `[${nowStr()}] ${toTitleFromId(newCol)}`;
+  const lines = noteParts.map(n => `  ${n.label}: ${n.value}`);
+  const block = `${stamp}\n${lines.join('\n')}`;
+  task.comment = (task.comment ? task.comment + '\n' : '') + block;
+}
   task.column = newCol;
   task.updatedAt = new Date().toISOString();
   task.log.push({ time: new Date().toISOString(), user, text: `Перемещение: ${fromTitle} → ${toTitle}` + (logEntries.length ? '. ' + logEntries.join(' | ') : '') });
@@ -2977,15 +3480,14 @@ function openTaskView(taskId) {
 </section>
 <section class="task-block task-block--collapsed" id="blockHistory">
   <div class="task-block__header task-block__header--clickable" data-block="blockHistory">
-    <div class="task-block__num">6</div><div class="task-block__icon">🕐</div>
-    <div class="task-block__title"><span>Лог задачи</span><span class="task-block__title-sep">·</span><span class="task-block__title-accent">${task.log.length} записей</span></div>
+    <div class="task-block__num">6</div><div class="task-block__icon">💬</div>
+    <div class="task-block__title"><span>Комментарии и лог</span><span class="task-block__title-sep">·</span><span class="task-block__title-accent">${task.log.length} записей</span></div>
     <div class="task-block__toggle">▾</div>
   </div>
   <div class="task-block__content">
     <div class="task-block__image"><img src="https://i.ibb.co/xKqVLJzD/2026-10-07-23-03-31.png" alt=""></div>
     <div class="task-block__fields">
-      <div class="task-field" ondblclick="openCharEditor('${taskId}','log')"><div class="task-field__icon">📜</div><div class="task-field__label">Лог задачи</div><div class="task-field__value"><span>${task.log.length} записей</span></div></div>
-      <div class="task-field"><div class="task-field__icon">🕐</div><div class="task-field__label">Последнее</div><div class="task-field__value task-field__value--readonly"><span>${task.log.length ? formatTime(task.log[task.log.length-1].time) + ' — ' + esc(task.log[task.log.length-1].text.substring(0, 40)) : '—'}</span></div></div>
+      ${historyExtrasHtml(task, taskId)}
     </div>
   </div>
 </section>
@@ -3038,6 +3540,8 @@ function openTaskView(taskId) {
         else if (action === 'toggleHidden') toggleTaskHidden(taskId);
         else if (action === 'issued-true') setTaskIssued(taskId, true);
         else if (action === 'issued-false') setTaskIssued(taskId, false);
+        else if (action === 'addComment') openCharEditor(taskId, 'comment');
+        else if (action === 'viewLog') openCharEditor(taskId, 'log');
       } catch (err) {
         console.error('action error:', err);
         alert('Ошибка: ' + err.message);
@@ -3464,11 +3968,11 @@ function showSchedule() {
     if (!t.scheduledTime) return false;
     return schedDateStr(new Date(t.scheduledTime)) === key;
   }).sort((a,b)=>parseTimeToMinutes(a.scheduledTime)-parseTimeToMinutes(b.scheduledTime));
-  const modal = document.createElement('div');
-  modal.className = 'modal-overlay';
   const fmtDate = base.toLocaleDateString('ru-RU', { day:'2-digit', month:'long', year:'numeric', weekday:'short' });
+
   let html = `<div class="modal-titlebar"><h2>📅 Расписание постов</h2><div class="modal-title-actions"><button class="back-btn" onclick="closeModal()">×</button></div></div>
     <div class="sched-datebar"><button onclick="shiftScheduleDate(-1)">‹</button><span class="sched-date-label">${fmtDate}</span><button onclick="shiftScheduleDate(1)">›</button>${scheduleDate ? `<button onclick="scheduleDate=null;showSchedule()">Сегодня</button>` : ''}</div>`;
+
   if (!tasks.length) html += `<div class="schedule-empty">На эту дату нет записей</div>`;
   else {
     for (let i=1; i<=4; i++) {
@@ -3481,7 +3985,20 @@ function showSchedule() {
       });
     }
   }
-  modal.innerHTML = `<div class="modal">${html}<div class="modal-actions"><button onclick="closeModal()">Закрыть</button></div></div>`;
+
+  const fullHtml = `<div class="modal">${html}<div class="modal-actions"><button onclick="closeModal()">Закрыть</button></div></div>`;
+
+  // Если окно расписания уже открыто — обновляем его содержимое, а не создаём новое
+  let existing = document.getElementById('scheduleModal');
+  if (existing) {
+    existing.innerHTML = fullHtml;
+    return;
+  }
+
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.id = 'scheduleModal';
+  modal.innerHTML = fullHtml;
   document.getElementById('modalContainer').appendChild(modal);
 }
 
