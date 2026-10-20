@@ -1202,6 +1202,27 @@ th.col-toggle:hover { background: transparent; }
   #blockHistory .task-block__title {
     display: none;
   }
+  #blockCar .task-block__header {
+    flex-wrap: wrap;
+  }
+  #blockCar .task-block__title {
+    flex: 1 1 100%;
+    order: 2;
+  }
+  #blockCar .task-header-btn {
+    order: 3;
+    margin-left: 0;
+    flex: 0 0 100%;
+    justify-content: flex-start;
+  }
+  #blockCar .task-block__toggle {
+    order: 4;
+    margin-left: auto;
+  }
+  #blockCar .task-block__num,
+  #blockCar .task-block__icon {
+    order: 1;
+  }
   #blockFinance .task-block__header,
   #blockOrg .task-block__header,
   #blockHistory .task-block__header {
