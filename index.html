@@ -1197,6 +1197,29 @@ th.col-toggle:hover { background: transparent; }
   .task-block__title { font-size: 12px; }
   .task-block__title-plate { font-size: 16px; padding: 3px 10px; }
   .task-block__title-plate::before { font-size: 9px; }
+  #blockFinance .task-block__title,
+  #blockOrg .task-block__title,
+  #blockHistory .task-block__title {
+    display: none;
+  }
+  #blockFinance .task-block__header,
+  #blockOrg .task-block__header,
+  #blockHistory .task-block__header {
+    gap: 6px;
+  }
+  #blockFinance .task-header-btn,
+  #blockOrg .task-header-btn,
+  #blockHistory .task-header-btn {
+    margin-left: auto;   /* ← прижать кнопку вправо, раз заголовка нет */
+    padding: 4px 8px;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+  #blockFinance .task-block__toggle,
+#blockOrg .task-block__toggle,
+#blockHistory .task-block__toggle {
+  margin-left: 0;
+}
 }
 @media (max-width: 900px) {
   header {
@@ -3469,11 +3492,18 @@ function openTaskView(taskId) {
       </header>
       <div class="task-modal-list">
         <section class="task-block task-block--collapsed" id="blockCar">
-  <div class="task-block__header task-block__header--clickable" data-block="blockCar">
-    <div class="task-block__num">1</div><div class="task-block__icon">🚗</div>
-    <div class="task-block__title"><span>${esc(task.car.model)}</span><span class="task-block__title-sep">·</span><span class="task-block__title-plate">${esc(task.car.plate)}</span></div>
-    <div class="task-block__toggle">▾</div>
+<div class="task-block__header task-block__header--clickable" data-block="blockCar">
+  <div class="task-block__num">1</div>
+  <div class="task-block__icon">
+    <img class="brand-logo-img" data-logo-url="${esc(brandOf(task.car.model).logo || '')}"
+         src="${brandOf(task.car.model).logo || ''}" alt=""
+         style="width:100%;height:100%;object-fit:contain;"
+         onerror="this.style.display='none';this.parentElement.textContent='🚗';">
   </div>
+  <div class="task-block__title"><span>${esc(task.car.model)}</span><span class="task-block__title-sep">·</span><span class="task-block__title-plate">${esc(task.car.plate)}</span></div>
+  ${task.car.vin ? `<button type="button" class="task-btn task-btn--ghost task-header-btn" data-action="autotradeVin" title="Autotrade по VIN">🔗 Autotrade (VIN)</button>` : ''}
+  <div class="task-block__toggle">▾</div>
+</div>
   <div class="task-block__content">
     <div class="task-block__image"><img src="https://i.ibb.co/v6YykYBc/2026-10-07-22-44-25.png" alt=""></div>
     <div class="task-block__fields">
@@ -3592,16 +3622,12 @@ function openTaskView(taskId) {
 </section>
 </div>
 <footer class="task-modal-footer">
-  <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-    ${canEditIssue && task.column === 'issue' ? `<button class="task-btn ${task.issued?'task-btn--warning':'task-btn--primary'}" data-action="toggleIssued">${task.issued?'НЕ ВЫДАНО':'ВЫДАНО'}</button>` : ''}
-    ${task.car.vin ? `<button class="task-btn task-btn--ghost" data-action="autotradeVin">🔗 Autotrade (VIN)</button>` : ''}
-  </div>
-  <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-    ${canEdit ? `<button class="task-btn task-btn--warning" data-action="editTask">✏️ Редактировать</button>` : ''}
-    ${!isWorker ? `<button class="task-btn task-hidden-btn" data-action="toggleHidden">${task.hidden ? '👁 Показать на доске' : '🙈 Скрыть задачу'}</button>` : ''}
-    ${!isWorker ? `<button class="task-btn task-btn--danger" data-action="delete">🗑 Удалить</button>` : ''}
-    <button class="task-btn task-btn--primary" data-action="close">Закрыть</button>
-  </div>
+<div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+  ${!isWorker ? `<button class="task-btn task-btn--danger" data-action="delete">🗑 Удалить</button>` : ''}
+  ${!isWorker ? `<button class="task-btn task-hidden-btn" data-action="toggleHidden">${task.hidden ? '👁 Показать на доске' : ' Скрыть задачу'}</button>` : ''}
+  ${canEdit ? `<button class="task-btn task-btn--warning" data-action="editTask">✏️ Редактировать</button>` : ''}
+  <button class="task-btn task-btn--primary" data-action="close">Закрыть</button>
+</div>
 </footer>
 </div>`;
 
