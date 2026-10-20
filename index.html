@@ -76,12 +76,12 @@ button.small { padding: 3px 8px; font-size: 12px; }
   padding: 10px; font-weight: 600; font-size: 13px; text-align: center;
   border-bottom: 2px solid #313244; border-radius: 8px 8px 0 0; color: #1e1e2e;
 }
-.col-1 .column-header { background: #f9e2af; }
-.col-2 .column-header { background: #fab387; }
-.col-3 .column-header { background: #f38ba8; }
-.col-4 .column-header { background: #89b4fa; }
-.col-5 .column-header { background: #a6e3a1; }
-.col-6 .column-header { background: #cba6f7; }
+.col-1 .column-header { background: #3b3a2e; color: #e6d9a8; }  /* ожидание — тёплый песочный */
+.col-2 .column-header { background: #3d3229; color: #e8c9a8; }  /* согласование — приглушённый оранж */
+.col-3 .column-header { background: #3d2b30; color: #e8b3bf; }  /* запчасти — сдержанный бордо */
+.col-4 .column-header { background: #2b3446; color: #a8c4e8; }  /* в работе — деловой синий */
+.col-5 .column-header { background: #2b3d2f; color: #a8d8b3; }  /* завершено — тёмный зелёный */
+.col-6 .column-header { background: #342b45; color: #c4b3e8; }  /* выдача — приглушённый фиолет */
 
 .column-body {
   flex: 1; overflow-y: auto; padding: 8px;
@@ -106,8 +106,8 @@ button.small { padding: 3px 8px; font-size: 12px; }
   outline-offset: -1px;
   transition: transform 0.15s, opacity 0.15s, box-shadow 0.15s, border-color 0.15s;
   user-select: none;
-  -webkit-user-select: none;   /* ← добавить для Safari iOS */
-  touch-action: pan-y;         /* ← добавить: вертикальный скролл разрешён, горизонтальный — наш */
+  -webkit-user-select: none;
+  touch-action: pan-y;
   display: block;
   overflow: hidden;
   isolation: isolate;
@@ -123,13 +123,13 @@ button.small { padding: 3px 8px; font-size: 12px; }
   opacity: 0.4;
   cursor: grabbing;
   box-shadow: 0 8px 24px rgba(137,180,250,0.35);
-  touch-action: none;   /* ← добавить сюда */
+  touch-action: none;
 }
 
 .task-brand-bg {
   position: absolute;
   right: -10px;
-  top: -10px;           /* было bottom: -10px */
+  top: -10px;
   width: 130px;
   height: 130px;
   opacity: 1;
@@ -343,9 +343,9 @@ button.small { padding: 3px 8px; font-size: 12px; }
 .notif-item .notif-time { color: #6c7086; font-size: 10px; }
 
 .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; }
-.badge-green { background: #a6e3a1; color: #1e1e2e; }
-.badge-red { background: #f38ba8; color: #1e1e2e; }
-.badge-yellow { background: #f9e2af; color: #1e1e2e; }
+.badge-green { background: #589e51; color: #1e1e2e; }
+.badge-red { background: #db3030; color: #1e1e2e; }
+.badge-yellow { background: #daa638; color: #1e1e2e; }
 .badge-blue { background: #89b4fa; color: #1e1e2e; }
 .badge-gray { background: #6c7086; color: #e0e0e0; }
 
@@ -364,7 +364,7 @@ button.small { padding: 3px 8px; font-size: 12px; }
   --col-name: 1 1 130px;
   --col-article: 0 0 110px;
   --col-check: 0 0 22px;
-  --col-qty: 0 0 96px;
+  --col-ty: 0 0 96px;
   --col-hours: 0 0 110px;
   --col-num: 0 0 84px;
   --col-status: 0 0 116px;
@@ -559,7 +559,7 @@ select.work-assignee.auto { border-color: rgba(61,214,140,0.5); color: var(--gre
 .filter-count { font-size: 11px; color: #6c7086; margin-left: auto; }
 
 .calc-wrap {
-  overflow-x: hidden;    /* горизонтальная прокрутка не нужна */
+  overflow-x: hidden;
 }
 .calc-summary { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
 .calc-card {
@@ -575,14 +575,14 @@ select.work-assignee.auto { border-color: rgba(61,214,140,0.5); color: var(--gre
 
 .calc-table {
   width: 100%;
-  table-layout: fixed;   /* ключевое: ширины считаются по нашим правилам, а не по содержимому */
+  table-layout: fixed;
   border-collapse: collapse;
   font-size: 11px;
 }
 .calc-table th,
 .calc-table td {
-  width: auto;              /* по умолчанию — равномерно */
-  white-space: normal;      /* разрешаем перенос */
+  width: auto;
+  white-space: normal;
   word-break: break-word;
   overflow-wrap: anywhere;
   vertical-align: middle;
@@ -590,31 +590,28 @@ select.work-assignee.auto { border-color: rgba(61,214,140,0.5); color: var(--gre
 }
 .calc-table td:nth-child(2),
 .calc-table th:nth-child(2) {
-  width: auto;             /* «Авто / Клиент» — пусть растягивается */
+  width: auto;
   white-space: normal;
   min-width: 140px;
 }
 .calc-table td:last-child,
 .calc-table th:last-child {
-  width: 40px;             /* колонка с корзиной */
+  width: 40px;
   white-space: nowrap;
 }
 .calc-table th:hover { background: #45475a; }
 .calc-table td { padding: 7px 10px; border-top: 1px solid #313244; }
 .calc-table tbody tr.clickable { cursor: pointer; }
 .calc-table tbody tr.clickable:hover { background: #313244; }
-/* Столбец «№» — совсем узкий */
 .calc-table td.calc-num-col {
   width: 34px;
   white-space: nowrap;
 }
-/* Столбец «Причина» — пусть занимает остаток, но с минимальной шириной */
 .calc-table td:nth-child(3),
 .calc-table th:nth-child(3) {
   width: auto;
   min-width: 90px;
 }
-/* Столбец «Оплата» (badge) */
 .calc-table td .pay-badge {
   white-space: nowrap;
 }
@@ -622,7 +619,7 @@ select.work-assignee.auto { border-color: rgba(61,214,140,0.5); color: var(--gre
 .calc-table td.num {
   width: 70px;
   text-align: right;
-  white-space: nowrap;      /* суммы не переносим */
+  white-space: nowrap;
 }
 .calc-table td.exp { color: #f38ba8; font-weight: 600; }
 .calc-table td.inc { color: #a6e3a1; font-weight: 600; }
@@ -640,7 +637,6 @@ select.work-assignee.auto { border-color: rgba(61,214,140,0.5); color: var(--gre
 .calc-table tfoot td.num { text-align: right; font-variant-numeric: tabular-nums; }
 .calc-table tfoot td.exp { color: #f38ba8; }
 .calc-table tfoot td.inc { color: #a6e3a1; }
-/* Удаление — 34px */
 .calc-table th.del-cell,
 .calc-table td.del-cell {
   width: 34px;
@@ -716,15 +712,11 @@ select.work-assignee.auto { border-color: rgba(61,214,140,0.5); color: var(--gre
   animation: modalIn 0.35s ease-out;
   color: var(--text);
 }
-/* ===== КАЛЬКУЛЯЦИЯ НА МОБИЛЬНЫХ ===== */
 @media (max-width: 900px) {
-  
   .calc-wrap {
     padding: 8px;
     overflow-x: hidden;
   }
-
-  /* Карточки сверху — в один столбец и компактнее */
   .calc-summary {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -738,8 +730,6 @@ select.work-assignee.auto { border-color: rgba(61,214,140,0.5); color: var(--gre
   }
   .calc-card .calc-card-title { font-size: 10px; }
   .calc-card .calc-card-value { font-size: 14px; margin-top: 2px; }
-
-  /* Панель фильтров и исполнителей */
   .calc-assignee-bar {
     flex-wrap: nowrap;
     overflow-x: auto;
@@ -752,7 +742,6 @@ select.work-assignee.auto { border-color: rgba(61,214,140,0.5); color: var(--gre
   }
   .calc-assignee-bar::-webkit-scrollbar { height: 4px; }
   .calc-assignee-bar::-webkit-scrollbar-thumb { background: #45475a; border-radius: 2px; }
-
   .calc-assignee-bar label {
     flex: 0 0 auto;
     white-space: nowrap;
@@ -770,7 +759,6 @@ select.work-assignee.auto { border-color: rgba(61,214,140,0.5); color: var(--gre
     white-space: nowrap;
     font-size: 10px;
   }
-
   .calc-cols {
     display: flex !important;
     flex-wrap: nowrap !important;
@@ -778,7 +766,7 @@ select.work-assignee.auto { border-color: rgba(61,214,140,0.5); color: var(--gre
     overflow-y: hidden;
     white-space: nowrap;
   }
-    .calc-cols > * {
+  .calc-cols > * {
     flex: 0 0 auto !important;
     white-space: nowrap;
   }
@@ -788,15 +776,12 @@ select.work-assignee.auto { border-color: rgba(61,214,140,0.5); color: var(--gre
     font-size: 10px;
   }
   .calc-cols .calc-cols-title { font-size: 10px; }
-
-    .calc-cols button.tab-btn {
+  .calc-cols button.tab-btn {
     flex: 0 0 auto;
     white-space: nowrap;
     padding: 4px 8px;
     font-size: 10px;
   }
-
-  /* Обёртка для горизонтальной прокрутки только таблицы */
   .calc-table-scroll {
     width: 100%;
     overflow-x: auto;
@@ -804,8 +789,6 @@ select.work-assignee.auto { border-color: rgba(61,214,140,0.5); color: var(--gre
   }
   .calc-cols::-webkit-scrollbar { height: 4px; }
   .calc-cols::-webkit-scrollbar-thumb { background: #45475a; border-radius: 2px; }
-
-  /* Таблица: фиксированные минимальные ширины, не сжимается в кашу */
   .calc-table {
     width: auto;
     min-width: 100%;
@@ -818,16 +801,12 @@ select.work-assignee.auto { border-color: rgba(61,214,140,0.5); color: var(--gre
     white-space: nowrap;
     word-break: normal;
   }
-
-  /* Числовые — узкие */
   .calc-table th.num,
   .calc-table td.num {
     width: 80px;
     text-align: right;
   }
   .calc-table td.calc-num-col { width: 36px; }
-
-  /* Авто/Клиент — шире, с переносом */
   .calc-table td:nth-child(2),
   .calc-table th:nth-child(2) {
     width: 160px;
@@ -836,29 +815,21 @@ select.work-assignee.auto { border-color: rgba(61,214,140,0.5); color: var(--gre
   }
   .calc-car-model { font-size: 12px; }
   .calc-car-plate { font-size: 10px; }
-
-  /* Причина — тоже переносится */
   .calc-table td:nth-child(3),
   .calc-table th:nth-child(3) {
     width: 120px;
     white-space: normal;
     word-break: break-word;
   }
-
-  /* Корзина */
   .calc-table th.del-cell,
   .calc-table td.del-cell {
     width: 34px;
     padding: 4px;
   }
-
-  /* Заголовки мельче */
   .calc-table th {
     font-size: 10px;
     padding: 6px 6px;
   }
-
-  /* Скролл-хинт */
   .calc-scroll-hint {
     display: block;
     font-size: 10px;
@@ -867,8 +838,28 @@ select.work-assignee.auto { border-color: rgba(61,214,140,0.5); color: var(--gre
     margin-top: 4px;
   }
 }
-
-/* На очень узких экранах уменьшаем ещё */
+.task-drag-ghost {
+  position: fixed;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 99999;
+  opacity: 0.92;
+  transform: rotate(2deg) scale(1.02);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.55);
+  border-radius: 6px;
+  transition: none;
+  will-change: left, top;
+}
+@media (max-width: 900px) {
+  .task-drag-ghost {
+    opacity: 1;   /* было 0.92 — на мобильном ghost непрозрачный */
+  }
+  .task.dragging {
+    opacity: 1;   /* было 0.4 — на мобильном оригинал почти невидим */
+  }
+}
+.task-drag-ghost .task-comment-note { display: none; }
 @media (max-width: 480px) {
   .calc-table { font-size: 10px; }
   .calc-table th { font-size: 9px; }
@@ -895,12 +886,34 @@ select.work-assignee.auto { border-color: rgba(61,214,140,0.5); color: var(--gre
 .task-modal-header__title h1 { font-size: 18px; font-weight: 700; color: #E8EEF7; }
 .task-modal-header__title p { font-size: 12px; color: var(--text-dim); margin-top: 1px; }
 .task-modal-close {
-  position: absolute; top: -4px; right: -4px;
-  width: 30px; height: 30px; border-radius: 50%; border: none;
-  background: transparent; color: var(--text-dim); font-size: 20px; cursor: pointer;
-  display: flex; align-items: center; justify-content: center; transition: all 0.2s;
+  position: absolute;
+  top: 1px;
+  right: 8px;
+  width: 55px;
+  height: 55px;
+  border-radius: 8px;              /* квадрат со скруглёнными углами */
+  border: 2px solid #e11d2e;       /* настоящий красный контур */
+  background: #e11d2e;             /* настоящая красная заливка */
+  color: #ffffff;                  /* белый крест */
+  font-size: 28px;
+  line-height: 1;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(225, 29, 46, 0.45); /* лёгкая красная тень */
 }
-.task-modal-close:hover { background: rgba(255,255,255,0.06); color: var(--text); }
+.task-modal-close:hover {
+  background: #c8102e;             /* темнее при наведении */
+  border-color: #c8102e;
+  transform: scale(1.05);
+}
+.task-modal-close:active {
+  transform: scale(0.97);
+}
 .task-modal-list { display: flex; flex-direction: column; gap: 10px; flex-shrink: 0; }
 .task-block {
   position: relative; background: var(--bg-card);
@@ -927,7 +940,12 @@ select.work-assignee.auto { border-color: rgba(61,214,140,0.5); color: var(--gre
   display: flex; align-items: center; justify-content: center;
   font-size: 13px; flex-shrink: 0;
 }
-.task-block__title { font-size: 13px; font-weight: 600; }
+.task-block__title {
+  font-size: 13px;
+  font-weight: 600;
+  flex: 1;
+  min-width: 0;
+}
 .task-block__title-sep { color: var(--text-dim); margin: 0 6px; font-weight: 400; font-size: 16px; }
 .task-block__title-accent { color: var(--cyan); font-weight: 600; }
 .task-block__title-plate {
@@ -946,6 +964,15 @@ select.work-assignee.auto { border-color: rgba(61,214,140,0.5); color: var(--gre
 }
 .task-block__header--clickable { cursor: pointer; user-select: none; transition: opacity 0.2s; }
 .task-block__header--clickable:hover { opacity: 0.85; }
+.task-header-btn {
+  flex: 0 0 auto;
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 8px;
+  margin-left: auto;
+  white-space: nowrap;
+}
 .task-block__toggle {
   margin-left: auto; width: 22px; height: 22px; border-radius: 6px;
   background: rgba(46, 124, 246, 0.12); border: 1px solid rgba(46, 124, 246, 0.3);
@@ -1031,7 +1058,6 @@ select.work-assignee.auto { border-color: rgba(61,214,140,0.5); color: var(--gre
 .task-group__title { font-size: 9px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-dim); margin-bottom: 2px; }
 .task-group .task-badges { margin: 0; }
 .task-group__empty { font-size: 10px; color: var(--text-dim); }
-/* Карточка «Авто / Клиент» — модель и номер/клиент в одну строку с переносом */
 .calc-car-model {
   font-size: 12px;
   white-space: normal;
@@ -1050,15 +1076,14 @@ select.work-assignee.auto { border-color: rgba(61,214,140,0.5); color: var(--gre
 }
 .calc-cols { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
 .calc-cols label { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text-dim); cursor: pointer; }
-  .calc-cols .calc-cols-title {
-    flex: 0 0 auto;
-    white-space: nowrap;
-    font-size: 10px;
-  }
+.calc-cols .calc-cols-title {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  font-size: 10px;
+}
 th.col-toggle { cursor: default; }
 th.col-toggle:hover { background: transparent; }
 .task-field__value--multiline .cmt-line { display: block; width: 100%; white-space: pre-wrap; }
-/* ==== Блок «Комментарии и лог» ==== */
 .task-field--stack {
   flex-direction: column;
   align-items: flex-start;
@@ -1085,15 +1110,24 @@ th.col-toggle:hover { background: transparent; }
 }
 .filter-checks { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .filter-checks label { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: #cdd6f4; cursor: pointer; }
-.item-row__name { flex: 1 1 120px; min-width: 90px; font-size: 11px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.item-row__art { font-family: 'Consolas','Courier New',monospace; font-size: 10px; color: var(--accent); font-weight: 700; }
-.item-row__meta { font-size: 10px; color: var(--text-dim); white-space: nowrap; font-variant-numeric: tabular-nums; }
-.item-row__who { font-size: 10px; color: var(--text-dim); white-space: nowrap; }
+.item-row__name { flex: 1 1 120px; min-width: 90px; font-size: 13px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.item-row__art { font-family: 'Consolas','Courier New',monospace; font-size: 11px; color: var(--accent); font-weight: 700; }
+.item-row__meta { font-size: 11px; color: var(--text-dim); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.item-row__who { font-size: 11px; color: var(--text-dim); white-space: nowrap; }
 .item-row__btns { display: inline-flex; gap: 3px; align-items: center; }
 .item-row__btn {
-  padding: 2px 6px; font-size: 9px; font-weight: 700;
-  border-radius: 4px; border: 1px solid #585b70;
-  background: #45475a; color: #cdd6f4; cursor: pointer; line-height: 1.2;
+  padding: 4px 12px;
+  font-size: 18px;
+  font-weight: 700;
+  border-radius: 8px;
+  line-height: 1.3;
+}
+.item-row__btn--add {
+  padding: 6px 16px;
+  font-size: 18px;
+  font-weight: 700;
+  border-radius: 8px;
+  line-height: 1.3;
 }
 .item-row__btn:hover { background: #89b4fa; color: #1e1e2e; border-color: #89b4fa; }
 .item-row__btn--edit { border-color: rgba(46,124,246,0.5); color: #89b4fa; }
@@ -1164,7 +1198,6 @@ th.col-toggle:hover { background: transparent; }
   .task-block__title-plate { font-size: 16px; padding: 3px 10px; }
   .task-block__title-plate::before { font-size: 9px; }
 }
-/* ===== МОБИЛЬНАЯ ОПТИМИЗАЦИЯ: МЕНЮ И ФИЛЬТРЫ В ОДНУ СТРОКУ ===== */
 @media (max-width: 900px) {
   header {
     flex-wrap: nowrap;
@@ -1176,14 +1209,12 @@ th.col-toggle:hover { background: transparent; }
   }
   header::-webkit-scrollbar { height: 4px; }
   header::-webkit-scrollbar-thumb { background: #45475a; border-radius: 2px; }
-
   header h1 {
     font-size: 15px;
     white-space: nowrap;
     flex: 0 0 auto;
   }
   header h1 small { display: none; }
-
   header select,
   header button {
     flex: 0 0 auto;
@@ -1191,7 +1222,6 @@ th.col-toggle:hover { background: transparent; }
     font-size: 12px;
     white-space: nowrap;
   }
-
   header .user-info {
     flex: 0 0 auto;
     margin-left: 0;
@@ -1202,8 +1232,6 @@ th.col-toggle:hover { background: transparent; }
   header .user-info .tenant-label {
     display: none;
   }
-
-  /* Фильтры статусов в одну строку */
   .filter-bar {
     flex-wrap: nowrap;
     overflow-x: auto;
@@ -1215,7 +1243,6 @@ th.col-toggle:hover { background: transparent; }
   }
   .filter-bar::-webkit-scrollbar { height: 4px; }
   .filter-bar::-webkit-scrollbar-thumb { background: #45475a; border-radius: 2px; }
-
   .filter-label {
     flex: 0 0 auto;
     white-space: nowrap;
@@ -1243,21 +1270,13 @@ th.col-toggle:hover { background: transparent; }
     white-space: nowrap;
   }
 }
-
-/* ===== На совсем узком экране (< 640px) — скрываем второстепенные кнопки шапки ===== */
 @media (max-width: 640px) {
-  /* Кнопки по data-атрибутам нет, поэтому скрываем по тексту через nth-of-type.
-     Если порядок кнопок в шапке меняется — подгони индексы. */
-  header > button:nth-of-type(3), /* ➕ Новая задача — оставляем */
-  header > button:nth-of-type(4), /* 🎲 Случайная задача — скрыть */
-  header > button:nth-of-type(5), /* 📅 Расписание постов — скрыть */
-  header > button:nth-of-type(6), /* 📤 Экспорт CSV — скрыть */
-  header > button:nth-of-type(7)  /* 📥 Импорт CSV — скрыть */
-  {
-    /* по умолчанию показываем всё; раскомментируй display:none, если нужно скрыть */
-    /* display: none; */
+  header > button:nth-of-type(3),
+  header > button:nth-of-type(4),
+  header > button:nth-of-type(5),
+  header > button:nth-of-type(6),
+  header > button:nth-of-type(7) {
   }
-
   header select#userSelect {
     max-width: 120px;
   }
@@ -1453,8 +1472,16 @@ const COLUMNS = [
   { id: 'done', title: '5. Работа завершена', cls: 'col-5' },
   { id: 'issue', title: '6. На выдачу', cls: 'col-6' }
 ];
-const COLORS = ['#89b4fa','#a6e3a1','#f9e2af','#f38ba8','#cba6f7','#fab387','#94e2d5','#f5c2e7'];
-
+const COLORS = [
+  '#5b7db1',  // приглушённый синий
+  '#5e8a6b',  // тёмный зелёный
+  '#b8a86a',  // приглушённый песочный
+  '#a86b78',  // сдержанный бордо
+  '#8a76a8',  // приглушённый фиолет
+  '#b8876a',  // тёмный оранжевый
+  '#5e8a8a',  // приглушённый бирюзовый
+  '#a87a8a'   // сдержанный розовый
+];
 const CDN = 'https://cdn.jsdelivr.net/gh/vehiclespecs/brand-logos@1.0.0/';
 const BRANDS = {
   'ABARTH': { emoji: '🚗', name: 'Abarth', color: '#c8102e', logo: CDN + 'abarth-logo.svg' },
@@ -1676,6 +1703,9 @@ let state = {
 
 let _dataRef = null;
 let dragTaskId = null;
+let dragGhostEl = null;
+let dragGhostOffsetX = 0;
+let dragGhostOffsetY = 0;
 let dragEl = null;
 let modalHistory = [];
 let modalDepth = 0;
@@ -2179,14 +2209,14 @@ function brandOf(model) {
   return DEFAULT_BRAND;
 }
 // ============ УДАЛЕНИЕ ФОНА У ЛОГОТИПОВ ============
-const LOGO_PROCESS_CACHE = {}; // url -> dataURL (или null, если не удалось)
+const LOGO_PROCESS_CACHE = {};
 
 function processLogoRemoveBackground(url, callback) {
   if (LOGO_PROCESS_CACHE[url] !== undefined) {
     callback(LOGO_PROCESS_CACHE[url]);
     return;
   }
-  LOGO_PROCESS_CACHE[url] = null; // защита от повторных запросов
+  LOGO_PROCESS_CACHE[url] = null;
 
   const im = new Image();
   im.crossOrigin = 'anonymous';
@@ -2200,9 +2230,8 @@ function processLogoRemoveBackground(url, callback) {
       const imgData = cx.getImageData(0, 0, c.width, c.height);
       const d = imgData.data;
 
-      // Цвет фона — верхний левый пиксель
       const bgR = d[0], bgG = d[1], bgB = d[2];
-      const THRESHOLD = 40; // подобрано для логотипов на белом/прозрачном фоне
+      const THRESHOLD = 40;
 
       for (let i = 0; i < d.length; i += 4) {
         const r = d[i], g = d[i + 1], b = d[i + 2];
@@ -2214,7 +2243,6 @@ function processLogoRemoveBackground(url, callback) {
       LOGO_PROCESS_CACHE[url] = dataUrl;
       callback(dataUrl);
     } catch (e) {
-      // Скорее всего canvas tainted (нет CORS). Просто отдаём оригинальный URL.
       console.warn('Не удалось убрать фон у логотипа:', url, e);
       LOGO_PROCESS_CACHE[url] = null;
       callback(null);
@@ -2316,6 +2344,12 @@ function setDragGhost(e, sourceEl, task) {
 function cleanupGhost() {
   const c = document.getElementById('dragGhostContainer');
   while (c && c.firstChild) c.removeChild(c.firstChild);
+}
+function cleanupDragGhost() {
+  if (dragGhostEl && dragGhostEl.parentElement) {
+    dragGhostEl.parentElement.removeChild(dragGhostEl);
+  }
+  dragGhostEl = null;
 }
 
 // ============ ВИДИМОСТЬ ============
@@ -2476,6 +2510,7 @@ function renderTask(task) {
 
   let holdTimer = null;
   let dragReady = false;
+  let didDrag = false;
 
   function cancelHold() {
     if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
@@ -2485,39 +2520,71 @@ function renderTask(task) {
     el.draggable = false;
   }
 
-  el.addEventListener('mousedown', e => {
-    if (e.button !== 0) return;
-    if (e.target.closest('.task-comment-note')) return;
-    if (e.target.closest('button')) return;
-    cancelHold();
-    holdTimer = setTimeout(() => {
-      dragReady = true;
-      el.draggable = true;
-      holdTimer = null;
-    }, 100);
-  });
+el.addEventListener('mousedown', e => {
+  if (e.button !== 0) return;
+  if (e.target.closest('.task-comment-note')) return;
+  if (e.target.closest('button')) return;
+  cancelHold();
+  didDrag = false;
+  el.draggable = true;
+  dragReady = true;
+});
 
-  el.addEventListener('mouseup', cancelHold);
+
+ el.addEventListener('mouseup', () => {
+  cancelHold();
+  setTimeout(() => {
+    if (!dragTaskId) {
+      el.draggable = false;
+      dragReady = false;
+    }
+  }, 0);
+});
   el.addEventListener('mouseleave', () => { cancelHold(); resetDrag(); });
 
-  el.addEventListener('dragstart', e => {
-    if (!dragReady) { e.preventDefault(); return; }
-    dragTaskId = task.id;
-    dragEl = el;
-    e.dataTransfer.setData('text/plain', task.id);
-    e.dataTransfer.effectAllowed = 'move';
-    setDragGhost(e, el, task);
-    requestAnimationFrame(() => el.classList.add('dragging'));
-  });
+el.addEventListener('dragstart', e => {
+  didDrag = true;
+  dragTaskId = task.id;
+  dragEl = el;
 
-  el.addEventListener('dragend', () => {
-    if (dragEl) dragEl.classList.remove('dragging');
-    document.querySelectorAll('.column.drag-over').forEach(c => c.classList.remove('drag-over'));
-    cleanupGhost();
-    dragTaskId = null;
-    dragEl = null;
-    resetDrag();
-  });
+  e.dataTransfer.setData('text/plain', task.id);
+  e.dataTransfer.effectAllowed = 'move';
+
+  cleanupDragGhost();
+  const rect = el.getBoundingClientRect();
+  dragGhostOffsetX = e.clientX - rect.left;
+  dragGhostOffsetY = e.clientY - rect.top;
+
+  const ghost = el.cloneNode(true);
+  ghost.classList.add('task-drag-ghost');
+  ghost.style.width = rect.width + 'px';
+  ghost.style.height = rect.height + 'px';
+  ghost.style.left = (e.clientX - dragGhostOffsetX) + 'px';
+  ghost.style.top  = (e.clientY - dragGhostOffsetY) + 'px';
+  ghost.style.transform = 'rotate(2deg) scale(1.02)';
+  ghost.querySelectorAll('button').forEach(b => b.disabled = true);
+  document.body.appendChild(ghost);
+  dragGhostEl = ghost;
+
+  try {
+    const img = new Image();
+    img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+    e.dataTransfer.setDragImage(img, 0, 0);
+  } catch (_) {}
+
+  el.classList.add('dragging');
+});
+
+el.addEventListener('dragend', () => {
+  if (dragEl) dragEl.classList.remove('dragging');
+  document.querySelectorAll('.column.drag-over').forEach(c => c.classList.remove('drag-over'));
+  cleanupDragGhost();
+  cleanupGhost();
+  dragTaskId = null;
+  dragEl = null;
+  resetDrag();
+  setTimeout(() => { didDrag = false; }, 0);
+});
 // ==== TOUCH DRAG (мобильные) ====
 let touchHoldTimer = null;
 let touchDragActive = false;
@@ -2534,52 +2601,76 @@ el.addEventListener('touchstart', e => {
   touchMoved = false;
   touchDragActive = false;
 
-  touchHoldTimer = setTimeout(() => {
-    touchDragActive = true;
-    dragTaskId = task.id;
-    dragEl = el;
-    el.classList.add('dragging');
-    if (navigator.vibrate) navigator.vibrate(30);
-  }, 250); // долгое нажатие 250 мс
+touchHoldTimer = setTimeout(() => {
+  touchDragActive = true;
+  dragTaskId = task.id;
+  dragEl = el;
+  el.classList.add('dragging');
+
+  // --- ghost для тача ---
+  cleanupDragGhost();
+  const rect = el.getBoundingClientRect();
+  // «Палец» в точке старта — берём центр пальца из touchstart (touchStartX/Y)
+  dragGhostOffsetX = touchStartX - rect.left;
+  dragGhostOffsetY = touchStartY - rect.top;
+
+  const ghost = el.cloneNode(true);
+  ghost.classList.add('task-drag-ghost');
+  ghost.style.width = rect.width + 'px';
+  ghost.style.height = rect.height + 'px';
+  ghost.style.left = (touchStartX - dragGhostOffsetX) + 'px';
+  ghost.style.top  = (touchStartY - dragGhostOffsetY) + 'px';
+  ghost.style.transform = 'rotate(2deg) scale(1.02)';
+  ghost.querySelectorAll('button').forEach(b => b.disabled = true);
+  document.body.appendChild(ghost);
+  dragGhostEl = ghost;
+
+  if (navigator.vibrate) navigator.vibrate(30);
+}, 250);
 }, { passive: true });
 
 el.addEventListener('touchmove', e => {
   if (e.touches.length !== 1) return;
   const t = e.touches[0];
+  const dx = t.clientX - touchStartX;
+  const dy = t.clientY - touchStartY;
 
-  // ---- 1. Если drag ещё не активирован (долгое нажатие не сработало) ----
   if (!touchDragActive) {
-    const dx = t.clientX - touchStartX;
-    const dy = t.clientY - touchStartY;
-    if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
+    if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) {
+      if (touchHoldTimer) { clearTimeout(touchHoldTimer); touchHoldTimer = null; }
+      e.preventDefault();
+      const board = document.getElementById('board');
+      board.scrollLeft -= dx;
+      touchStartX = t.clientX;
+      touchStartY = t.clientY;
+      touchMoved = true;
+      return;
+    }
+    if (Math.abs(dy) > 10) {
       if (touchHoldTimer) { clearTimeout(touchHoldTimer); touchHoldTimer = null; }
     }
     return;
   }
 
-  // ---- 2. Drag активен: блокируем скролл страницы ----
   e.preventDefault();
   touchMoved = true;
 
-  // ---- 3. Автоскролл доски ----
   const board = document.getElementById('board');
   const br = board.getBoundingClientRect();
-  const EDGE = 70;        // ширина «горячей зоны» у края, px
-  const STEP = 14;        // на сколько сдвигать за один touchmove, px
-
-  // Левый край
+  const EDGE = 70;
+  const STEP = 14;
   if (t.clientX < br.left + EDGE) {
-    // чем ближе к краю — тем быстрее скролл (пропорционально)
-    const intensity = (br.left + EDGE - t.clientX) / EDGE; // 0..1
+    const intensity = (br.left + EDGE - t.clientX) / EDGE;
     board.scrollLeft -= Math.max(4, STEP * intensity);
-  }
-  // Правый край
-  else if (t.clientX > br.right - EDGE) {
-    const intensity = (t.clientX - (br.right - EDGE)) / EDGE; // 0..1
+  } else if (t.clientX > br.right - EDGE) {
+    const intensity = (t.clientX - (br.right - EDGE)) / EDGE;
     board.scrollLeft += Math.max(4, STEP * intensity);
   }
-
-  // ---- 4. Двигаем карточку под палец ----
+  // --- двигаем ghost за пальцем ---
+  if (dragGhostEl) {
+    dragGhostEl.style.left = (t.clientX - dragGhostOffsetX) + 'px';
+    dragGhostEl.style.top  = (t.clientY - dragGhostOffsetY) + 'px';
+  }
   moveDragToCursor(t.clientX, t.clientY);
 }, { passive: false });
 
@@ -2588,6 +2679,7 @@ el.addEventListener('touchend', e => {
   if (!touchDragActive) return;
   touchDragActive = false;
   el.classList.remove('dragging');
+    cleanupDragGhost();
   document.querySelectorAll('.column.drag-over').forEach(c => c.classList.remove('drag-over'));
 
   if (dragEl) {
@@ -2603,17 +2695,16 @@ el.addEventListener('touchcancel', () => {
   if (touchHoldTimer) { clearTimeout(touchHoldTimer); touchHoldTimer = null; }
   touchDragActive = false;
   if (dragEl) dragEl.classList.remove('dragging');
+  cleanupDragGhost();   // ← добавить
   document.querySelectorAll('.column.drag-over').forEach(c => c.classList.remove('drag-over'));
   dragTaskId = null;
   dragEl = null;
 });
 
-  // Одинарный клик — открытие задачи
 el.addEventListener('click', e => {
   if (e.target.closest('.task-comment-note')) return;
   if (e.target.closest('button')) return;
-  if (dragReady) return;
-  if (touchMoved) { touchMoved = false; return; }  // <-- добавить
+  if (didDrag) { didDrag = false; return; }
   try {
     openTaskView(task.id);
   } catch (err) {
@@ -2634,8 +2725,6 @@ el.addEventListener('click', e => {
 
   return el;
 }
-
-// Drag&drop: живая перестановка
 
 document.getElementById('board').addEventListener('dragover', e => {
   if (!dragTaskId || !dragEl) return;
@@ -2695,8 +2784,6 @@ function moveDragToCursor(x, y) {
   }
     const task = state.tasks.find(t => t.id === dragTaskId);
   if (task) {
-    // НЕ меняем task.column здесь — оставляем для confirmMove.
-    // Только пересчитываем order в целевой колонке по факту DOM.
     Array.from(colBody.querySelectorAll('.task')).forEach((el, i) => {
       const t = state.tasks.find(x => x.id === el.dataset.id);
       if (t) t.order = i;
@@ -2825,7 +2912,6 @@ function tryMoveTask(taskId, newCol) {
   }
   if (task.column === newCol) { saveState(); return; }
 
-  // Колонки, куда переносим без модалки
   const noModalCols = ['parts', 'inwork', 'done'];
   if (noModalCols.indexOf(newCol) >= 0) {
     const oldCol = task.column;
@@ -3201,27 +3287,26 @@ function confirmMove(taskId, newCol) {
   }
   const fromTitle = COLUMNS.find(c=>c.id===oldCol).title;
   const toTitle = COLUMNS.find(c=>c.id===newCol).title;
-  // ==== Перенос заметок в комментарии ====
-const noteParts = [];
-if (newCol === 'waiting' && task.pendingAction) {
-  noteParts.push({ label: 'Ожидаемое действие', value: task.pendingAction });
-}
-if (newCol === 'approval' && task.approvalNote) {
-  noteParts.push({ label: 'Что необходимо согласовать', value: task.approvalNote });
-}
-if (newCol === 'issue') {
-  if (task.workDone) noteParts.push({ label: 'Проделанные работы', value: task.workDone });
-  if (task.recommendations) noteParts.push({ label: 'Рекомендации для обслуживания', value: task.recommendations });
-}
-if (newCol === 'done' && task.doneComment) {
-  noteParts.push({ label: 'Комментарий по завершении', value: task.doneComment });
-}
-if (noteParts.length) {
-  const stamp = `[${nowStr()}] ${toTitleFromId(newCol)}`;
-  const lines = noteParts.map(n => `  ${n.label}: ${n.value}`);
-  const block = `${stamp}\n${lines.join('\n')}`;
-  task.comment = (task.comment ? task.comment + '\n' : '') + block;
-}
+  const noteParts = [];
+  if (newCol === 'waiting' && task.pendingAction) {
+    noteParts.push({ label: 'Ожидаемое действие', value: task.pendingAction });
+  }
+  if (newCol === 'approval' && task.approvalNote) {
+    noteParts.push({ label: 'Что необходимо согласовать', value: task.approvalNote });
+  }
+  if (newCol === 'issue') {
+    if (task.workDone) noteParts.push({ label: 'Проделанные работы', value: task.workDone });
+    if (task.recommendations) noteParts.push({ label: 'Рекомендации для обслуживания', value: task.recommendations });
+  }
+  if (newCol === 'done' && task.doneComment) {
+    noteParts.push({ label: 'Комментарий по завершении', value: task.doneComment });
+  }
+  if (noteParts.length) {
+    const stamp = `[${nowStr()}] ${toTitleFromId(newCol)}`;
+    const lines = noteParts.map(n => `  ${n.label}: ${n.value}`);
+    const block = `${stamp}\n${lines.join('\n')}`;
+    task.comment = (task.comment ? task.comment + '\n' : '') + block;
+  }
   task.column = newCol;
   task.updatedAt = new Date().toISOString();
   task.log.push({ time: new Date().toISOString(), user, text: `Перемещение: ${fromTitle} → ${toTitle}` + (logEntries.length ? '. ' + logEntries.join(' | ') : '') });
@@ -3354,7 +3439,6 @@ function openTaskView(taskId) {
   const container = document.getElementById('modalContainer');
   if (!container) { alert('Нет контейнера модалок'); return; }
 
-  // Убираем старые task-modal-overlay
   try {
     Array.from(container.querySelectorAll('.task-modal-overlay')).forEach(el => {
       if (el.parentElement === container) container.removeChild(el);
@@ -3424,41 +3508,39 @@ function openTaskView(taskId) {
                 <div class="item-list__group">
                   <div class="item-list__group-title">🔩 Запчасти (${(task.parts||[]).filter(partHasContent).length})</div>
                   ${partsItemsHtml(task)}
-                  <button type="button" class="item-row__btn" data-action="parts">➕ Добавить запчасть</button>
-                </div>
+<button type="button" class="item-row__btn item-row__btn--add" data-action="parts">➕ Добавить запчасть</button>                </div>
                 <div class="item-list__group">
                   <div class="item-list__group-title">🛠 Работы (${(task.works||[]).length})</div>
                   ${worksItemsHtml(task)}
-                  <button type="button" class="item-row__btn" data-action="works">➕ Добавить работу</button>
-                </div>
+<button type="button" class="item-row__btn item-row__btn--add" data-action="works">➕ Добавить работу</button>                </div>
               </div>
             </div>
           </div>
         </section>
         <section class="task-block task-block--collapsed" id="blockFinance">
-          <div class="task-block__header task-block__header--clickable" data-block="blockFinance">
-            <div class="task-block__num">4</div><div class="task-block__icon">💰</div>
-            <div class="task-block__title">
-              <span>Финансы</span>
-              <span class="task-block__title-sep">·</span>
-              <span class="task-block__title-accent">${money(totalRevenue(task))}</span>
-              <span class="task-block__title-sep">·</span>
-              <span class="task-badge ${paySt === 'paid' ? 'task-badge--green' : paySt === 'unpaid' ? 'task-badge--red' : ''}">${paymentLabel(paySt)}</span>
-            </div>
-            <div class="task-block__toggle">▾</div>
-          </div>
-          <div class="task-block__content">
-            <div class="task-block__fields">
-              ${financeBlockHtml(task)}
-              <button type="button" class="task-btn task-btn--primary" data-action="payments">💳 Добавить оплату</button>
-            </div>
-          </div>
-        </section>
-      </div>
-     <section class="task-block task-block--collapsed" id="blockOrg">
+  <div class="task-block__header task-block__header--clickable" data-block="blockFinance">
+    <div class="task-block__num">4</div><div class="task-block__icon">💰</div>
+    <div class="task-block__title">
+      <span>Финансы</span>
+      <span class="task-block__title-sep">·</span>
+      <span class="task-block__title-accent">${money(totalRevenue(task))}</span>
+      <span class="task-block__title-sep">·</span>
+      <span class="task-badge ${paySt === 'paid' ? 'task-badge--green' : paySt === 'unpaid' ? 'task-badge--red' : ''}">${paymentLabel(paySt)}</span>
+    </div>
+    <button type="button" class="task-btn task-btn--primary task-header-btn" data-action="payments">💳 Добавить оплату</button>
+    <div class="task-block__toggle">▾</div>
+  </div>
+  <div class="task-block__content">
+    <div class="task-block__fields">
+            ${financeBlockHtml(task)}
+    </div>
+  </div>
+</section>
+<section class="task-block task-block--collapsed" id="blockOrg">
   <div class="task-block__header task-block__header--clickable" data-block="blockOrg">
     <div class="task-block__num">3</div><div class="task-block__icon">📅</div>
     <div class="task-block__title"><span>Организация работ</span><span class="task-block__title-sep">·</span><span class="task-block__title-accent">${task.scheduledTime ? formatTime(task.scheduledTime) : '—'}</span></div>
+    <button type="button" class="task-btn task-btn--primary task-header-btn" data-action="schedule">📅 Назначить заезд</button>
     <div class="task-block__toggle">▾</div>
   </div>
   <div class="task-block__content">
@@ -3482,6 +3564,7 @@ function openTaskView(taskId) {
   <div class="task-block__header task-block__header--clickable" data-block="blockHistory">
     <div class="task-block__num">6</div><div class="task-block__icon">💬</div>
     <div class="task-block__title"><span>Комментарии и лог</span><span class="task-block__title-sep">·</span><span class="task-block__title-accent">${task.log.length} записей</span></div>
+    <button type="button" class="task-btn task-btn--primary task-header-btn" data-action="addComment">💬 Добавить коммент</button>
     <div class="task-block__toggle">▾</div>
   </div>
   <div class="task-block__content">
@@ -3491,29 +3574,42 @@ function openTaskView(taskId) {
     </div>
   </div>
 </section>
-      <footer class="task-modal-footer">
+<section class="task-block task-block--collapsed" id="blockPrint">
+  <div class="task-block__header task-block__header--clickable" data-block="blockPrint">
+    <div class="task-block__num">7</div><div class="task-block__icon">🖨️</div>
+    <div class="task-block__title"><span>Печать и рассылка</span></div>
+    <div class="task-block__toggle">▾</div>
+  </div>
+  <div class="task-block__content">
+    <div class="task-block__fields">
+      <div class="task-print-actions">
+        <button type="button" class="task-btn task-btn--ghost" data-action="printWorkOrder">🖨️ Заказ-наряд</button>
+        <button type="button" class="task-btn task-btn--ghost" data-action="printActOfWork">🖨️ Акт работ</button>
+        <!-- Здесь позже появятся кнопки рассылки -->
+      </div>
+    </div>
+  </div>
+</section>
+</div>
+<footer class="task-modal-footer">
   <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
     ${canEditIssue && task.column === 'issue' ? `<button class="task-btn ${task.issued?'task-btn--warning':'task-btn--primary'}" data-action="toggleIssued">${task.issued?'НЕ ВЫДАНО':'ВЫДАНО'}</button>` : ''}
     ${task.car.vin ? `<button class="task-btn task-btn--ghost" data-action="autotradeVin">🔗 Autotrade (VIN)</button>` : ''}
   </div>
   <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-    <button class="task-btn task-btn--ghost" data-action="printWorkOrder">🖨️ Заказ-наряд</button>
-    <button class="task-btn task-btn--ghost" data-action="printActOfWork">🖨️ Акт работ</button>
     ${canEdit ? `<button class="task-btn task-btn--warning" data-action="editTask">✏️ Редактировать</button>` : ''}
     ${!isWorker ? `<button class="task-btn task-hidden-btn" data-action="toggleHidden">${task.hidden ? '👁 Показать на доске' : '🙈 Скрыть задачу'}</button>` : ''}
     ${!isWorker ? `<button class="task-btn task-btn--danger" data-action="delete">🗑 Удалить</button>` : ''}
     <button class="task-btn task-btn--primary" data-action="close">Закрыть</button>
   </div>
-      </footer>
-    </div>`;
+</footer>
+</div>`;
 
   container.appendChild(modal);
   processAllBrandLogos();
 
-  // Кнопка закрытия
   modal.querySelector('.task-modal-close').addEventListener('click', () => closeModal());
 
-  // Свёрнутые блоки
   modal.querySelectorAll('.task-block__header--clickable').forEach(header => {
     header.addEventListener('click', () => {
       const blockId = header.dataset.block;
@@ -3521,7 +3617,6 @@ function openTaskView(taskId) {
     });
   });
 
-  // Кнопки действий
   modal.querySelectorAll('[data-action]').forEach(btn => {
     btn.addEventListener('click', e => {
       e.stopPropagation();
@@ -3532,6 +3627,7 @@ function openTaskView(taskId) {
         else if (action === 'parts') openCharEditor(taskId, 'parts');
         else if (action === 'works') openCharEditor(taskId, 'works');
         else if (action === 'payments') openCharEditor(taskId, 'payments');
+        else if (action === 'schedule') openCharEditor(taskId, 'time');
         else if (action === 'printWorkOrder') printWorkOrder(taskId);
         else if (action === 'printActOfWork') printActOfWork(taskId);
         else if (action === 'toggleIssued') toggleIssued(taskId);
@@ -3549,7 +3645,6 @@ function openTaskView(taskId) {
     });
   });
 
-  // Клик по запчастям/работам
   modal.querySelectorAll('.item-row').forEach(row => {
     row.addEventListener('click', e => {
       e.stopPropagation();
@@ -3988,7 +4083,6 @@ function showSchedule() {
 
   const fullHtml = `<div class="modal">${html}<div class="modal-actions"><button onclick="closeModal()">Закрыть</button></div></div>`;
 
-  // Если окно расписания уже открыто — обновляем его содержимое, а не создаём новое
   let existing = document.getElementById('scheduleModal');
   if (existing) {
     existing.innerHTML = fullHtml;
@@ -4326,6 +4420,11 @@ function printWorkOrder(taskId) {
   const stoPhone = appSettings.stoPhone || '';
   const w = window.open('', '_blank');
   if (!w) return;
+  const closeBtn = w.document.createElement('button');
+closeBtn.textContent = '← Назад / Закрыть';
+closeBtn.style.cssText = 'position:fixed; top:10px; left:10px; z-index:9999; padding:8px 16px; font-size:14px; cursor:pointer;';
+closeBtn.onclick = () => w.close();
+w.document.body.appendChild(closeBtn);
   w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Заказ-наряд №${task.number}</title>
   <style>@media print{@page{margin:15mm}body{margin:0}}body{font-family:'Times New Roman',serif;font-size:12pt;line-height:1.4;color:#000;padding:20px}h1{text-align:center;font-size:18pt;margin:0 0 10px}.hi{text-align:center;font-size:10pt;margin-bottom:20px}table{width:100%;border-collapse:collapse;margin:10px 0}th,td{border:1px solid #000;padding:5px 8px;text-align:left}th{background:#f0f0f0;font-weight:bold}.st{font-weight:bold;margin-top:15px}.sig{margin-top:30px;display:flex;justify-content:space-between}.sig-line{width:45%;border-bottom:1px solid #000;padding-bottom:5px;margin-top:20px}</style></head><body>
   <h1>ЗАКАЗ-НАРЯД №${task.number}</h1>
@@ -4372,6 +4471,11 @@ document.addEventListener('click', e => {
     state.notifOpen = false;
     renderNotifications();
   }
+});
+document.addEventListener('dragover', e => {
+  if (!dragGhostEl) return;
+  dragGhostEl.style.left = (e.clientX - dragGhostOffsetX) + 'px';
+  dragGhostEl.style.top  = (e.clientY - dragGhostOffsetY) + 'px';
 });
 document.addEventListener('dblclick', e => {
   if (e.target.classList && (e.target.classList.contains('modal-overlay') || e.target.classList.contains('task-modal-overlay'))) {
