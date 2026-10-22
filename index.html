@@ -2041,18 +2041,72 @@ function localStorageFallbackKey() {
   const t = currentTenant();
   return t ? 'crm_autoservice_' + t : 'crm_autoservice_anon';
 }
-let _saveTimer = null;
-function saveState() {
-  if (_saveTimer) clearTimeout(_saveTimer);
-  _saveTimer = setTimeout(() => saveStateImmediate(), 500);
+
+// Мгновенное точечное сохранение задачи + служебных данных.
+// saveState() без аргумента — только метаданные (без tasks),
+// чтобы не перезаписывать чужие задачи при работе с 2+ устройств.
+function saveState(taskId = null) {
+  if (taskId) {
+    saveTaskNow(taskId);
+    return;
+  }
+  saveMetaNow();
 }
-function saveStateImmediate() {
+
+function saveMetaNow() {
   const ref = dataRef();
-  const data = { tasks: state.tasks, notifications: state.notifications, lastRead: state.lastRead, taskCounter: state.taskCounter };
-  if (!ref) { localStorage.setItem(localStorageFallbackKey(), JSON.stringify(data)); return; }
-  ref.update(data).catch(err => {
-    console.error('Firebase write error:', err);
+  const meta = {
+    notifications: state.notifications,
+    lastRead: state.lastRead,
+    taskCounter: state.taskCounter
+  };
+  if (!ref) {
+    // fallback: сохраняем всё локально
+    const data = { tasks: state.tasks, ...meta };
     localStorage.setItem(localStorageFallbackKey(), JSON.stringify(data));
+    return;
+  }
+  ref.update(meta).catch(err => {
+    console.error('Firebase meta write error:', err);
+  });
+}
+
+function saveTaskNow(taskId) {
+  const task = state.tasks.find(t => t.id === taskId);
+  if (!task) return;
+  const ref = dataRef();
+  if (!ref) {
+    // fallback: сохраняем всё локально
+    const data = {
+      tasks: state.tasks,
+      notifications: state.notifications,
+      lastRead: state.lastRead,
+      taskCounter: state.taskCounter
+    };
+    localStorage.setItem(localStorageFallbackKey(), JSON.stringify(data));
+    return;
+  }
+  // Записываем ТОЛЬКО одну задачу — чужие не трогаем
+  ref.child('tasks/' + taskId).set(task).catch(err => {
+    console.error('Firebase task write error:', err);
+    alert('Не удалось сохранить задачу. Проверьте соединение.');
+  });
+}
+
+function deleteTaskNow(taskId) {
+  const ref = dataRef();
+  if (!ref) {
+    const data = {
+      tasks: state.tasks,
+      notifications: state.notifications,
+      lastRead: state.lastRead,
+      taskCounter: state.taskCounter
+    };
+    localStorage.setItem(localStorageFallbackKey(), JSON.stringify(data));
+    return;
+  }
+  ref.child('tasks/' + taskId).remove().catch(err => {
+    console.error('Firebase task delete error:', err);
   });
 }
 function loadState() {
@@ -2968,7 +3022,7 @@ function tryMoveTask(taskId, newCol) {
       user: USERS[u].name,
       text: `Перемещение: ${fromTitle} → ${toTitle}`
     });
-    saveState();
+    saveState(taskId);
     render();
     return;
   }
@@ -3354,7 +3408,7 @@ function confirmMove(taskId, newCol) {
   task.column = newCol;
   task.updatedAt = new Date().toISOString();
   task.log.push({ time: new Date().toISOString(), user, text: `Перемещение: ${fromTitle} → ${toTitle}` + (logEntries.length ? '. ' + logEntries.join(' | ') : '') });
-  saveState();
+  saveState(task.id);
   closeModal();
   render();
 }
@@ -3455,7 +3509,8 @@ async function createTaskFromForm() {
     issued: false, color: null
   };
   state.tasks.push(task);
-  saveState();
+  saveState(task.id);
+  saveMetaNow();
   closeModal();
   render();
 }
@@ -3471,7 +3526,8 @@ async function createRandomTask() {
     updatedAt: new Date().toISOString(), createdAt: new Date().toISOString(), issued: false, color: null
   };
   state.tasks.push(task);
-  saveState();
+  saveState(task.id);
+  saveMetaNow();
   render();
 }
 
@@ -3714,7 +3770,7 @@ function toggleTaskHidden(taskId) {
   task.hidden = !task.hidden;
   task.updatedAt = new Date().toISOString();
   task.log.push({ time: new Date().toISOString(), user: USERS[state.currentUser].name, text: task.hidden ? 'Задача скрыта с канбан-доски' : 'Задача снова отображается' });
-  saveState();
+  saveState(taskId);
   closeModal();
   render();
   setTimeout(() => openTaskView(taskId), 80);
@@ -3792,7 +3848,7 @@ function savePartModal(taskId, index) {
     task.parts[index] = updated;
   }
   task.updatedAt = new Date().toISOString();
-  saveState();
+  saveState(taskId);
   closeModal();
   render();
   setTimeout(() => openTaskView(taskId), 80);
@@ -3845,7 +3901,7 @@ function saveWorkModal(taskId, index) {
   }
   if (newWorks.length) task.works = (task.works || []).concat(newWorks);
   task.updatedAt = new Date().toISOString();
-  saveState();
+  saveState(taskId);
   closeModal();
   render();
   setTimeout(() => openTaskView(taskId), 80);
@@ -3945,7 +4001,7 @@ function removePayment(taskId, index) {
   if (!p) return;
   if (!confirm(`Удалить оплату ${money(p.amount)}?`)) return;
   task.payments.splice(index, 1);
-  saveState();
+  saveState(taskId);
   closeModal();
   render();
   setTimeout(()=>openCharEditor(taskId, 'payments'), 100);
@@ -4009,7 +4065,7 @@ function saveChar(taskId, field) {
     task.log.push({ time: new Date().toISOString(), user, text: logText });
     task.updatedAt = new Date().toISOString();
   }
-  saveState();
+  saveState(taskId);
   closeModal();
   render();
   setTimeout(()=>{
@@ -4021,7 +4077,7 @@ function setTaskIssued(taskId, issued) {
   const task = state.tasks.find(t => t.id === taskId);
   if (!task || task.issued === issued) return;
   task.issued = issued;
-  saveState();
+  saveState(taskId);
   closeModal();
   render();
   setTimeout(() => openTaskView(taskId), 100);
@@ -4030,7 +4086,7 @@ function toggleIssued(taskId) {
   const t = state.tasks.find(x => x.id === taskId);
   if (!t) return;
   t.issued = !t.issued;
-  saveState();
+  saveState(taskId);
   closeModal();
   render();
   setTimeout(()=>openTaskView(taskId), 100);
@@ -4076,7 +4132,7 @@ function saveEditTask(taskId) {
   const nc = document.getElementById('e_newComment').value.trim();
   if (nc) task.comment = (task.comment ? task.comment + '\n' : '') + `[${nowStr()}] ${nc}`;
   task.updatedAt = new Date().toISOString();
-  saveState();
+  saveState(taskId);
   closeModal();
   render();
   setTimeout(()=>openTaskView(taskId), 100);
@@ -4088,7 +4144,8 @@ function deleteTask(taskId) {
   const idx = state.tasks.findIndex(t => t.id === taskId);
   if (idx === -1) return;
   state.tasks.splice(idx, 1);
-  saveState();
+  deleteTaskNow(taskId);
+  saveMetaNow();
   closeModal();
   render();
 }
@@ -4277,7 +4334,7 @@ function sortCalc(field) {
 function notifyAboutTask(task, message) {
   state.notifications.push({ id: uid(), taskId: task.id, message, time: new Date().toISOString(), read: false });
   if (state.notifications.length > 100) state.notifications = state.notifications.slice(-100);
-  saveState();
+  saveMetaNow();
   renderNotifications();
   updateBadge();
 }
@@ -4298,7 +4355,7 @@ function toggleNotifications() {
   renderNotifications();
   if (state.notifOpen) {
     notificationsForUser().forEach(n => n.read = true);
-    saveState();
+    saveMetaNow();
     updateBadge();
   }
 }
@@ -4396,6 +4453,7 @@ function runImport() {
       const iPlate = idx('госномер'), iModel = idx('модель'), iClient = idx('клиент'), iReason = idx('причина');
       if (iPlate < 0) { alert('Нет столбца «Госномер»'); return; }
       let added = 0;
+      const importedTasks = [];
       for (let r = 1; r < rows.length; r++) {
         const row = rows[r];
         const plate = (row[iPlate] || '').trim();
@@ -4412,9 +4470,11 @@ function runImport() {
           issued: false, color: null
         };
         state.tasks.push(task);
+        importedTasks.push(task);
         added++;
       }
-      saveState();
+      importedTasks.forEach(t => saveState(t.id));
+      saveMetaNow();
       closeModal();
       render();
       alert('Импортировано: ' + added);
@@ -4548,10 +4608,13 @@ if (_initialUser) {
   render();
 }
 window.addEventListener('beforeunload', () => {
-  if (_saveTimer) { clearTimeout(_saveTimer); saveStateImmediate(); }
+  // Метаданные синхронизируем на всякий случай.
+  // Задачи сохраняются мгновенно при каждом изменении,
+  // так что здесь их повторно писать не нужно.
+  try { saveMetaNow(); } catch (e) {}
 });
 setInterval(() => {
-  if (_saveTimer) { clearTimeout(_saveTimer); saveStateImmediate(); }
+  saveMetaNow();
 }, 30000);
 </script>
 </body>
