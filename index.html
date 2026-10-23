@@ -1325,6 +1325,79 @@ th.col-toggle:hover { background: transparent; }
     max-width: 120px;
   }
 }
+
+/* ===== [PATCH] AI-ввод: голос, фото, настройки ===== */
+.nt-ai-row { display: flex; gap: 8px; align-items: stretch; }
+.nt-ai-row .task-field__value { flex: 1; min-width: 0; }
+.nt-icon-btn {
+  flex: 0 0 55px; width: 55px; height: 55px; border-radius: 8px;
+  border: 2px solid var(--border-card); background: var(--input-bg);
+  color: var(--accent); font-size: 24px; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.15s; padding: 0;
+}
+.nt-icon-btn:hover { background: var(--accent); border-color: var(--accent); color: #fff; transform: translateY(-1px); }
+.nt-icon-btn:active { transform: translateY(0) scale(0.97); }
+.nt-icon-btn.recording { background: #e11d2e; border-color: #e11d2e; color: #fff; animation: ntPulse 1s infinite; }
+.nt-icon-btn.busy { background: #1B4FB0; border-color: #1B4FB0; color: #fff; pointer-events: none; opacity: 0.85; }
+@keyframes ntPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(225,29,46,.6); } 50% { box-shadow: 0 0 0 8px rgba(225,29,46,0); } }
+
+.nt-ai-panel {
+  margin-top: 10px; padding: 10px 12px;
+  border: 1px solid rgba(61,213,196,.35); border-radius: 10px;
+  background: rgba(61,213,196,.05);
+  display: none; flex-direction: column; gap: 8px;
+}
+.nt-ai-panel.show { display: flex; }
+.nt-ai-panel__row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+@media (max-width: 640px) { .nt-ai-panel__row { grid-template-columns: 1fr; } }
+.nt-ai-panel label { display: block; font-size: 10px; color: #7A8FAE; text-transform: uppercase; letter-spacing: .4px; margin-bottom: 3px; }
+.nt-ai-panel input { width: 100%; background: #0B1729; border: 1px solid rgba(30,78,140,.5); border-radius: 6px; color: #E8EEF7; font-size: 11px; padding: 6px 8px; font-family: inherit; outline: none; }
+.nt-ai-panel input:focus { border-color: #2E7CF6; }
+.nt-ai-panel__hint { font-size: 10px; color: #7A8FAE; line-height: 1.4; }
+
+.nt-ai-status { margin-top: 8px; padding: 8px 12px; border-radius: 8px; font-size: 11px; display: none; }
+.nt-ai-status.visible { display: block; }
+.nt-ai-status.info { background: rgba(46,124,246,.12); color: #89b4fa; border: 1px solid rgba(46,124,246,.3); }
+.nt-ai-status.ok   { background: rgba(61,214,140,.12); color: #a6e3a1; border: 1px solid rgba(61,214,140,.3); }
+.nt-ai-status.err  { background: rgba(243,139,168,.12); color: #f38ba8; border: 1px solid rgba(243,139,168,.3); }
+
+.nt-ai-link { color: #3DD5C4; text-decoration: none; font-size: 11px; cursor: pointer; }
+.nt-ai-link:hover { text-decoration: underline; }
+
+/* Строки запчастей/работ в модалке новой задачи (упрощённые) */
+.nt-rw-row {
+  display: grid; grid-template-columns: minmax(140px,2fr) 70px 130px 32px;
+  gap: 6px; align-items: center; margin-bottom: 6px;
+  background: rgba(19,37,63,.7); border: 1px solid rgba(30,78,140,.3);
+  border-radius: 8px; padding: 6px;
+}
+.nt-rw-row.ai { border-color: rgba(61,213,196,.5); background: rgba(61,213,196,.05); }
+.nt-rw-row input, .nt-rw-row select {
+  background: #0B1729; border: 1px solid rgba(30,78,140,.5); border-radius: 6px;
+  color: #E8EEF7; font-size: 11px; padding: 6px 8px; min-height: 30px; width: 100%;
+  font-family: inherit; outline: none;
+}
+.nt-rw-row input:focus, .nt-rw-row select:focus { border-color: #2E7CF6; }
+.nt-rw-row .del-btn {
+  width: 32px; height: 30px; padding: 0; border-radius: 6px;
+  background: rgba(243,139,168,.12); border: 1px solid rgba(243,139,168,.4);
+  color: #f38ba8; font-size: 13px;
+}
+.nt-rw-row .del-btn:hover { background: #f38ba8; color: #1e1e2e; border-color: #f38ba8; }
+.nt-rw-group { background: rgba(11,23,41,.5); border: 1px solid rgba(30,78,140,.4); border-radius: 10px; padding: 10px 12px; margin-top: 8px; }
+.nt-rw-group:first-child { margin-top: 0; }
+.nt-rw-title { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: #3DD5C4; text-transform: uppercase; letter-spacing: .4px; margin-bottom: 8px; }
+.nt-rw-title .cnt { background: rgba(61,213,196,.15); color: #3DD5C4; padding: 1px 8px; border-radius: 10px; font-size: 10px; font-weight: 700; }
+.nt-rw-add {
+  display: block; width: 100%; padding: 8px; margin-top: 4px;
+  border-radius: 8px; border: 1px dashed rgba(46,124,246,.5);
+  background: rgba(46,124,246,.05); color: #2E7CF6;
+  font-size: 12px; font-weight: 600;
+}
+.nt-rw-add:hover { background: rgba(46,124,246,.15); border-color: #2E7CF6; }
+.nt-rw-empty { text-align: center; padding: 12px; color: #7A8FAE; font-size: 11px; border: 1px dashed rgba(30,78,140,.4); border-radius: 8px; }
+/* ===== [PATCH] конец ===== */
 </style>
 </head>
 <body>
@@ -1500,6 +1573,11 @@ function logout() {
   modalHistory = [];
   closeModalAll();
   renderAuthGate();
+  if (typeof _aiCache !== 'undefined') {
+    _aiCache.key = '';
+    _aiCache.textModel = 'deepseek-v4-flash';
+    _aiCache.visionModel = 'deepseek-flash';
+  }
 }
 
 const USERS = {
@@ -1785,6 +1863,7 @@ function onLoginSubmit(ev) {
   loadSettings();
   loadState();
   render();
+  if (typeof ntLoadAISettings === 'function') setTimeout(ntLoadAISettings, 300); // [PATCH]
 }
 function logoutBtn() {
   const t = currentUser();
@@ -3470,36 +3549,138 @@ function addDoneWorkRow(work) {
 }
 
 // ============ СОЗДАНИЕ ============
+/* ===== [PATCH] Новая задача с AI-вводом ===== */
 function openNewTaskModal() {
   const modal = document.createElement('div');
   modal.className = 'modal-overlay';
   modal.innerHTML = `
-    <div class="modal">
-      <h2>Новая задача</h2>
-      <h3>Автомобиль</h3>
-      <label>Госномер</label><input id="nPlate" placeholder="А123БВ 123">
+    <div class="modal" style="max-width:760px">
+      <h2>➕ Новая задача</h2>
+      <h3>🚗 Автомобиль</h3>
+      <label>Госномер</label>
+      <div class="nt-ai-row">
+        <input id="nPlate" placeholder="А123БВ 123" autocomplete="off" style="flex:1">
+        <button type="button" class="nt-icon-btn" id="ntMicBtn" title="Голосовой ввод">🎤</button>
+        <button type="button" class="nt-icon-btn" id="ntPhotoBtn" title="Сканировать фото">📷</button>
+      </div>
       <label>Модель</label><input id="nModel" placeholder="Toyota Camry">
       <label>Год</label><input id="nYear" type="number" value="2020">
-      <label>VIN</label><input id="nVin" maxlength="17">
+      <label>VIN</label><input id="nVin" maxlength="17" style="text-transform:uppercase">
       <label>Пробег</label><input id="nMileage" type="number">
-      <h3>Клиент</h3>
+
+      <h3>👥 Клиент</h3>
       <label>ФИО</label><input id="nClientName">
       <label>Телефон</label><input id="nClientPhone">
-      <h3>Задача</h3>
+
+      <h3>📝 Задача</h3>
       <label>Причина обращения</label><textarea id="nReason"></textarea>
       <label>Комментарий</label><textarea id="nComment"></textarea>
       <label>Состояние авто при приёмке</label><textarea id="nDamage"></textarea>
+
+      <h3>🔧 Запчасти и работы</h3>
+      <div class="nt-rw-group">
+        <div class="nt-rw-title">🔩 Запчасти <span class="cnt" id="ntPartsCount">0</span>
+          <button type="button" class="nt-icon-btn" id="ntRWMicBtn" style="width:32px;height:32px;font-size:14px;border-width:1px;margin-left:auto" title="Дополнить списки голосом">🎤</button>
+        </div>
+        <div id="ntPartsList"><div class="nt-rw-empty">Запчастей пока нет</div></div>
+        <button type="button" class="nt-rw-add" onclick="ntAddPartRow()">➕ Добавить запчасть</button>
+      </div>
+      <div class="nt-rw-group">
+        <div class="nt-rw-title">🛠 Работы <span class="cnt" id="ntWorksCount">0</span></div>
+        <div id="ntWorksList"><div class="nt-rw-empty">Работ пока нет</div></div>
+        <button type="button" class="nt-rw-add" onclick="ntAddWorkRow()">➕ Добавить работу</button>
+      </div>
+
+      <div class="nt-ai-status" id="ntAiStatus"></div>
+
+      <div class="nt-ai-panel" id="ntAiPanel">
+        <div class="nt-ai-panel__row">
+          <div><label>API-ключ TokenWave</label><input type="password" id="ntAiKey" placeholder="Ключ"></div>
+          <div><label>Текстовая модель</label><input type="text" id="ntAiTextModel" placeholder="deepseek-v4-flash"></div>
+        </div>
+        <div class="nt-ai-panel__row">
+          <div><label>Vision-модель (для фото)</label><input type="text" id="ntAiVisionModel" placeholder="deepseek-flash"></div>
+          <div style="display:flex;align-items:flex-end">
+            <button type="button" class="small" id="ntAiCheckModels" style="width:100%;padding:7px 10px;font-size:11px">Проверить модели</button>
+          </div>
+        </div>
+        <div class="nt-ai-panel__hint">Ключ и модели хранятся в базе (Firebase) для этого СТО. Запросы идут напрямую в TokenWave.</div>
+      </div>
+
       <div class="modal-actions">
+        <span style="flex:1;font-size:11px;color:#7A8FAE;align-self:center">
+          <a href="#" class="nt-ai-link" id="ntAiToggle">⚙ AI-настройки</a>
+        </span>
         <button onclick="closeModal()">Отмена</button>
         <button class="primary" onclick="createTaskFromForm()">Создать</button>
       </div>
     </div>`;
   document.getElementById('modalContainer').appendChild(modal);
+
+  // Заполнить поля из сохранённых настроек
+  ntFillAIPanel();
+
+  // Кнопка "AI-настройки"
+  document.getElementById('ntAiToggle').addEventListener('click', e => {
+    e.preventDefault();
+    document.getElementById('ntAiPanel').classList.toggle('show');
+  });
+
+  // Кнопка "Проверить модели"
+  document.getElementById('ntAiCheckModels').addEventListener('click', ntCheckModels);
+
+  // Изменения ключа/моделей → сохранение в Firebase
+  ['ntAiKey','ntAiTextModel','ntAiVisionModel'].forEach(id => {
+    const el = document.getElementById(id);
+    el.addEventListener('change', () => ntSaveAISettings());
+  });
+
+  // Главный микрофон
+  ntSetupMic(document.getElementById('ntMicBtn'), {
+    onResult: async (text) => {
+      ntSetAIStatus('🎤 Распознано: «' + text.slice(0,80) + (text.length>80?'…':'') + '»', 'info');
+      await ntHandleVoiceResult(text);
+    }
+  });
+
+  // Микрофон запчастей/работ
+  ntSetupMic(document.getElementById('ntRWMicBtn'), {
+    onStart: () => ntSetAIStatus('🎤 Слушаю запчасти и работы… нажми ⏹, чтобы остановить.', 'info'),
+    onResult: async (text) => {
+      ntSetAIStatus('🎤 «' + text.slice(0,100) + (text.length>100?'…':'') + '» — дополняю списки…', 'info');
+      try {
+        const currentParts = ntCollectParts();
+        const currentWorks = ntCollectWorks();
+        const data = await ntCallTextLLM(ntBuildRWAppendPrompt(text, currentParts, currentWorks));
+        if (Array.isArray(data.parts)) {
+          ntRenderParts(data.parts.map(p => ({ name: p.name||'', qty: parseInt(p.qty,10)||1, status: p.status||'notordered' })));
+        }
+        if (Array.isArray(data.works)) {
+          ntRenderWorks(data.works.map(w => ({ name: w.name||'', qty: parseInt(w.qty,10)||1, status: w.status||'notstarted' })));
+        }
+        ntSetAIStatus(`✓ Запчастей: ${ntCollectParts().length}, работ: ${ntCollectWorks().length}.`, 'ok');
+      } catch (e) {
+        ntSetAIStatus('Ошибка дополнения: ' + e.message, 'err');
+      }
+    }
+  });
+
+  // Фото
+  document.getElementById('ntPhotoBtn').addEventListener('click', () => ntPickPhoto());
+
+  // Восстановить черновик из localStorage (если пользователь уже что-то вводил)
+  ntRestoreDraft();
 }
+/* ===== [PATCH] Создание задачи: + parts/works из AI-строк ===== */
 async function createTaskFromForm() {
   const plate = document.getElementById('nPlate').value.trim();
   const model = document.getElementById('nModel').value.trim();
   if (!plate || !model) { alert('Заполните госномер и модель'); return; }
+
+  // Собираем запчасти и работы из новых строк
+  const newParts = ntCollectParts();
+  const newWorks = ntCollectWorks();
+
   const taskNumber = await nextTaskNumberAsync();
   const task = {
     id: uid(), number: taskNumber, column: 'waiting',
@@ -3518,7 +3699,15 @@ async function createTaskFromForm() {
     comment: document.getElementById('nComment').value.trim() || '',
     damageDescription: document.getElementById('nDamage').value.trim() || '',
     scheduledTime: null, assignee: null, post: null,
-    parts: [], works: [], payments: [],
+    parts: newParts.map(p => ({
+      name: p.name, article: '', quantity: p.qty, purchase: '', sale: '',
+      status: p.status || 'notordered', notes: [], note: '', link: ''
+    })),
+    works: newWorks.map(w => ({
+      name: w.name, hours: '', cost: '', price: '',
+      status: w.status || 'notstarted', assignee: '', comment: '', link: ''
+    })),
+    payments: [],
     log: [{ time: new Date().toISOString(), user: USERS[state.currentUser].name, text: 'Задача создана' }],
     updatedAt: new Date().toISOString(), createdAt: new Date().toISOString(),
     issued: false, color: null
@@ -3526,6 +3715,7 @@ async function createTaskFromForm() {
   state.tasks.push(task);
   saveState(task.id);
   saveMetaNow();
+  ntClearDraft();
   closeModal();
   render();
 }
@@ -4613,6 +4803,523 @@ document.getElementById('userSelect').addEventListener('change', e => {
   state.notifOpen = false;
   render();
 });
+
+/* ===== [PATCH] AI-модуль: голос, фото, настройки в Firebase ===== */
+
+const NT_AI_CONFIG = {
+  baseURL: 'https://tokenwave.ru/v1/chat/completions',
+  modelsURL: 'https://tokenwave.ru/v1/models',
+  maxImageMB: 8
+};
+
+// Настройки AI хранятся в Firebase: <prefix>/ai/settings
+// Формат: { key, textModel, visionModel }
+let _aiCache = { key: '', textModel: 'deepseek-v4-flash', visionModel: 'deepseek-flash' };
+
+function aiSettingsRef() {
+  const ref = dataRef();
+  return ref ? ref.child('ai/settings') : null;
+}
+
+function ntLoadAISettings() {
+  const ref = aiSettingsRef();
+  if (!ref) return;
+  ref.once('value').then(snap => {
+    const v = snap && snap.val ? snap.val() : null;
+    if (v && typeof v === 'object') {
+      _aiCache.key = v.key || '';
+      _aiCache.textModel = v.textModel || 'deepseek-v4-flash';
+      _aiCache.visionModel = v.visionModel || 'deepseek-flash';
+    }
+    ntFillAIPanel();
+  }).catch(() => {});
+}
+
+function ntFillAIPanel() {
+  const k = document.getElementById('ntAiKey');
+  const tm = document.getElementById('ntAiTextModel');
+  const vm = document.getElementById('ntAiVisionModel');
+  if (k) k.value = _aiCache.key || '';
+  if (tm) tm.value = _aiCache.textModel || 'deepseek-v4-flash';
+  if (vm) vm.value = _aiCache.visionModel || 'deepseek-flash';
+}
+
+function ntSaveAISettings() {
+  const key = (document.getElementById('ntAiKey')?.value || '').trim();
+  const tm = (document.getElementById('ntAiTextModel')?.value || '').trim() || 'deepseek-v4-flash';
+  const vm = (document.getElementById('ntAiVisionModel')?.value || '').trim() || 'deepseek-flash';
+  _aiCache.key = key;
+  _aiCache.textModel = tm;
+  _aiCache.visionModel = vm;
+  const ref = aiSettingsRef();
+  if (!ref) return;
+  ref.set({ key, textModel: tm, visionModel: vm }).catch(err => {
+    console.error('AI settings save error:', err);
+    ntSetAIStatus('Не удалось сохранить настройки: ' + err.message, 'err');
+  });
+}
+
+function ntSetAIStatus(text, type) {
+  const el = document.getElementById('ntAiStatus');
+  if (!el) return;
+  el.className = 'nt-ai-status visible ' + (type || 'info');
+  el.textContent = text;
+  if (type === 'ok') setTimeout(() => el.classList.remove('visible'), 4000);
+}
+
+function ntAiParseJSON(s) {
+  try { return JSON.parse(s); } catch (_) {}
+  const m = String(s || '').match(/\{[\s\S]*\}/);
+  if (m) { try { return JSON.parse(m[0]); } catch (_) {} }
+  throw new Error('LLM вернул не-JSON');
+}
+
+// ---------- Строки запчастей/работ ----------
+function ntPartRowHtml(p) {
+  p = p || {};
+  return `<div class="nt-rw-row" data-kind="part">
+    <input type="text" class="rw-name" placeholder="Название запчасти" value="${esc(p.name||'')}">
+    <input type="number" class="rw-qty" min="1" step="1" placeholder="Кол-во" value="${p.qty||1}">
+    <select class="rw-status">
+      <option value="notordered" ${p.status==='notordered'?'selected':''}>Не заказано</option>
+      <option value="ordered" ${p.status==='ordered'?'selected':''}>Заказано</option>
+      <option value="instock" ${p.status==='instock'?'selected':''}>На складе</option>
+    </select>
+    <button type="button" class="del-btn" onclick="this.closest('.nt-rw-row').remove();ntUpdateRWCounts()">✕</button>
+  </div>`;
+}
+function ntWorkRowHtml(w) {
+  w = w || {};
+  return `<div class="nt-rw-row" data-kind="work">
+    <input type="text" class="rw-name" placeholder="Название работы" value="${esc(w.name||'')}">
+    <input type="number" class="rw-qty" min="1" step="1" placeholder="Кол-во" value="${w.qty||1}">
+    <select class="rw-status">
+      <option value="notstarted" ${w.status==='notstarted'?'selected':''}>Не в работе</option>
+      <option value="inwork" ${w.status==='inwork'?'selected':''}>В работе</option>
+      <option value="finished" ${w.status==='finished'?'selected':''}>Завершено</option>
+    </select>
+    <button type="button" class="del-btn" onclick="this.closest('.nt-rw-row').remove();ntUpdateRWCounts()">✕</button>
+  </div>`;
+}
+function ntAddPartRow() {
+  const list = document.getElementById('ntPartsList');
+  if (!list) return;
+  list.querySelector('.nt-rw-empty')?.remove();
+  list.insertAdjacentHTML('beforeend', ntPartRowHtml({}));
+  ntUpdateRWCounts();
+}
+function ntAddWorkRow() {
+  const list = document.getElementById('ntWorksList');
+  if (!list) return;
+  list.querySelector('.nt-rw-empty')?.remove();
+  list.insertAdjacentHTML('beforeend', ntWorkRowHtml({}));
+  ntUpdateRWCounts();
+}
+function ntUpdateRWCounts() {
+  const pCount = document.querySelectorAll('#ntPartsList .nt-rw-row').length;
+  const wCount = document.querySelectorAll('#ntWorksList .nt-rw-row').length;
+  const pc = document.getElementById('ntPartsCount'); if (pc) pc.textContent = pCount;
+  const wc = document.getElementById('ntWorksCount'); if (wc) wc.textContent = wCount;
+}
+function ntCollectParts() {
+  const out = [];
+  document.querySelectorAll('#ntPartsList .nt-rw-row').forEach(r => {
+    const name = (r.querySelector('.rw-name')?.value || '').trim();
+    if (!name) return;
+    out.push({
+      name,
+      qty: Math.max(1, parseInt(r.querySelector('.rw-qty')?.value, 10) || 1),
+      status: r.querySelector('.rw-status')?.value || 'notordered'
+    });
+  });
+  return out;
+}
+function ntCollectWorks() {
+  const out = [];
+  document.querySelectorAll('#ntWorksList .nt-rw-row').forEach(r => {
+    const name = (r.querySelector('.rw-name')?.value || '').trim();
+    if (!name) return;
+    out.push({
+      name,
+      qty: Math.max(1, parseInt(r.querySelector('.rw-qty')?.value, 10) || 1),
+      status: r.querySelector('.rw-status')?.value || 'notstarted'
+    });
+  });
+  return out;
+}
+function ntRenderParts(parts) {
+  const list = document.getElementById('ntPartsList');
+  if (!list) return;
+  list.innerHTML = '';
+  if (!parts.length) { list.innerHTML = '<div class="nt-rw-empty">Запчастей пока нет</div>'; }
+  else {
+    parts.forEach(p => list.insertAdjacentHTML('beforeend', ntPartRowHtml(p)));
+    list.querySelectorAll('.nt-rw-row').forEach(r => r.classList.add('ai'));
+  }
+  ntUpdateRWCounts();
+}
+function ntRenderWorks(works) {
+  const list = document.getElementById('ntWorksList');
+  if (!list) return;
+  list.innerHTML = '';
+  if (!works.length) { list.innerHTML = '<div class="nt-rw-empty">Работ пока нет</div>'; }
+  else {
+    works.forEach(w => list.insertAdjacentHTML('beforeend', ntWorkRowHtml(w)));
+    list.querySelectorAll('.nt-rw-row').forEach(r => r.classList.add('ai'));
+  }
+  ntUpdateRWCounts();
+}
+
+// ---------- Черновик ----------
+function ntDraftKey() { return 'nt_draft_' + (currentTenant() || 'anon'); }
+function ntRestoreDraft() {
+  try {
+    const raw = localStorage.getItem(ntDraftKey());
+    if (!raw) return;
+    const d = JSON.parse(raw);
+    ['nPlate','nModel','nYear','nVin','nMileage','nClientName','nClientPhone','nReason','nComment','nDamage'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el && d[id]) el.value = d[id];
+    });
+    if (Array.isArray(d.parts) && d.parts.length) ntRenderParts(d.parts);
+    if (Array.isArray(d.works) && d.works.length) ntRenderWorks(d.works);
+  } catch (_) {}
+}
+function ntClearDraft() {
+  try { localStorage.removeItem(ntDraftKey()); } catch (_) {}
+}
+
+// ---------- Промпты ----------
+function ntBuildTextPrompt(text) {
+  return `Ты — парсер задач для автосервиса. Извлеки поля из текста.
+
+Верни СТРОГО валидный JSON без markdown:
+{
+  "plate": "госномер или пустая строка",
+  "model": "марка/модель или пустая строка",
+  "year": "год числом или пустая строка",
+  "vin": "VIN 17 символов без I/O/Q или пустая строка",
+  "mileage": "пробег числом или пустая строка",
+  "clientName": "ФИО или пустая строка",
+  "clientPhone": "телефон или пустая строка",
+  "reason": "краткая причина (2-4 слова) или пустая строка",
+  "comment": "остальные детали или пустая строка",
+  "damage": "описание состояния авто или пустая строка",
+  "parts": [{"name":"название","qty":1,"status":"notordered"}],
+  "works": [{"name":"название","qty":1,"status":"notstarted"}]
+}
+Правила:
+- Госномер → РФ А123ВС777.
+- VIN — ровно 17 символов, без I/O/Q.
+- parts/works — только если реально названы. Не дублируй: «замена масла» — работа, «масло» — запчасть.
+- Пустое — "" или [].
+
+Текст:
+"""${text}"""`;
+}
+function ntBuildPhotoPrompt() {
+  return `Ты — оператор автосервиса. На фото — документ (СТС, ПТС, наряд-заказ, чек) или авто с номером. Извлеки данные для CRM.
+
+Верни СТРОГО валидный JSON без markdown:
+{
+  "raw_text": "весь видимый текст",
+  "plate": "госномер или пустая строка",
+  "model": "марка/модель/год или пустая строка",
+  "year": "год числом или пустая строка",
+  "vin": "VIN 17 символов или пустая строка",
+  "mileage": "пробег числом или пустая строка",
+  "clientName": "ФИО или пустая строка",
+  "clientPhone": "телефон или пустая строка",
+  "reason": "краткая причина или пустая строка",
+  "comment": "детали или пустая строка",
+  "damage": "описание состояния или пустая строка",
+  "parts": [{"name":"название","qty":1,"status":"notordered"}],
+  "works": [{"name":"название","qty":1,"status":"notstarted"}]
+}
+Правила:
+- VIN: ровно 17 символов, без I/O/Q. Нечитаем — "".
+- Поля нет — "".
+- parts/works — только если перечислены.`;
+}
+function ntBuildRWAppendPrompt(text, currentParts, currentWorks) {
+  return `Ты — оператор автосервиса. Пользователь продиктовал фрагмент — дополни списки запчастей и работ.
+
+УЖЕ ЕСТЬ запчасти:
+${JSON.stringify(currentParts, null, 2)}
+
+УЖЕ ЕСТЬ работы:
+${JSON.stringify(currentWorks, null, 2)}
+
+Пользователь продиктовал:
+"""${text}"""
+
+Верни СТРОГО JSON без markdown:
+{
+  "parts": [{"name":"название","qty":1,"status":"notordered"}],
+  "works": [{"name":"название","qty":1,"status":"notstarted"}]
+}
+Правила:
+- Верни ПОЛНЫЕ объединённые списки: было + новые. Не теряй, не дублируй.
+- Если позиция уже есть и назвали количество — обнови qty.
+- Не дублируй: «замена масла» — работа, «масло» — запчасть.`;
+}
+
+// ---------- Вызовы LLM ----------
+async function ntCallTextLLM(prompt) {
+  if (!_aiCache.key) throw new Error('Введи API-ключ в AI-настройках.');
+  const res = await fetch(NT_AI_CONFIG.baseURL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _aiCache.key },
+    body: JSON.stringify({
+      model: _aiCache.textModel,
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.1, max_tokens: 1500
+    })
+  });
+  if (!res.ok) { const t = await res.text(); throw new Error(`API ${res.status}: ${t.slice(0,300)}`); }
+  const data = await res.json();
+  return ntAiParseJSON(data.choices?.[0]?.message?.content || '');
+}
+async function ntCallVisionLLM(dataUrl) {
+  if (!_aiCache.key) throw new Error('Введи API-ключ в AI-настройках.');
+  const res = await fetch(NT_AI_CONFIG.baseURL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _aiCache.key },
+    body: JSON.stringify({
+      model: _aiCache.visionModel,
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'text', text: ntBuildPhotoPrompt() },
+          { type: 'image_url', image_url: { url: dataUrl } }
+        ]
+      }],
+      temperature: 0.1, max_tokens: 1500
+    })
+  });
+  if (!res.ok) {
+    const t = await res.text();
+    let hint = '';
+    try { const j = JSON.parse(t); if (j.error?.code === 'model_not_found') hint = `\n\n💡 Модель «${_aiCache.visionModel}» недоступна. Проверь в AI-настройках.`; } catch (_) {}
+    throw new Error(`API ${res.status}: ${t.slice(0,300)}${hint}`);
+  }
+  const data = await res.json();
+  return ntAiParseJSON(data.choices?.[0]?.message?.content || '');
+}
+
+// ---------- Применение данных ----------
+function ntApplyAIData(data) {
+  const set = (id, val) => {
+    const el = document.getElementById(id);
+    if (!el) return false;
+    const s = (val ?? '').toString().trim();
+    if (!s) return false;
+    el.value = s;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    return true;
+  };
+  let filled = 0;
+  if (set('nPlate', data.plate)) filled++;
+  if (set('nModel', data.model)) filled++;
+  if (set('nYear', data.year)) filled++;
+  if (set('nMileage', data.mileage)) filled++;
+  if (data.vin) {
+    const v = String(data.vin).toUpperCase().replace(/[^A-Z0-9]/g,'').replace(/[IOQ]/g,'');
+    if (v) { set('nVin', v); filled++; }
+  }
+  if (set('nClientName', data.clientName)) filled++;
+  if (set('nClientPhone', data.clientPhone)) filled++;
+  if (set('nReason', data.reason)) filled++;
+  if (set('nComment', data.comment)) filled++;
+  if (set('nDamage', data.damage)) filled++;
+
+  if (Array.isArray(data.parts) && data.parts.length) {
+    ntRenderParts(data.parts.map(p => ({ name: p.name||'', qty: parseInt(p.qty,10)||1, status: p.status||'notordered' })));
+    filled++;
+  }
+  if (Array.isArray(data.works) && data.works.length) {
+    ntRenderWorks(data.works.map(w => ({ name: w.name||'', qty: parseInt(w.qty,10)||1, status: w.status||'notstarted' })));
+    filled++;
+  }
+  return filled;
+}
+
+// ---------- Голос → текст ----------
+async function ntHandleVoiceResult(text) {
+  if (!text || text.length < 3) return;
+  ntSetAIStatus('🤖 Разбираю текст…', 'info');
+  try {
+    const data = await ntCallTextLLM(ntBuildTextPrompt(text));
+    const filled = ntApplyAIData(data);
+    ntSetAIStatus(`✓ Заполнено полей: ${filled}.`, 'ok');
+  } catch (e) {
+    ntSetAIStatus('Ошибка разбора: ' + e.message, 'err');
+  }
+}
+
+// ---------- Фото → текст ----------
+function ntPickPhoto() {
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = 'image/*'; inp.capture = 'environment';
+  inp.style.display = 'none';
+  inp.addEventListener('change', () => {
+    const file = inp.files && inp.files[0];
+    if (file) ntHandlePhotoFile(file);
+    inp.remove();
+  });
+  document.body.appendChild(inp);
+  inp.click();
+}
+function ntHandlePhotoFile(file) {
+  const btn = document.getElementById('ntPhotoBtn');
+  return new Promise(resolve => {
+    if (!file) { resolve(); return; }
+    if (!file.type.startsWith('image/')) { ntSetAIStatus('Это не картинка.', 'err'); resolve(); return; }
+    if (file.size > NT_AI_CONFIG.maxImageMB * 1024 * 1024) {
+      ntSetAIStatus(`Файл больше ${NT_AI_CONFIG.maxImageMB} МБ — сожми.`, 'err'); resolve(); return;
+    }
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      if (btn) btn.classList.add('busy');
+      ntSetAIStatus(`🤖 Распознаю фото (${_aiCache.visionModel})…`, 'info');
+      try {
+        const data = await ntCallVisionLLM(e.target.result);
+        const filled = ntApplyAIData(data);
+        ntSetAIStatus(`✓ Распознано. Заполнено полей: ${filled}. Можно сканировать ещё.`, 'ok');
+      } catch (err) {
+        ntSetAIStatus('Ошибка распознавания: ' + err.message, 'err');
+      } finally {
+        if (btn) btn.classList.remove('busy');
+        resolve();
+      }
+    };
+    reader.onerror = () => { ntSetAIStatus('Не удалось прочитать файл.', 'err'); resolve(); };
+    reader.readAsDataURL(file);
+  });
+}
+
+// ---------- Проверка моделей ----------
+async function ntCheckModels() {
+  if (!_aiCache.key) { ntSetAIStatus('Сначала введи API-ключ.', 'err'); return; }
+  ntSetAIStatus('Запрашиваю список моделей…', 'info');
+  try {
+    const res = await fetch(NT_AI_CONFIG.modelsURL, { headers: { 'Authorization': 'Bearer ' + _aiCache.key } });
+    if (!res.ok) throw new Error('API ' + res.status);
+    const data = await res.json();
+    const models = (data.data || data || []).map(m => m.id || m.name || String(m));
+    const vision = models.filter(id => /vl|vision|4o|claude|gemini|deepseek-flash/i.test(id));
+    console.log('=== Все модели ===', models);
+    console.log('=== Vision-кандидаты ===', vision);
+    let msg = `Найдено ${models.length} моделей. `;
+    msg += vision.length ? `Vision: ${vision.slice(0,5).join(', ')}` : 'Vision-моделей нет — фото не сработает.';
+    ntSetAIStatus(msg, vision.length ? 'ok' : 'err');
+    if (models.includes('deepseek-flash')) setTimeout(() => ntSetAIStatus('✓ deepseek-flash доступна.', 'ok'), 1500);
+  } catch (e) {
+    ntSetAIStatus('Ошибка: ' + e.message, 'err');
+  }
+}
+
+// ---------- Микрофон (общий) ----------
+function ntSetupMic(btn, { onResult, onStart, onError } = {}) {
+  if (!btn) return;
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    btn.title = 'Голосовой ввод не поддерживается';
+    btn.addEventListener('click', () => ntSetAIStatus('Браузер не поддерживает Web Speech API. Открой в Chrome/Edge.', 'err'));
+    return;
+  }
+  let rec = null, state = 'idle', collected = '';
+  const origTitle = btn.title || 'Голосовой ввод';
+  const origText = btn.textContent || '🎤';
+
+  function setUI(mode) {
+    btn.classList.toggle('recording', mode === 'recording');
+    btn.classList.toggle('busy', mode === 'processing');
+    if (mode === 'recording') { btn.title = 'Остановить запись'; btn.textContent = '⏹'; }
+    else if (mode === 'processing') { btn.title = 'Распознавание…'; btn.textContent = '⏳'; }
+    else { btn.title = origTitle; btn.textContent = origText; }
+  }
+
+  async function start() {
+    collected = '';
+    rec = new SR();
+    rec.lang = 'ru-RU'; rec.continuous = true; rec.interimResults = true; rec.maxAlternatives = 1;
+    rec.onstart = () => {
+      state = 'recording'; setUI('recording');
+      if (onStart) onStart();
+      else ntSetAIStatus('🎤 Слушаю… нажми ⏹, чтобы остановить.', 'info');
+    };
+    rec.onresult = (e) => {
+      let interim = '', fin = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const r = e.results[i];
+        if (r.isFinal) fin += r[0].transcript; else interim += r[0].transcript;
+      }
+      if (fin) collected += (collected ? ' ' : '') + fin.trim();
+      const preview = (collected + ' ' + interim).trim();
+      if (preview && !onStart) ntSetAIStatus('🎤 ' + preview.slice(0,120) + (preview.length>120?'…':''), 'info');
+    };
+    rec.onerror = (e) => {
+      if (onError) onError(e);
+      else {
+        if (e.error === 'not-allowed') ntSetAIStatus('Доступ к микрофону запрещён.', 'err');
+        else if (e.error !== 'aborted' && e.error !== 'no-speech') ntSetAIStatus('Ошибка записи: ' + e.error, 'err');
+      }
+      if (state === 'recording') { state = 'idle'; setUI('idle'); }
+    };
+    rec.onend = () => { if (state === 'recording') finalize(); };
+    try { rec.start(); }
+    catch (err) { state = 'idle'; setUI('idle'); ntSetAIStatus('Не удалось запустить микрофон: ' + err.message, 'err'); }
+  }
+
+  function finalize() {
+    state = 'processing'; setUI('processing');
+    const text = collected.trim();
+    if (!text || text.length < 3) {
+      state = 'idle'; setUI('idle');
+      ntSetAIStatus('Ничего не распознано — попробуй ещё раз.', 'err');
+      return;
+    }
+    Promise.resolve(onResult(text)).finally(() => { state = 'idle'; setUI('idle'); });
+  }
+
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (state === 'processing') return;
+    if (state === 'recording') { try { rec.stop(); } catch (_) {} }
+    else start();
+  });
+}
+
+// ---------- Автосохранение черновика ----------
+document.addEventListener('input', (e) => {
+  if (!e.target.id) return;
+  const ids = ['nPlate','nModel','nYear','nVin','nMileage','nClientName','nClientPhone','nReason','nComment','nDamage'];
+  if (ids.indexOf(e.target.id) < 0 && !e.target.closest('#ntPartsList,#ntWorksList')) return;
+  if (!document.getElementById('ntPartsList')) return; // не на странице новой задачи
+  const draft = {};
+  ids.forEach(id => { const el = document.getElementById(id); if (el) draft[id] = el.value; });
+  draft.parts = ntCollectParts();
+  draft.works = ntCollectWorks();
+  try { localStorage.setItem(ntDraftKey(), JSON.stringify(draft)); } catch (_) {}
+});
+
+// ---------- Старт AI-модуля ----------
+// Загружаем настройки при смене тенанта / старте
+(function ntInitAI() {
+  const tryLoad = () => {
+    if (!currentTenant()) return;
+    ntLoadAISettings();
+  };
+  // при загрузке
+  if (currentTenant()) setTimeout(tryLoad, 800);
+  // при логине
+  const orig = window.onLoginSubmit;
+  // не патчим глобально — просто подписываемся на событие storage (межтенант)
+  window.addEventListener('storage', (e) => { if (e.key === 'crm_current_tenant') setTimeout(tryLoad, 500); });
+})();
+
+/* ===== [PATCH] конец ===== */
 
 // ============ СТАРТ ============
 renderAuthGate();
