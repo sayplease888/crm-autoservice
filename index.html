@@ -1989,8 +1989,20 @@ function migratePart(p) {
   if (p.sale === undefined || p.sale === null) p.sale = '';
   return p;
 }
-function normalizeTasks(tasks) {
-  (tasks || []).forEach(t => {
+function tasksToArray(raw) {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw.filter(v => v && typeof v === 'object');
+  if (typeof raw === 'object') {
+    return Object.keys(raw)
+      .map(k => raw[k])
+      .filter(v => v && typeof v === 'object');
+  }
+  return [];
+}
+
+function normalizeTasks(rawTasks) {
+  const tasks = tasksToArray(rawTasks);
+  tasks.forEach(t => {
     if (!t.parts) t.parts = [];
     t.parts = t.parts.map(migratePart).filter(partHasContent);
     if (!t.works) t.works = [];
@@ -2012,11 +2024,12 @@ function normalizeTasks(tasks) {
     if (t.column === undefined) t.column = 'waiting';
     if (t.order === undefined) t.order = 0;
   });
-  const numbered = (tasks || []).filter(t => typeof t.number === 'number' && t.number > 0);
+  const numbered = tasks.filter(t => typeof t.number === 'number' && t.number > 0);
   if (numbered.length) state.taskCounter = Math.max(state.taskCounter || 0, ...numbered.map(t => t.number));
-  const unnumbered = (tasks || []).filter(t => typeof t.number !== 'number' || !(t.number > 0))
+  const unnumbered = tasks.filter(t => typeof t.number !== 'number' || !(t.number > 0))
     .sort((a, b) => String(a.createdAt || a.updatedAt || '').localeCompare(String(b.createdAt || b.updatedAt || '')));
   unnumbered.forEach(t => { t.number = nextTaskNumber(); });
+  return tasks;
 }
 function nextTaskNumber() {
   state.taskCounter = (state.taskCounter || 0) + 1;
@@ -2120,12 +2133,14 @@ function loadState() {
   ref.on('value', (snapshot) => {
     const data = snapshot.val();
     if (data) {
-      state.tasks = data.tasks || [];
+      state.tasks = data.tasks;   // может быть массивом ИЛИ объектом — normalizeTasks приведёт
       state.notifications = data.notifications || [];
       state.lastRead = data.lastRead || {};
       state.taskCounter = data.taskCounter || 0;
+    } else {
+      state.tasks = [];
     }
-    normalizeTasks(state.tasks);
+    state.tasks = normalizeTasks(state.tasks);
     render();
   }, (error) => {
     console.error('Firebase read error:', error);
@@ -2133,13 +2148,13 @@ function loadState() {
       const saved = localStorage.getItem(localStorageFallbackKey());
       if (saved) {
         const parsed = JSON.parse(saved);
-        state.tasks = parsed.tasks || [];
+        state.tasks = parsed.tasks;
         state.notifications = parsed.notifications || [];
         state.lastRead = parsed.lastRead || {};
         state.taskCounter = parsed.taskCounter || 0;
       }
     } catch(e) { console.error(e); }
-    normalizeTasks(state.tasks);
+    state.tasks = normalizeTasks(state.tasks);
     render();
   });
 }
