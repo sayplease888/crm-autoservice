@@ -1398,6 +1398,49 @@ th.col-toggle:hover { background: transparent; }
 .nt-rw-add:hover { background: rgba(46,124,246,.15); border-color: #2E7CF6; }
 .nt-rw-empty { text-align: center; padding: 12px; color: #7A8FAE; font-size: 11px; border: 1px dashed rgba(30,78,140,.4); border-radius: 8px; }
 /* ===== [PATCH] конец ===== */
+/* ===== [PATCH] 🎤/📷 в шапке блока «Работы и запчасти» ===== */
+.task-block__header-actions {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+.task-block__mic-btn {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 6px;
+  border: 1px solid rgba(46, 124, 246, 0.4);
+  background: rgba(46, 124, 246, 0.12);
+  color: #2E7CF6;
+  font-size: 14px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.task-block__mic-btn:hover {
+  background: #2E7CF6;
+  border-color: #2E7CF6;
+  color: #fff;
+}
+.task-block__mic-btn.recording {
+  background: #e11d2e;
+  border-color: #e11d2e;
+  color: #fff;
+  animation: ntPulse 1s infinite;
+}
+.task-block__mic-btn.busy {
+  background: #1B4FB0;
+  border-color: #1B4FB0;
+  color: #fff;
+  pointer-events: none;
+  opacity: 0.85;
+}
 </style>
 </head>
 <body>
@@ -3810,10 +3853,14 @@ function openTaskView(taskId) {
   </div>
 </section>
         <section class="task-block">
-          <div class="task-block__header">
-            <div class="task-block__num">2</div><div class="task-block__icon">🔧</div>
-            <div class="task-block__title">Работы и запчасти</div>
-          </div>
+  <div class="task-block__header">
+    <div class="task-block__num">2</div><div class="task-block__icon">🔧</div>
+    <div class="task-block__title">Работы и запчасти</div>
+    <div class="task-block__header-actions">
+      <button type="button" class="task-block__mic-btn" id="blockRWMicBtn" data-task-id="${taskId}">🎤</button>
+      <button type="button" class="task-block__mic-btn" id="blockRWPhotoBtn" data-task-id="${taskId}">📷</button>
+    </div>
+  </div>
           <div class="task-block__content">
             <div class="task-block__fields">
               <div class="task-fields-grid">
@@ -3962,7 +4009,36 @@ function openTaskView(taskId) {
       if (kind === 'work') openWorkModal(taskId, parseInt(idx));
     });
   });
-
+// [PATCH] 🎤/📷 в шапке блока «Работы и запчасти» — дополняют task.parts/works без формы
+const rwMicBtn = modal.querySelector('#blockRWMicBtn');
+if (rwMicBtn) {
+  ntSetupMic(rwMicBtn, {
+    onStart: () => ntSetAIStatus('🎤 Слушаю запчасти и работы… нажми ⏹, чтобы остановить.', 'info'),
+    onResult: async (text) => {
+      ntSetAIStatus('🎤 «' + text.slice(0,100) + (text.length>100?'…':'') + '» — дополняю…', 'info');
+      await ntHandleEditRWOnly(taskId, text);
+    }
+  });
+}
+const rwPhotoBtn = modal.querySelector('#blockRWPhotoBtn');
+if (rwPhotoBtn) {
+  rwPhotoBtn.addEventListener('click', () => {
+    if (rwPhotoBtn.classList.contains('busy')) return;
+    const inp = document.createElement('input');
+    inp.type = 'file'; inp.accept = 'image/*'; inp.capture = 'environment';
+    inp.style.display = 'none';
+    inp.addEventListener('change', () => {
+      const file = inp.files && inp.files[0];
+      if (file) {
+        rwPhotoBtn.classList.add('busy');
+        ntHandleEditPhotoRWOnly(taskId, file).finally(() => rwPhotoBtn.classList.remove('busy'));
+      }
+      inp.remove();
+    });
+    document.body.appendChild(inp);
+    inp.click();
+  });
+}
   pushModalHistory(() => openTaskView(taskId), 'Задача ' + task.car.plate);
 }
 function toggleTaskBlock(blockId) {
@@ -5643,7 +5719,198 @@ document.addEventListener('input', (e) => {
 })();
 
 /* ===== [PATCH] конец ===== */
+/* ===== [PATCH] AI только для запчастей/работ в карточке задачи ===== */
 
+// Голос → дополняет task.parts/works, не трогая форму
+/* ===== [PATCH] AI из шапки блока «Работы и запчасти» — редактирует ВСЁ ===== */
+
+// Применить поля формы редактирования (e_*) к задаче напрямую
+// (используется, когда модалка редактирования не открыта)
+function ntApplyEditFormToTask(task, data) {
+  let changed = 0;
+  if (data.plate && String(data.plate).trim() !== task.car.plate) { task.car.plate = String(data.plate).trim(); changed++; }
+  if (data.model && String(data.model).trim() !== task.car.model) { task.car.model = String(data.model).trim(); changed++; }
+  if (data.year && String(data.year).trim() !== String(task.car.year)) { task.car.year = String(data.year).trim(); changed++; }
+  if (data.vin) {
+    const v = String(data.vin).toUpperCase().replace(/[^A-Z0-9]/g,'').replace(/[IOQ]/g,'');
+    if (v && v !== task.car.vin) { task.car.vin = v; changed++; }
+  }
+  if (data.mileage && String(data.mileage).trim() !== String(task.car.mileage || '')) { task.car.mileage = String(data.mileage).trim(); changed++; }
+  if (data.clientName && String(data.clientName).trim() !== task.client.name) { task.client.name = String(data.clientName).trim() || '—'; changed++; }
+  if (data.clientPhone && String(data.clientPhone).trim() !== task.client.phone) { task.client.phone = String(data.clientPhone).trim() || '—'; changed++; }
+  if (data.reason && String(data.reason).trim() !== task.reason) { task.reason = String(data.reason).trim() || '—'; changed++; }
+  if (data.comment && String(data.comment).trim() !== (task.comment || '')) { task.comment = String(data.comment).trim(); changed++; }
+  if (data.damage && String(data.damage).trim() !== (task.damageDescription || '')) { task.damageDescription = String(data.damage).trim(); changed++; }
+
+  // Исполнитель
+  const assignee = data.assignee || ntParseAssignee(data.__rawText || '');
+  if (assignee && USERS[assignee] && task.assignee !== assignee) { task.assignee = assignee; changed++; }
+
+  // Пост
+  if (data.post) {
+    const p = parseInt(data.post, 10);
+    if (p >= 1 && p <= 4 && task.post !== p) { task.post = p; changed++; }
+  }
+
+  // Время
+  const timeText = data.scheduledTimeText || data.__rawText || '';
+  if (timeText) {
+    const iso = ntParseTimeText(timeText);
+    if (iso && task.scheduledTime !== iso) { task.scheduledTime = iso; changed++; }
+  }
+
+  return changed;
+}
+
+// Голос → редактирует ВСЁ в задаче
+async function ntHandleEditRWOnly(taskId, text) {
+  if (!text || text.length < 3) return;
+  const task = state.tasks.find(t => t.id === taskId);
+  if (!task) return;
+
+  ntSetAIStatus('🤖 Разбираю текст…', 'info');
+  try {
+    // Полный промпт для редактирования (тот же, что в openEditTask)
+    const prompt = ntBuildEditTextPrompt(text, task);
+    const data = await ntCallTextLLM(prompt);
+    data.__rawText = text;
+
+    if (!data.assignee) data.assignee = ntParseAssignee(text);
+    if (!data.scheduledTimeText && /завтра|послезавтра|сегодня|через час|понедельник|вторник|среду|четверг|пятницу|субботу|воскресенье/i.test(text)) {
+      data.scheduledTimeText = text;
+    }
+
+    // Применяем скалярные поля прямо к task
+    const fieldsChanged = ntApplyEditFormToTask(task, data);
+
+    // Дополняем/обновляем parts/works
+    const merged = ntMergeIntoTask(taskId, {
+      parts: Array.isArray(data.parts) ? data.parts : [],
+      works: Array.isArray(data.works) ? data.works : []
+    });
+
+    // Оплата (с confirm)
+    const paid = ntMaybeApplyPayment(taskId, data);
+
+    if (fieldsChanged || merged.partsAdded || merged.partsUpdated || merged.worksAdded || merged.worksUpdated || paid) {
+      task.updatedAt = new Date().toISOString();
+      task.log = task.log || [];
+      task.log.push({
+        time: new Date().toISOString(),
+        user: USERS[state.currentUser].name,
+        text: `AI из карточки: полей ${fieldsChanged}, запчасти +${merged.partsAdded}/~${merged.partsUpdated}, работы +${merged.worksAdded}/~${merged.worksUpdated}${paid ? ', +оплата' : ''}`
+      });
+      saveState(taskId);
+    }
+
+    const info = [];
+    if (fieldsChanged) info.push(`полей: ${fieldsChanged}`);
+    if (merged.partsAdded) info.push(`+${merged.partsAdded} запч.`);
+    if (merged.partsUpdated) info.push(`~${merged.partsUpdated} запч.`);
+    if (merged.worksAdded) info.push(`+${merged.worksAdded} раб.`);
+    if (merged.worksUpdated) info.push(`~${merged.worksUpdated} раб.`);
+    if (paid) info.push('+оплата');
+
+    if (info.length) {
+      ntSetAIStatus(`✓ Обновлено: ${info.join(', ')}. Перерисовываю…`, 'ok');
+      closeModal();
+      render();
+      setTimeout(() => openTaskView(taskId), 120);
+    } else {
+      ntSetAIStatus('Ничего не найдено в тексте.', 'info');
+    }
+  } catch (e) {
+    ntSetAIStatus('Ошибка разбора: ' + e.message, 'err');
+  }
+}
+
+// Фото → редактирует ВСЁ в задаче
+function ntHandleEditPhotoRWOnly(taskId, file) {
+  return new Promise(resolve => {
+    if (!file) { resolve(); return; }
+    if (!file.type.startsWith('image/')) { ntSetAIStatus('Это не картинка.', 'err'); resolve(); return; }
+    if (file.size > NT_AI_CONFIG.maxImageMB * 1024 * 1024) {
+      ntSetAIStatus(`Файл больше ${NT_AI_CONFIG.maxImageMB} МБ.`, 'err'); resolve(); return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      ntSetAIStatus(`🤖 Распознаю фото (${_aiCache.visionModel})…`, 'info');
+      try {
+        const task = state.tasks.find(t => t.id === taskId);
+        if (!task) throw new Error('Задача не найдена');
+
+        // Полный промпт для редактирования по фото
+        const prompt = ntBuildEditPhotoPrompt('', task);
+
+        const res = await fetch(NT_AI_CONFIG.baseURL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _aiCache.key },
+          body: JSON.stringify({
+            model: _aiCache.visionModel,
+            messages: [{ role: 'user', content: [
+              { type: 'text', text: prompt },
+              { type: 'image_url', image_url: { url: e.target.result } }
+            ]}],
+            temperature: 0.1, max_tokens: 2000
+          })
+        });
+        if (!res.ok) throw new Error('API ' + res.status);
+        const jres = await res.json();
+        const data = ntAiParseJSON(jres.choices?.[0]?.message?.content || '');
+        data.__rawText = data.raw_text || '';
+
+        // Применяем скалярные поля
+        const fieldsChanged = ntApplyEditFormToTask(task, data);
+
+        // Дополняем parts/works
+        const merged = ntMergeIntoTask(taskId, {
+          parts: Array.isArray(data.parts) ? data.parts : [],
+          works: Array.isArray(data.works) ? data.works : []
+        });
+
+        // Оплата
+        const paid = ntMaybeApplyPayment(taskId, data);
+
+        if (fieldsChanged || merged.partsAdded || merged.partsUpdated || merged.worksAdded || merged.worksUpdated || paid) {
+          task.updatedAt = new Date().toISOString();
+          task.log = task.log || [];
+          task.log.push({
+            time: new Date().toISOString(),
+            user: USERS[state.currentUser].name,
+            text: `AI из карточки (фото): полей ${fieldsChanged}, запчасти +${merged.partsAdded}/~${merged.partsUpdated}, работы +${merged.worksAdded}/~${merged.worksUpdated}${paid ? ', +оплата' : ''}`
+          });
+          saveState(taskId);
+        }
+
+        const info = [];
+        if (fieldsChanged) info.push(`полей: ${fieldsChanged}`);
+        if (merged.partsAdded) info.push(`+${merged.partsAdded} запч.`);
+        if (merged.partsUpdated) info.push(`~${merged.partsUpdated} запч.`);
+        if (merged.worksAdded) info.push(`+${merged.worksAdded} раб.`);
+        if (merged.worksUpdated) info.push(`~${merged.worksUpdated} раб.`);
+        if (paid) info.push('+оплата');
+
+        if (info.length) {
+          ntSetAIStatus(`✓ Обновлено: ${info.join(', ')}. Перерисовываю…`, 'ok');
+          closeModal();
+          render();
+          setTimeout(() => openTaskView(taskId), 120);
+        } else {
+          ntSetAIStatus('На фото ничего не найдено для обновления.', 'info');
+        }
+      } catch (err) {
+        ntSetAIStatus('Ошибка распознавания: ' + err.message, 'err');
+      } finally { resolve(); }
+    };
+    reader.onerror = () => { ntSetAIStatus('Не удалось прочитать файл.', 'err'); resolve(); };
+    reader.readAsDataURL(file);
+  });
+}
+/* ===== [PATCH] конец ===== */
+
+
+/* ===== [PATCH] конец ===== */
 
 // ============ СТАРТ ============
 renderAuthGate();
