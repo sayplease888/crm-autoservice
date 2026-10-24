@@ -4303,44 +4303,126 @@ function openAutotradeVin(vin) {
   if (!vin) return;
   window.open('https://autotrade.su/novosibirsk/vin/search/groups/' + encodeURIComponent(vin) + '#groups', '_blank', 'noopener,noreferrer');
 }
+/* ===== [PATCH] openEditTask — все параметры + AI ===== */
 function openEditTask(taskId) {
   const task = state.tasks.find(t => t.id === taskId);
   if (!task) return;
   const modal = document.createElement('div');
   modal.className = 'modal-overlay';
   modal.innerHTML = `
-    <div class="modal">
-      <h2>Редактирование</h2>
-      <label>Госномер</label><input id="e_plate" value="${esc(task.car.plate)}">
+    <div class="modal" style="max-width:640px">
+      <h2>✏️ Редактирование задачи</h2>
+      <label>Госномер</label>
+      <div class="nt-ai-row">
+        <input id="e_plate" value="${esc(task.car.plate)}" style="flex:1">
+        <button type="button" class="nt-icon-btn" id="eMicBtn" title="Голосовой ввод (все поля)">🎤</button>
+        <button type="button" class="nt-icon-btn" id="ePhotoBtn" title="Сканировать фото">📷</button>
+      </div>
       <label>Модель</label><input id="e_model" value="${esc(task.car.model)}">
       <label>Год</label><input id="e_year" type="number" value="${esc(task.car.year)}">
-      <label>VIN</label><input id="e_vin" maxlength="17" value="${esc(task.car.vin)}">
+      <label>VIN</label><input id="e_vin" maxlength="17" style="text-transform:uppercase" value="${esc(task.car.vin)}">
       <label>Пробег</label><input id="e_mileage" type="number" value="${esc(task.car.mileage || '')}">
       <label>Клиент ФИО</label><input id="e_clientName" value="${esc(task.client.name)}">
       <label>Телефон</label><input id="e_clientPhone" value="${esc(task.client.phone)}">
-      <label>Причина</label><textarea id="e_reason">${esc(task.reason)}</textarea>
+      <label>Причина обращения</label><textarea id="e_reason">${esc(task.reason)}</textarea>
+      <label>Комментарий</label><textarea id="e_comment">${esc(task.comment || '')}</textarea>
+      <label>Состояние авто при приёмке</label><textarea id="e_damage">${esc(task.damageDescription || '')}</textarea>
+      <label>Исполнитель задачи</label>
+      <select id="e_assignee">
+        <option value="">— не назначен —</option>
+        ${Object.keys(USERS).filter(k => USERS[k].role === 'worker').map(k => `<option value="${k}" ${task.assignee === k ? 'selected' : ''}>${USERS[k].name}</option>`).join('')}
+      </select>
+      <label>Пост</label>
+      <select id="e_post">
+        <option value="">—</option>
+        ${[1,2,3,4].map(n => `<option value="${n}" ${task.post == n ? 'selected' : ''}>Пост №${n}</option>`).join('')}
+      </select>
+      <label>Время записи</label>
+      <div class="sched-picker">
+        <input type="date" id="e_sched_date" value="${(function(){ const p = isoToDateTimeParts(task.scheduledTime); return p.date || ''; })()}">
+        <select id="e_sched_time" class="slot-select">
+          <option value="">— время —</option>
+          ${timeSlots().map(s => {
+            const cur = isoToDateTimeParts(task.scheduledTime);
+            const sel = cur.time ? (roundToSlot(cur.time) === s ? 'selected' : '') : '';
+            return `<option value="${s}" ${sel}>${s}</option>`;
+          }).join('')}
+        </select>
+      </div>
       <label>Добавить комментарий</label><textarea id="e_newComment"></textarea>
-      <div class="modal-actions"><button onclick="closeModal()">Отмена</button><button class="primary" onclick="saveEditTask('${taskId}')">Сохранить</button></div>
+      <div class="nt-ai-status" id="ntAiStatus"></div>
+      <div class="modal-actions">
+        <span style="flex:1;font-size:11px;color:#7A8FAE;align-self:center">
+          🎤/📷 заполнят поля, дополнят запчасти/работы, зададут цены, назначат исполнителя, время, пост. Скажи «назначь слесарю», «завтра в 14:30», «на пост 2».
+        </span>
+        <button onclick="closeModal()">Отмена</button>
+        <button class="primary" onclick="saveEditTask('${taskId}')">Сохранить</button>
+      </div>
     </div>`;
   document.getElementById('modalContainer').appendChild(modal);
+
+  ntSetupMic(document.getElementById('eMicBtn'), {
+    onResult: async (text) => {
+      ntSetAIStatus('🎤 Распознано: «' + text.slice(0,80) + (text.length>80?'…':'') + '»', 'info');
+      await ntHandleEditAIData(taskId, text);
+    }
+  });
+
+  document.getElementById('ePhotoBtn').addEventListener('click', () => {
+    const btn = document.getElementById('ePhotoBtn');
+    if (btn.classList.contains('busy')) return;
+    const inp = document.createElement('input');
+    inp.type = 'file'; inp.accept = 'image/*'; inp.capture = 'environment';
+    inp.style.display = 'none';
+    inp.addEventListener('change', () => {
+      const file = inp.files && inp.files[0];
+      if (file) { btn.classList.add('busy'); ntHandleEditPhoto(taskId, file).finally(() => btn.classList.remove('busy')); }
+      inp.remove();
+    });
+    document.body.appendChild(inp);
+    inp.click();
+  });
 }
+
+/* ===== [PATCH] saveEditTask — все поля + оплата ===== */
 function saveEditTask(taskId) {
   const task = state.tasks.find(t => t.id === taskId);
-  task.car.plate = document.getElementById('e_plate').value.trim();
-  task.car.model = document.getElementById('e_model').value.trim();
-  task.car.year = document.getElementById('e_year').value;
-  task.car.vin = document.getElementById('e_vin').value.trim().toUpperCase();
-  task.car.mileage = document.getElementById('e_mileage').value.trim();
-  task.client.name = document.getElementById('e_clientName').value.trim();
-  task.client.phone = document.getElementById('e_clientPhone').value.trim();
-  task.reason = document.getElementById('e_reason').value.trim();
-  const nc = document.getElementById('e_newComment').value.trim();
+  if (!task) return;
+  const val = id => (document.getElementById(id)?.value || '').trim();
+
+  task.car.plate = val('e_plate');
+  task.car.model = val('e_model');
+  task.car.year = val('e_year');
+  task.car.vin = val('e_vin').toUpperCase();
+  task.car.mileage = val('e_mileage');
+  task.client.name = val('e_clientName') || '—';
+  task.client.phone = val('e_clientPhone') || '—';
+  task.reason = val('e_reason') || '—';
+  task.comment = val('e_comment');
+  task.damageDescription = val('e_damage');
+
+  const assignee = val('e_assignee');
+  task.assignee = assignee || null;
+
+  const post = val('e_post');
+  task.post = post ? parseInt(post, 10) : null;
+
+  const d = document.getElementById('e_sched_date')?.value;
+  const t = document.getElementById('e_sched_time')?.value;
+  if (d && t) {
+    task.scheduledTime = partsToIso(d, t) || null;
+  } else if (!d && !t) {
+    task.scheduledTime = null;
+  }
+
+  const nc = val('e_newComment');
   if (nc) task.comment = (task.comment ? task.comment + '\n' : '') + `[${nowStr()}] ${nc}`;
+
   task.updatedAt = new Date().toISOString();
   saveState(taskId);
   closeModal();
   render();
-  setTimeout(()=>openTaskView(taskId), 100);
+  setTimeout(() => openTaskView(taskId), 100);
 }
 function deleteTask(taskId) {
   const task = state.tasks.find(t => t.id === taskId);
@@ -5198,6 +5280,247 @@ function ntHandlePhotoFile(file) {
   });
 }
 
+// ---------- Edit-mode AI helpers (ported from v2) ----------
+function ntParseAssignee(text) {
+  if (!text) return null;
+  const s = String(text).toLowerCase().replace(/ё/g, 'е');
+  const map = { 'слесар':'locksmith', 'электрик':'electric', 'моторист':'motorist' };
+  for (const [frag, key] of Object.entries(map)) if (s.includes(frag)) return key;
+  return null;
+}
+
+function ntParseTimeText(text) {
+  if (!text) return null;
+  const s = String(text).toLowerCase().replace(/ё/g, 'е');
+  let hh = null, mm = 0;
+  let m = s.match(/(\d{1,2})\s*[:.\-]\s*(\d{1,2})/);
+  if (m) { hh = parseInt(m[1], 10); mm = parseInt(m[2], 10); }
+  else { m = s.match(/в\s+(\d{1,2})(?:\s*час|$)/); if (m) { hh = parseInt(m[1], 10); mm = 0; } }
+  if (hh === null || isNaN(hh) || hh < 0 || hh > 23) return null;
+  if (mm < 0 || mm > 59) mm = 0;
+  const now = new Date();
+  let day = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  if (/\bчерез\s+час/.test(s)) { const d = new Date(); d.setMinutes(d.getMinutes() + 60); day = new Date(d.getFullYear(), d.getMonth(), d.getDate()); hh = d.getHours(); mm = d.getMinutes(); }
+  else if (/\bзавтра\b/.test(s)) day.setDate(day.getDate() + 1);
+  else if (/\bпослезавтра\b/.test(s)) day.setDate(day.getDate() + 2);
+  else {
+    const wd = { 'понедельник':1, 'вторник':2, 'среду':3, 'среда':3, 'четверг':4, 'пятницу':5, 'пятница':5, 'субботу':6, 'суббота':6, 'воскресенье':0, 'воскресение':0 };
+    for (const [name, w] of Object.entries(wd)) if (s.includes(name)) { const cur = day.getDay(); const diff = (w - cur + 7) % 7 || 7; day.setDate(day.getDate() + diff); break; }
+  }
+  const result = new Date(day.getFullYear(), day.getMonth(), day.getDate(), hh, mm, 0, 0);
+  const totalMin = result.getHours() * 60 + result.getMinutes();
+  const snapped = Math.round(totalMin / 30) * 30;
+  const clamped = Math.min(Math.max(snapped, SLOT_START_HOUR*60), SLOT_END_HOUR*60);
+  result.setHours(Math.floor(clamped / 60), clamped % 60, 0, 0);
+  return result.toISOString();
+}
+
+function ntBuildEditTextPrompt(text, task) {
+  const workers = Object.keys(USERS).filter(k => USERS[k].role === 'worker')
+    .map(k => `${USERS[k].name} (key="${k}")`).join(', ');
+  return `Ты — ассистент автосервиса. Пользователь продиктовал текст для обновления задачи.
+
+ТЕКУЩИЕ данные:
+- Госномер: "${task.car.plate || ''}"
+- Модель: "${task.car.model || ''}"
+- Год: "${task.car.year || ''}"
+- VIN: "${task.car.vin || ''}"
+- Пробег: "${task.car.mileage || ''}"
+- Клиент: "${task.client.name || ''}" / "${task.client.phone || ''}"
+- Причина: "${task.reason || ''}"
+- Исполнитель: "${task.assignee || ''}"
+- Пост: "${task.post || ''}"
+
+Доступные работники: ${workers}
+
+Пользователь продиктовал:
+"""${text}"""
+
+Верни СТРОГО валидный JSON без markdown:
+{
+  "plate": null, "model": null, "year": null, "vin": null, "mileage": null,
+  "clientName": null, "clientPhone": null, "reason": null, "comment": null, "damage": null,
+  "assignee": null, "post": null, "scheduledTimeText": null,
+  "parts": [{"name":"","qty":1,"purchase":null,"sale":null,"status":"notordered"}],
+  "works": [{"name":"","hours":null,"cost":null,"price":null,"status":"notstarted"}]
+}
+Правила:
+- null — если параметр НЕ упомянут. НЕ придумывай.
+- "назначь слесарю" / "слесарь Иванов" → assignee = "locksmith".
+- "завтра", "в пятницу", "через час" → scheduledTimeText = точная фраза.
+- Цены: "закупка 500, продажа 800" → purchase:500, sale:800. Только цена → price/sale.
+- parts/works — если реально названы. Для существующих (по имени) AI может обновить qty/status/purchase/sale/hours/cost/price.
+- VIN: ровно 17 символов, без I/O/Q.`;
+}
+
+function ntBuildEditPhotoPrompt(textHint, task) {
+  return `Ты — оператор автосервиса. На фото документ (СТС, ПТС, наряд-заказ, чек), VIN или авто.
+ТЕКУЩИЕ данные: plate="${task.car.plate || ''}", model="${task.car.model || ''}", vin="${task.car.vin || ''}"
+${textHint ? `Комментарий: "${textHint}"` : ''}
+Верни СТРОГО JSON без markdown:
+{
+  "raw_text": "", "plate": null, "model": null, "year": null, "vin": null, "mileage": null,
+  "clientName": null, "clientPhone": null, "reason": null, "comment": null, "damage": null,
+  "assignee": null, "post": null, "scheduledTimeText": null,
+  "parts": [{"name":"","qty":1,"purchase":null,"sale":null,"status":"notordered"}],
+  "works": [{"name":"","hours":null,"cost":null,"price":null,"status":"notstarted"}]
+}
+Правила: VIN ровно 17 символов, без I/O/Q. Если поля нет — null. Не придумывай. Цены — только если видны.`;
+}
+
+function ntApplyEditAIData(data) {
+  const set = (id, val) => { const el = document.getElementById(id); if (!el) return false; const s = (val ?? '').toString().trim(); if (!s) return false; el.value = s; el.dispatchEvent(new Event('input', { bubbles: true })); return true; };
+  let filled = 0;
+  if (set('e_plate', data.plate)) filled++;
+  if (set('e_model', data.model)) filled++;
+  if (set('e_year', data.year)) filled++;
+  if (set('e_mileage', data.mileage)) filled++;
+  if (data.vin) { const v = String(data.vin).toUpperCase().replace(/[^A-Z0-9]/g,'').replace(/[IOQ]/g,''); if (v) { set('e_vin', v); filled++; } }
+  if (set('e_clientName', data.clientName)) filled++;
+  if (set('e_clientPhone', data.clientPhone)) filled++;
+  if (set('e_reason', data.reason)) filled++;
+  if (set('e_comment', data.comment)) filled++;
+  if (set('e_damage', data.damage)) filled++;
+  const assignee = data.assignee || ntParseAssignee(data.__rawText || '');
+  if (assignee && USERS[assignee]) { const sel = document.getElementById('e_assignee'); if (sel) { sel.value = assignee; filled++; } }
+  if (data.post) { const sel = document.getElementById('e_post'); if (sel) { sel.value = String(data.post); filled++; } }
+  const timeText = data.scheduledTimeText || data.__rawText || '';
+  if (timeText) { const iso = ntParseTimeText(timeText); if (iso) { const p = isoToDateTimeParts(iso); const dEl = document.getElementById('e_sched_date'); const tEl = document.getElementById('e_sched_time'); if (dEl) dEl.value = p.date; if (tEl) tEl.value = roundToSlot(p.time); filled++; } }
+  return filled;
+}
+
+function ntMergeIntoTask(taskId, data) {
+  const task = state.tasks.find(t => t.id === taskId);
+  if (!task) return { partsAdded: 0, partsUpdated: 0, worksAdded: 0, worksUpdated: 0 };
+  let partsAdded = 0, partsUpdated = 0, worksAdded = 0, worksUpdated = 0;
+  if (Array.isArray(data.parts) && data.parts.length) {
+    task.parts = task.parts || [];
+    const byName = new Map();
+    task.parts.forEach((p, i) => byName.set(String(p.name || '').trim().toLowerCase(), i));
+    data.parts.forEach(p => {
+      const name = String(p.name || '').trim(); if (!name) return;
+      const key = name.toLowerCase(); const idx = byName.get(key);
+      if (idx !== undefined) {
+        const cur = task.parts[idx]; let ch = false;
+        if (p.qty != null) { const q = Math.max(1, parseInt(p.qty,10)||1); if (q !== cur.quantity) { cur.quantity = q; ch = true; } }
+        if (p.status && ['notordered','ordered','instock'].includes(p.status) && p.status !== cur.status) { cur.status = p.status; ch = true; }
+        if (p.purchase != null && String(p.purchase) !== String(cur.purchase)) { cur.purchase = p.purchase; ch = true; }
+        if (p.sale != null && String(p.sale) !== String(cur.sale)) { cur.sale = p.sale; ch = true; }
+        if (ch) partsUpdated++;
+      } else {
+        task.parts.push({ name, article: '', quantity: Math.max(1, parseInt(p.qty,10)||1), purchase: p.purchase != null ? p.purchase : '', sale: p.sale != null ? p.sale : '', status: ['ordered','instock'].includes(p.status) ? p.status : 'notordered', notes: [], note: '', link: '' });
+        byName.set(key, task.parts.length - 1); partsAdded++;
+      }
+    });
+  }
+  if (Array.isArray(data.works) && data.works.length) {
+    task.works = task.works || [];
+    const byName = new Map();
+    task.works.forEach((w, i) => byName.set(String(w.name || '').trim().toLowerCase(), i));
+    data.works.forEach(w => {
+      const name = String(w.name || '').trim(); if (!name) return;
+      const key = name.toLowerCase(); const idx = byName.get(key);
+      if (idx !== undefined) {
+        const cur = task.works[idx]; let ch = false;
+        if (w.hours != null && String(w.hours) !== String(cur.hours)) { cur.hours = w.hours; ch = true; }
+        if (w.cost != null && String(w.cost) !== String(cur.cost)) { cur.cost = w.cost; ch = true; }
+        if (w.price != null && String(w.price) !== String(cur.price)) { cur.price = w.price; ch = true; }
+        if (w.status && ['notstarted','inwork','finished'].includes(w.status) && w.status !== cur.status) { cur.status = w.status; ch = true; }
+        if (ch) worksUpdated++;
+      } else {
+        task.works.push({ name, hours: w.hours || '', cost: w.cost || '', price: w.price || '', status: ['inwork','finished'].includes(w.status) ? w.status : 'notstarted', assignee: '', comment: '', link: '' });
+        byName.set(key, task.works.length - 1); worksAdded++;
+      }
+    });
+  }
+  const total = partsAdded + partsUpdated + worksAdded + worksUpdated;
+  if (total) {
+    task.updatedAt = new Date().toISOString();
+    task.log = task.log || [];
+    task.log.push({ time: new Date().toISOString(), user: USERS[state.currentUser].name, text: `AI: запчасти +${partsAdded}/~${partsUpdated}, работы +${worksAdded}/~${worksUpdated}` });
+    saveState(taskId);
+  }
+  return { partsAdded, partsUpdated, worksAdded, worksUpdated };
+}
+
+function ntMaybeApplyPayment(taskId, data) {
+  if (!data.payment || !data.payment.amount) return false;
+  const amount = Number(data.payment.amount);
+  if (!isFinite(amount) || amount <= 0) return false;
+  const task = state.tasks.find(t => t.id === taskId);
+  if (!task) return false;
+  const method = data.payment.method || 'Наличные';
+  if (!confirm(`Записать оплату ${amount.toLocaleString('ru-RU')} ₽ (${method})?`)) return false;
+  task.payments = task.payments || [];
+  task.payments.push({ date: new Date().toISOString(), amount, method, comment: data.payment.comment || 'AI-ввод', user: USERS[state.currentUser].name });
+  task.updatedAt = new Date().toISOString();
+  task.log = task.log || [];
+  task.log.push({ time: new Date().toISOString(), user: USERS[state.currentUser].name, text: `Оплата ${amount.toLocaleString('ru-RU')} ₽ (AI)` });
+  saveState(taskId);
+  return true;
+}
+
+async function ntHandleEditAIData(taskId, text) {
+  if (!text || text.length < 3) return;
+  const task = state.tasks.find(t => t.id === taskId); if (!task) return;
+  ntSetAIStatus('🤖 Разбираю текст…', 'info');
+  try {
+    const data = await ntCallTextLLM(ntBuildEditTextPrompt(text, task));
+    data.__rawText = text;
+    if (!data.assignee) data.assignee = ntParseAssignee(text);
+    if (!data.scheduledTimeText && /завтра|послезавтра|сегодня|через час|понедельник|вторник|среду|четверг|пятницу|субботу|воскресенье/i.test(text)) data.scheduledTimeText = text;
+    const filled = ntApplyEditAIData(data);
+    const merged = ntMergeIntoTask(taskId, data);
+    const paid = ntMaybeApplyPayment(taskId, data);
+    const info = [];
+    if (merged.partsAdded) info.push(`+${merged.partsAdded} запч.`);
+    if (merged.partsUpdated) info.push(`~${merged.partsUpdated} запч.`);
+    if (merged.worksAdded) info.push(`+${merged.worksAdded} раб.`);
+    if (merged.worksUpdated) info.push(`~${merged.worksUpdated} раб.`);
+    if (paid) info.push('+оплата');
+    const suffix = info.length ? ` · ${info.join(', ')}` : '';
+    ntSetAIStatus(`✓ Заполнено полей: ${filled}${suffix}. Нажми «Сохранить».`, 'ok');
+  } catch (e) { ntSetAIStatus('Ошибка разбора: ' + e.message, 'err'); }
+}
+
+function ntHandleEditPhoto(taskId, file) {
+  return new Promise(resolve => {
+    if (!file) { resolve(); return; }
+    if (!file.type.startsWith('image/')) { ntSetAIStatus('Это не картинка.', 'err'); resolve(); return; }
+    if (file.size > NT_AI_CONFIG.maxImageMB * 1024 * 1024) { ntSetAIStatus(`Файл больше ${NT_AI_CONFIG.maxImageMB} МБ.`, 'err'); resolve(); return; }
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      ntSetAIStatus(`🤖 Распознаю фото (${_aiCache.visionModel})…`, 'info');
+      try {
+        const task = state.tasks.find(t => t.id === taskId);
+        const prompt = ntBuildEditPhotoPrompt('', task);
+        const res = await fetch(NT_AI_CONFIG.baseURL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _aiCache.key },
+          body: JSON.stringify({ model: _aiCache.visionModel, messages: [{ role: 'user', content: [ { type: 'text', text: prompt }, { type: 'image_url', image_url: { url: e.target.result } } ] }], temperature: 0.1, max_tokens: 2000 })
+        });
+        if (!res.ok) throw new Error('API ' + res.status);
+        const jres = await res.json();
+        const data = ntAiParseJSON(jres.choices?.[0]?.message?.content || '');
+        data.__rawText = data.raw_text || '';
+        const filled = ntApplyEditAIData(data);
+        const merged = ntMergeIntoTask(taskId, data);
+        const paid = ntMaybeApplyPayment(taskId, data);
+        const info = [];
+        if (merged.partsAdded) info.push(`+${merged.partsAdded} запч.`);
+        if (merged.partsUpdated) info.push(`~${merged.partsUpdated} запч.`);
+        if (merged.worksAdded) info.push(`+${merged.worksAdded} раб.`);
+        if (merged.worksUpdated) info.push(`~${merged.worksUpdated} раб.`);
+        if (paid) info.push('+оплата');
+        const suffix = info.length ? ` · ${info.join(', ')}` : '';
+        ntSetAIStatus(`✓ Распознано. Заполнено полей: ${filled}${suffix}. Нажми «Сохранить».`, 'ok');
+      } catch (err) { ntSetAIStatus('Ошибка распознавания: ' + err.message, 'err'); }
+      finally { resolve(); }
+    };
+    reader.onerror = () => { ntSetAIStatus('Не удалось прочитать файл.', 'err'); resolve(); };
+    reader.readAsDataURL(file);
+  });
+}
 // ---------- Проверка моделей ----------
 async function ntCheckModels() {
   if (!_aiCache.key) { ntSetAIStatus('Сначала введи API-ключ.', 'err'); return; }
@@ -5320,6 +5643,7 @@ document.addEventListener('input', (e) => {
 })();
 
 /* ===== [PATCH] конец ===== */
+
 
 // ============ СТАРТ ============
 renderAuthGate();
