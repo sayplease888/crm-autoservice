@@ -5150,6 +5150,7 @@ function ntClearDraft() {
 // ---------- Промпты ----------
 function ntBuildTextPrompt(text) {
   return `Ты — парсер задач для автосервиса. Извлеки поля из текста.
+${ntBuildTaskContext(null)}
 
 Верни СТРОГО валидный JSON без markdown:
 {
@@ -5177,7 +5178,7 @@ function ntBuildTextPrompt(text) {
 }
 function ntBuildPhotoPrompt() {
   return `Ты — оператор автосервиса. На фото — документ (СТС, ПТС, наряд-заказ, чек) или авто с номером. Извлеки данные для CRM.
-
+${ntBuildTaskContext(null)}
 Верни СТРОГО валидный JSON без markdown:
 {
   "raw_text": "весь видимый текст",
@@ -5202,6 +5203,10 @@ function ntBuildPhotoPrompt() {
 function ntBuildRWAppendPrompt(text, currentParts, currentWorks) {
   return `Ты — оператор автосервиса. Пользователь продиктовал фрагмент — дополни списки запчастей и работ.
 
+=== NOTE: статусы и поля ===
+part: { name, qty (≥1), purchase (₽), sale (₽), status: "notordered"|"ordered"|"instock" }
+work: { name, hours, cost (₽), price (₽), status: "notstarted"|"inwork"|"finished" }
+
 УЖЕ ЕСТЬ запчасти:
 ${JSON.stringify(currentParts, null, 2)}
 
@@ -5221,7 +5226,124 @@ ${JSON.stringify(currentWorks, null, 2)}
 - Если позиция уже есть и назвали количество — обнови qty.
 - Не дублируй: «замена масла» — работа, «масло» — запчасть.`;
 }
+/* ===== [PATCH] Контекст задачи для AI-промптов ===== */
 
+// Возвращает читаемый блок NOTE + TASK для вставки в любой промпт.
+// task — объект задачи или null (тогда только схема)
+function ntBuildTaskContext(task) {
+  const note = `
+=== NOTE: структура задачи CRM ===
+
+КАРТОЧКА АВТОМОБИЛЯ:
+- car.plate        — госномер РФ, формат А123ВС777 (без региона, если не назван)
+- car.model        — марка + модель (например "Kia Rio")
+- car.year         — год выпуска, число
+- car.vin          — VIN, РОВНО 17 символов, только A-Z и 0-9, без I/O/Q
+- car.mileage      — пробег в км, число
+
+КЛИЕНТ:
+- client.name      — ФИО владельца
+- client.phone     — телефон
+
+ЗАДАЧА:
+- reason           — краткая причина обращения (2-4 слова): "ТО", "ремонт", "диагностика", "жалоба", "консультация", "запчасти", "другое"
+- comment          — остальные детали, пожелания, свободный текст
+- damageDescription— состояние авто при приёмке
+
+ОРГАНИЗАЦИЯ:
+- assignee         — key работника, один из: ${Object.keys(USERS).filter(k=>USERS[k].role==='worker').map(k=>`"${k}" (${USERS[k].name})`).join(', ')}
+- post             — номер поста, число 1..4
+- scheduledTime    — дата+время записи, ISO-строка
+
+СТАТУСЫ ЗАПЧАСТЕЙ (part.status):
+- "notordered" — не заказано (по умолчанию)
+- "ordered"    — заказано у поставщика
+- "instock"    — есть на складе
+
+СТАТУСЫ РАБОТ (work.status):
+- "notstarted" — не начато (по умолчанию)
+- "inwork"     — в работе
+- "finished"   — завершено
+
+ПОЛЯ ЗАПЧАСТИ (part):
+- name        — название
+- qty         — количество, целое ≥ 1
+- purchase    — закупочная цена, ₽ (число или "")
+- sale        — цена продажи клиенту, ₽ (число или "")
+- status      — см. статусы запчастей
+- article     — артикул (можно пустым)
+
+ПОЛЯ РАБОТЫ (work):
+- name        — название работы
+- hours       — нормо-часы (число или "")
+- cost        — себестоимость, ₽ (число или "")
+- price       — цена для клиента, ₽ (число или "")
+- status      — см. статусы работ
+- assignee    — key исполнителя отдельной работы (опционально)
+
+ОПЛАТА (payment):
+- amount      — сумма, ₽ (число > 0)
+- method      — "Наличные" или "Перевод"
+- comment     — короткий комментарий
+
+ПРАВИЛА:
+1. Если параметр НЕ упомянут в новом тексте — верни null (не затирай существующее).
+2. Если пользователь говорит "добавь к каждой запчасти..." — обработай ВСЕ существующие parts из TASK ниже.
+3. Если пользователь говорит "составь список по причине/комментарию" — проанализируй reason и comment из TASK и предложи логичные parts/works.
+4. Существующие parts/works обновляй ПО ИМЕНИ (без учёта регистра). Новые — добавляй.
+5. Не дублируй: "замена масла" — работа, "масло" — запчасть.
+`;
+
+  let taskBlock = "";
+  if (task) {
+    // компактная сериализация задачи без лишних полей
+    const t = {
+      car: {
+        plate: task.car?.plate || "",
+        model: task.car?.model || "",
+        year: task.car?.year || "",
+        vin: task.car?.vin || "",
+        mileage: task.car?.mileage || ""
+      },
+      client: {
+        name: task.client?.name || "",
+        phone: task.client?.phone || ""
+      },
+      reason: task.reason || "",
+      comment: task.comment || "",
+      damageDescription: task.damageDescription || "",
+      assignee: task.assignee || null,
+      post: task.post || null,
+      scheduledTime: task.scheduledTime || null,
+      parts: (task.parts || []).map(p => ({
+        name: p.name || "",
+        qty: p.quantity || 1,
+        purchase: p.purchase || "",
+        sale: p.sale || "",
+        status: p.status || "notordered"
+      })),
+      works: (task.works || []).map(w => ({
+        name: w.name || "",
+        hours: w.hours || "",
+        cost: w.cost || "",
+        price: w.price || "",
+        status: w.status || "notstarted"
+      })),
+      payments: (task.payments || []).map(p => ({
+        amount: p.amount || 0,
+        method: p.method || "Наличные",
+        comment: p.comment || ""
+      }))
+    };
+    taskBlock = `
+
+=== TASK: текущее состояние задачи ===
+${JSON.stringify(t, null, 2)}
+`;
+  }
+
+  return note + taskBlock;
+}
 // ---------- Вызовы LLM ----------
 async function ntCallTextLLM(prompt) {
   if (!_aiCache.key) throw new Error('Введи API-ключ в AI-настройках.');
@@ -5392,22 +5514,8 @@ function ntParseTimeText(text) {
 }
 
 function ntBuildEditTextPrompt(text, task) {
-  const workers = Object.keys(USERS).filter(k => USERS[k].role === 'worker')
-    .map(k => `${USERS[k].name} (key="${k}")`).join(', ');
   return `Ты — ассистент автосервиса. Пользователь продиктовал текст для обновления задачи.
-
-ТЕКУЩИЕ данные:
-- Госномер: "${task.car.plate || ''}"
-- Модель: "${task.car.model || ''}"
-- Год: "${task.car.year || ''}"
-- VIN: "${task.car.vin || ''}"
-- Пробег: "${task.car.mileage || ''}"
-- Клиент: "${task.client.name || ''}" / "${task.client.phone || ''}"
-- Причина: "${task.reason || ''}"
-- Исполнитель: "${task.assignee || ''}"
-- Пост: "${task.post || ''}"
-
-Доступные работники: ${workers}
+${ntBuildTaskContext(task)}
 
 Пользователь продиктовал:
 """${text}"""
@@ -5431,8 +5539,8 @@ function ntBuildEditTextPrompt(text, task) {
 
 function ntBuildEditPhotoPrompt(textHint, task) {
   return `Ты — оператор автосервиса. На фото документ (СТС, ПТС, наряд-заказ, чек), VIN или авто.
-ТЕКУЩИЕ данные: plate="${task.car.plate || ''}", model="${task.car.model || ''}", vin="${task.car.vin || ''}"
-${textHint ? `Комментарий: "${textHint}"` : ''}
+${textHint ? `Подсказка: "${textHint}"` : ''}
+${ntBuildTaskContext(task)}
 Верни СТРОГО JSON без markdown:
 {
   "raw_text": "", "plate": null, "model": null, "year": null, "vin": null, "mileage": null,
