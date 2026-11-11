@@ -76,12 +76,29 @@ button.small { padding: 3px 8px; font-size: 12px; }
   padding: 10px; font-weight: 600; font-size: 13px; text-align: center;
   border-bottom: 2px solid #313244; border-radius: 8px 8px 0 0; color: #1e1e2e;
 }
+.col-recent .column-header { background: #2a2d3a; color: #cdd6f4; }  /* изменения */
 .col-1 .column-header { background: #3b3a2e; color: #e6d9a8; }  /* ожидание — тёплый песочный */
 .col-2 .column-header { background: #3d3229; color: #e8c9a8; }  /* согласование — приглушённый оранж */
 .col-3 .column-header { background: #3d2b30; color: #e8b3bf; }  /* запчасти — сдержанный бордо */
 .col-4 .column-header { background: #2b3446; color: #a8c4e8; }  /* в работе — деловой синий */
 .col-5 .column-header { background: #2b3d2f; color: #a8d8b3; }  /* завершено — тёмный зелёный */
 .col-6 .column-header { background: #342b45; color: #c4b3e8; }  /* выдача — приглушённый фиолет */
+.col-recent { min-width: 260px; max-width: 300px; }
+.rc-card {
+  background: #313244; border-radius: 6px; padding: 7px 9px; margin-bottom: 8px;
+  border-left: 3px solid #89b4fa; cursor: pointer; font-size: 11px;
+  border: 1px solid #45475a; transition: border-color 0.15s, transform 0.15s;
+}
+.rc-card:hover { border-color: #89b4fa; transform: translateY(-1px); }
+.rc-card__head { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+.rc-card__plate { font-family: 'Consolas','Courier New',monospace; font-weight: 700; color: #89b4fa; font-size: 11px; }
+.rc-card__model { flex: 1; color: #cdd6f4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
+.rc-card__cnt { background: rgba(137,180,250,0.2); color: #89b4fa; padding: 0 6px; border-radius: 8px; font-size: 10px; font-weight: 600; }
+.rc-card__line { color: #a6adc8; font-size: 10px; line-height: 1.35; padding-left: 2px; border-left: 2px solid #45475a; margin-top: 3px; padding-left: 6px; }
+.rc-card__line.rc-ai { border-left-color: #3DD5C4; }
+.rc-card__line.rc-status { border-left-color: #f9e2af; }
+.rc-card__line.rc-move { border-left-color: #89b4fa; }
+.rc-card__time { color: #6c7086; font-size: 9px; }
 
 .column-body {
   flex: 1; overflow-y: auto; padding: 8px;
@@ -104,15 +121,61 @@ button.small { padding: 3px 8px; font-size: 12px; }
   border-bottom: 1px solid #45475a;
   outline: 1px solid #585b70;
   outline-offset: -1px;
-  transition: transform 0.15s, opacity 0.15s, box-shadow 0.15s, border-color 0.15s;
+  transition: transform 0.15s, opacity 0.15s, box-shadow 0.15s, border-color 0.15s, max-height 0.25s ease;
   user-select: none;
   -webkit-user-select: none;
   touch-action: pan-y;
   display: block;
   overflow: hidden;
   isolation: isolate;
-  margin-bottom: 12px
+  margin-bottom: 12px;
 }
+/* Компактный режим — 2 строки */
+.task.task--compact .task-groups,
+.task.task--compact .task-money-row,
+.task.task--compact .task-comment-note,
+.task.task--compact .task-row:not(.task-compact-line) { display: none; }
+.task.task--compact { padding: 5px 8px 5px 6px; }
+.task.task--compact .task-topline { margin-bottom: 0; }
+.task.task--compact .task-header { display: none; }
+.task .task-expand-hint { display: none !important; }
+.task-compact-line {
+  display: flex; align-items: center; gap: 6px; flex-wrap: nowrap;
+  font-size: 11px; color: #a6adc8; margin-top: 2px; position: relative; z-index: 1;
+}
+.task-compact-line .tc-model { color: #cdd6f4; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 55%; }
+.task-compact-line .tc-meta { flex: 0 0 auto; white-space: nowrap; font-size: 10px; color: #6c7086; }
+.task-card-actions {
+  position: absolute; top: 4px; right: 4px; z-index: 5;
+  display: flex; gap: 4px;
+}
+.task-card-btn {
+  width: 26px; height: 26px; padding: 0; border-radius: 6px;
+  border: 1px solid #45475a; background: #313244; color: #cdd6f4;
+  font-size: 13px; line-height: 1; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.task-card-btn:hover { background: #89b4fa; color: #1e1e2e; border-color: #89b4fa; }
+.task-card-btn.expand-btn {
+  width: 40px; height: 34px; font-size: 18px; font-weight: 800;
+  background: #2E7CF6; border: 2px solid #89b4fa; color: #fff;
+  box-shadow: 0 2px 8px rgba(46,124,246,0.45);
+}
+.task-card-btn.expand-btn:hover {
+  background: #89b4fa; color: #1e1e2e; border-color: #cdd6f4;
+  transform: scale(1.08);
+}
+.task:not(.task--compact) .task-card-btn.expand-btn {
+  background: #40a02b; border-color: #a6e3a1; color: #fff;
+  box-shadow: 0 2px 8px rgba(64,160,43,0.45);
+}
+.task:not(.task--compact) .task-card-btn.expand-btn:hover {
+  background: #a6e3a1; color: #1e1e2e;
+}
+.task-card-btn.open-btn {
+  background: rgba(166, 227, 161, 0.2); border-color: #a6e3a1; color: #a6e3a1;
+}
+.task-card-btn.open-btn:hover { background: #a6e3a1; color: #1e1e2e; }
 .task:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0,0,0,0.3);
@@ -272,6 +335,66 @@ button.small { padding: 3px 8px; font-size: 12px; }
 .log-entry + .log-entry { margin-top: 2px; }
 .log-entry .log-time { display: block; color: #6c7086; font-size: 10px; margin-bottom: 1px; }
 .log-entry .log-text { display: block; color: #cdd6f4; }
+
+/* Панель последних изменений (группировка по задаче) */
+.rc-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 9000;
+  display: flex; justify-content: flex-end; align-items: stretch;
+}
+.rc-panel {
+  width: 100%; max-width: 420px; background: #1e1e2e;
+  border-left: 1px solid #313244; display: flex; flex-direction: column;
+  box-shadow: -8px 0 32px rgba(0,0,0,0.4); animation: rcSlide 0.25s ease-out;
+}
+@keyframes rcSlide { from { transform: translateX(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+.rc-header {
+  display: flex; align-items: center; gap: 10px; padding: 14px 16px;
+  border-bottom: 1px solid #313244; background: #181825;
+}
+.rc-header h2 { margin: 0; flex: 1; font-size: 16px; color: #89b4fa; }
+.rc-header .rc-close {
+  width: 32px; height: 32px; border-radius: 6px; border: 1px solid #45475a;
+  background: #313244; color: #cdd6f4; font-size: 18px; cursor: pointer;
+}
+.rc-header .rc-close:hover { background: #f38ba8; color: #1e1e2e; border-color: #f38ba8; }
+.rc-body { flex: 1; overflow-y: auto; padding: 10px 12px 20px; }
+.rc-empty { text-align: center; color: #6c7086; padding: 40px 16px; font-size: 13px; }
+.rc-group {
+  margin-bottom: 12px; border: 1px solid #313244; border-radius: 10px;
+  background: #181825; overflow: hidden;
+}
+.rc-group__head {
+  display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+  background: rgba(137,180,250,0.08); border-bottom: 1px solid #313244;
+  cursor: pointer; user-select: none;
+}
+.rc-group__head:hover { background: rgba(137,180,250,0.15); }
+.rc-group__plate {
+  font-family: 'Consolas','Courier New',monospace; font-weight: 700;
+  color: #89b4fa; font-size: 12px;
+}
+.rc-group__model { flex: 1; font-size: 12px; color: #cdd6f4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rc-group__count {
+  font-size: 10px; background: rgba(137,180,250,0.2); color: #89b4fa;
+  padding: 1px 7px; border-radius: 10px; font-weight: 600;
+}
+.rc-group__entries { padding: 6px 10px 8px; }
+.rc-entry {
+  padding: 5px 0 5px 10px; border-left: 2px solid #45475a;
+  font-size: 11px; line-height: 1.4; margin-bottom: 4px;
+}
+.rc-entry .rc-time { display: block; color: #6c7086; font-size: 10px; margin-bottom: 1px; }
+.rc-entry .rc-text { color: #cdd6f4; }
+.rc-entry.rc-ai { border-left-color: #3DD5C4; }
+.rc-entry.rc-status { border-left-color: #f9e2af; }
+.rc-entry.rc-move { border-left-color: #89b4fa; }
+.rc-footer {
+  padding: 8px 14px; border-top: 1px solid #313244; font-size: 11px; color: #6c7086;
+  display: flex; justify-content: space-between; align-items: center;
+}
+@media (max-width: 480px) {
+  .rc-panel { max-width: 100%; }
+}
 
 .calc-assignee-bar {
   display: flex; align-items: center; gap: 10px;
@@ -1051,6 +1174,33 @@ select.work-assignee.auto { border-color: rgba(61,214,140,0.5); color: var(--gre
 .item-row--red:hover { background: rgba(243, 139, 168, 0.28); }
 .item-row--yellow:hover { background: rgba(249, 226, 175, 0.26); }
 .item-row--green:hover { background: rgba(166, 227, 161, 0.26); }
+/* Цветной круглишок статуса */
+.status-dot {
+  flex: 0 0 18px; width: 18px; height: 18px; border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.25); cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s; position: relative;
+}
+.status-dot:hover { transform: scale(1.18); box-shadow: 0 0 0 3px rgba(255,255,255,0.12); }
+.status-dot:active { transform: scale(0.95); }
+.status-dot--red { background: #f38ba8; border-color: #f38ba8; }
+.status-dot--yellow { background: #f9e2af; border-color: #f9e2af; }
+.status-dot--green { background: #a6e3a1; border-color: #a6e3a1; }
+.status-dot::after {
+  content: attr(data-label); position: absolute; left: 50%; bottom: calc(100% + 6px);
+  transform: translateX(-50%); background: #1e1e2e; color: #cdd6f4;
+  font-size: 10px; padding: 3px 7px; border-radius: 4px; white-space: nowrap;
+  opacity: 0; pointer-events: none; transition: opacity 0.15s; z-index: 20;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+.status-dot:hover::after { opacity: 1; }
+@media (max-width: 640px) {
+  .item-row { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; gap: 4px; padding: 5px 6px; }
+  .item-row__name { flex: 1 1 auto; min-width: 80px; font-size: 12px; }
+  .item-row__meta, .item-row__who, .item-row__btns { flex-shrink: 0; }
+  .item-row__btns { gap: 2px; }
+  .item-row__btn { padding: 2px 5px; font-size: 10px; }
+  .status-dot { flex: 0 0 16px; width: 16px; height: 16px; }
+}
 .task-groups { display: flex; flex-direction: column; gap: 4px; margin: 3px 0; }
 .task-group { border-radius: 6px; padding: 3px 5px; border: 1px solid #313244; }
 .task-group--parts { background: rgba(137, 180, 250, 0.10); border-left: 3px solid #89b4fa; }
@@ -1367,10 +1517,14 @@ th.col-toggle:hover { background: transparent; }
 
 /* Строки запчастей/работ в модалке новой задачи (упрощённые) */
 .nt-rw-row {
-  display: grid; grid-template-columns: minmax(140px,2fr) 70px 130px 32px;
+  display: grid; grid-template-columns: minmax(100px,1.4fr) minmax(80px,1fr) 55px 110px 32px;
   gap: 6px; align-items: center; margin-bottom: 6px;
   background: rgba(19,37,63,.7); border: 1px solid rgba(30,78,140,.3);
   border-radius: 8px; padding: 6px;
+}
+.nt-rw-row .rw-article {
+  font-family: 'Consolas','Courier New',monospace; font-size: 11px;
+  text-transform: uppercase; letter-spacing: 0.3px;
 }
 .nt-rw-row.ai { border-color: rgba(61,213,196,.5); background: rgba(61,213,196,.05); }
 .nt-rw-row input, .nt-rw-row select {
@@ -1461,6 +1615,7 @@ th.col-toggle:hover { background: transparent; }
   <button onclick="exportCsv()">📤 Экспорт CSV</button>
   <button onclick="openImportModal()">📥 Импорт CSV</button>
   <button onclick="openSettings()">⚙ Настройки</button>
+  <button onclick="openRecentChanges()">📜 Изменения</button>
   <div class="user-info">
     <button class="bell-btn" onclick="toggleNotifications()">
       🔔<span class="bell-badge" id="notifBadge" style="display:none">0</span>
@@ -1630,6 +1785,7 @@ const USERS = {
   motorist: { name: 'Моторист', role: 'worker' }
 };
 const COLUMNS = [
+  { id: 'recent', title: '📜 Изменения', cls: 'col-recent', special: true },
   { id: 'waiting', title: '1. Ожидает действия', cls: 'col-1' },
   { id: 'approval', title: '2. На согласовании', cls: 'col-2' },
   { id: 'parts', title: '3. Заказ / Ремонт запчастей', cls: 'col-3' },
@@ -2701,19 +2857,51 @@ function renderBoard() {
     colEl.dataset.col = col.id;
     const header = document.createElement('div');
     header.className = 'column-header';
-    const count = visible.filter(t => t.column === col.id).length;
-    header.textContent = `${col.title} (${count})`;
-    colEl.appendChild(header);
     const body = document.createElement('div');
     body.className = 'column-body';
     body.dataset.col = col.id;
-    const tasks = visible.filter(t => t.column === col.id).sort((a,b) => (a.order || 0) - (b.order || 0));
-    tasks.forEach(t => body.appendChild(renderTask(t)));
-    if (tasks.length === 0) {
-      const em = document.createElement('div');
-      em.className = 'empty-msg';
-      em.textContent = 'Пусто';
-      body.appendChild(em);
+
+    if (col.special && col.id === 'recent') {
+      const groups = groupChangesByTask(collectRecentChanges(60));
+      header.textContent = `${col.title} (${groups.length})`;
+      colEl.appendChild(header);
+      if (!groups.length) {
+        const em = document.createElement('div');
+        em.className = 'empty-msg';
+        em.textContent = 'Нет изменений';
+        body.appendChild(em);
+      } else {
+        groups.forEach(g => {
+          const card = document.createElement('div');
+          card.className = 'rc-card';
+          card.onclick = () => openTaskView(g.taskId);
+          const lines = g.entries.slice(0, 3).map(e => {
+            const cls = rcEntryClass(e.text);
+            return `<div class="rc-card__line ${cls}"><span class="rc-card__time">${formatTime(e.time)}</span> ${esc(e.text.slice(0, 80))}${e.text.length > 80 ? '…' : ''}</div>`;
+          }).join('');
+          const more = g.entries.length > 3 ? `<div class="rc-card__line"><span class="rc-card__time">… ещё ${g.entries.length - 3}</span></div>` : '';
+          card.innerHTML = `
+            <div class="rc-card__head">
+              <span class="rc-card__plate">${esc(g.plate)}</span>
+              <span class="rc-card__model">${g.number ? '№' + g.number + ' · ' : ''}${esc(g.model)}</span>
+              <span class="rc-card__cnt">${g.entries.length}</span>
+            </div>
+            ${lines}${more}`;
+          body.appendChild(card);
+        });
+      }
+    } else {
+      const count = visible.filter(t => t.column === col.id).length;
+      header.textContent = `${col.title} (${count})`;
+      colEl.appendChild(header);
+      const tasks = visible.filter(t => t.column === col.id).sort((a,b) => (a.order || 0) - (b.order || 0));
+      tasks.forEach(t => body.appendChild(renderTask(t)));
+      if (tasks.length === 0) {
+        const em = document.createElement('div');
+        em.className = 'empty-msg';
+        em.textContent = 'Пусто';
+        body.appendChild(em);
+      }
     }
     colEl.appendChild(body);
     board.appendChild(colEl);
@@ -2724,8 +2912,19 @@ function money0(n) {
   return v.toLocaleString('ru-RU', { maximumFractionDigits: 0 }) + ' ₽';
 }
 function taskCardHtml(task) {
+  const assignee = appSettings.showAssignee ? (task.assignee ? USERS[task.assignee].name : '—') : '';
+  const post = appSettings.showPost ? (task.post ? 'П' + task.post : '') : '';
+  const metaBits = [formatTime(task.scheduledTime), assignee, post].filter(Boolean).join(' · ');
   return `${brandBackgroundHtml(task.car.model)}
+    <div class="task-card-actions">
+      <button type="button" class="task-card-btn expand-btn" title="Развернуть / свернуть" data-action="toggle-expand">▾</button>
+      <button type="button" class="task-card-btn open-btn" title="Открыть задачу" data-action="open-task">↗</button>
+    </div>
     <div class="task-topline">${plateBadgeHtml(task.car.plate)}</div>
+    <div class="task-compact-line">
+      <span class="tc-model">${esc(task.car.model)}</span>
+      <span class="tc-meta">${esc(metaBits)}</span>
+    </div>
     <div class="task-header"><span class="task-title">${esc(task.car.model)}</span></div>
     <div class="task-row">⏰ ${formatTime(task.scheduledTime)}</div>
     ${appSettings.showAssignee ? `<div class="task-row">👤 ${task.assignee ? USERS[task.assignee].name : '—'}</div>` : ''}
@@ -2738,7 +2937,7 @@ function taskCardHtml(task) {
 
 function renderTask(task) {
   const el = document.createElement('div');
-  el.className = 'task';
+  el.className = 'task task--compact';
   el.dataset.id = task.id;
   el.style.borderLeftColor = getTaskColor(task.id);
   el.innerHTML = taskCardHtml(task);
@@ -2938,8 +3137,29 @@ el.addEventListener('touchcancel', () => {
 
 el.addEventListener('click', e => {
   if (e.target.closest('.task-comment-note')) return;
-  if (e.target.closest('button')) return;
   if (didDrag) { didDrag = false; return; }
+  const btn = e.target.closest('.task-card-btn');
+  if (btn) {
+    e.stopPropagation();
+    const action = btn.dataset.action;
+    if (action === 'toggle-expand') {
+      el.classList.toggle('task--compact');
+      btn.textContent = el.classList.contains('task--compact') ? '▾' : '▴';
+      return;
+    }
+    if (action === 'open-task') {
+      try { openTaskView(task.id); } catch (err) { alert('Ошибка: ' + err.message); }
+      return;
+    }
+  }
+  if (e.target.closest('button')) return;
+  // Клик по карточке в компактном режиме — раскрыть; в полном — открыть задачу
+  if (el.classList.contains('task--compact')) {
+    el.classList.remove('task--compact');
+    const expBtn = el.querySelector('.expand-btn');
+    if (expBtn) expBtn.textContent = '▴';
+    return;
+  }
   try {
     openTaskView(task.id);
   } catch (err) {
@@ -3051,6 +3271,7 @@ function restoreEmptyPlaceholder(colId) {
 function updateColumnCounts() {
   const board = document.getElementById('board');
   COLUMNS.forEach(col => {
+    if (col.special) return;
     const colEl = board.querySelector(`.column[data-col="${col.id}"]`);
     if (!colEl) return;
     const header = colEl.querySelector('.column-header');
@@ -3071,6 +3292,40 @@ function statusColorGroup(kind, status) {
   if (status === 'inwork') return 'yellow';
   return 'red';
 }
+const PART_STATUS_CYCLE = ['notordered', 'ordered', 'instock'];
+const WORK_STATUS_CYCLE = ['notstarted', 'inwork', 'finished'];
+function cycleItemStatus(taskId, kind, index) {
+  const task = state.tasks.find(t => t.id === taskId);
+  if (!task) return;
+  if (kind === 'part') {
+    if (!task.parts || !task.parts[index]) return;
+    const cur = task.parts[index].status || 'notordered';
+    const next = PART_STATUS_CYCLE[(PART_STATUS_CYCLE.indexOf(cur) + 1) % PART_STATUS_CYCLE.length];
+    const oldLabel = PARTS_STATUS[cur] || cur;
+    task.parts[index].status = next;
+    task.updatedAt = new Date().toISOString();
+    task.log = task.log || [];
+    task.log.push({ time: new Date().toISOString(), user: USERS[state.currentUser].name, text: `Статус запчасти «${task.parts[index].name || '—'}»: ${oldLabel} → ${PARTS_STATUS[next]}` });
+    saveState(taskId);
+  } else if (kind === 'work') {
+    if (!task.works || !task.works[index]) return;
+    const cur = task.works[index].status || 'notstarted';
+    const next = WORK_STATUS_CYCLE[(WORK_STATUS_CYCLE.indexOf(cur) + 1) % WORK_STATUS_CYCLE.length];
+    const oldLabel = WORKS_STATUS[cur] || cur;
+    task.works[index].status = next;
+    task.updatedAt = new Date().toISOString();
+    task.log = task.log || [];
+    task.log.push({ time: new Date().toISOString(), user: USERS[state.currentUser].name, text: `Статус работы «${task.works[index].name || '—'}»: ${oldLabel} → ${WORKS_STATUS[next]}` });
+    saveState(taskId);
+  }
+  // Обновляем только открытую модалку задачи, не закрывая
+  const overlay = document.getElementById('taskViewModal');
+  if (overlay) {
+    openTaskView(taskId);
+  } else {
+    renderBoard();
+  }
+}
 function partsItemsHtml(task) {
   const parts = (task.parts || []).filter(partHasContent);
   if (!parts.length) return `<div class="item-list__empty">Запчасти ещё не добавлены</div>`;
@@ -3083,6 +3338,7 @@ function partsItemsHtml(task) {
     const drom = p.article ? `<button type="button" class="item-row__btn" onclick='event.stopPropagation();openPartSearch("drom", "${esc(p.article)}")'>Drom</button>` : '';
     const at = p.article ? `<button type="button" class="item-row__btn" onclick='event.stopPropagation();openPartSearch("autotrade", "${esc(p.article)}")'>Autotrade</button>` : '';
     return `<div class="item-row item-row--${color}" data-kind="part" data-idx="${i}" title="${esc(p.name || '')}">
+      <span class="status-dot status-dot--${color}" data-label="${esc(label)}" onclick="event.stopPropagation();cycleItemStatus('${task.id}','part',${i})" title="Сменить статус"></span>
       <span class="item-row__name">🔩 ${esc(p.name || 'Без названия')} ${art}${qty > 1 ? ' ×' + qty : ''}</span>
       <span class="badge badge-${color}" style="font-size:9px;padding:1px 5px;">${esc(label)}</span>
       <span class="item-row__meta">${sum}</span>
@@ -3100,6 +3356,7 @@ function worksItemsHtml(task) {
     const whoKey = w.assignee || task.assignee;
     const who = whoKey && USERS[whoKey] ? USERS[whoKey].name : '—';
     return `<div class="item-row item-row--${color}" data-kind="work" data-idx="${i}" title="${esc(w.name || '')}">
+      <span class="status-dot status-dot--${color}" data-label="${esc(label)}" onclick="event.stopPropagation();cycleItemStatus('${task.id}','work',${i})" title="Сменить статус"></span>
       <span class="item-row__name">🛠 ${esc(w.name || 'Без названия')}</span>
       <span class="badge badge-${color}" style="font-size:9px;padding:1px 5px;">${esc(label)}</span>
       <span class="item-row__meta">${money(w.price)}${hours}</span>
@@ -3138,6 +3395,9 @@ function workStatusBadge(w) {
 
 // ============ ПЕРЕМЕЩЕНИЕ / МОДАЛКИ ============
 function tryMoveTask(taskId, newCol) {
+  if (newCol === 'recent') return; // нельзя перетаскивать в столбец изменений
+  const colMeta = COLUMNS.find(c => c.id === newCol);
+  if (colMeta && colMeta.special) return;
   const task = state.tasks.find(t => t.id === taskId);
   if (!task) return;
   const u = state.currentUser;
@@ -3605,6 +3865,8 @@ function openNewTaskModal() {
         <input id="nPlate" placeholder="А123БВ 123" autocomplete="off" style="flex:1">
         <button type="button" class="nt-icon-btn" id="ntMicBtn" title="Голосовой ввод">🎤</button>
         <button type="button" class="nt-icon-btn" id="ntPhotoBtn" title="Сканировать фото">📷</button>
+        <button type="button" class="nt-icon-btn" id="ntFileBtn" title="Загрузить файл">📎</button>
+        <button type="button" class="nt-icon-btn" id="ntNoteBtn" title="Текстовая заметка / промпт" style="font-size:11px;font-weight:700">📝</button>
       </div>
       <label>Модель</label><input id="nModel" placeholder="Toyota Camry">
       <label>Год</label><input id="nYear" type="number" value="2020">
@@ -3626,7 +3888,10 @@ function openNewTaskModal() {
           <button type="button" class="nt-icon-btn" id="ntRWMicBtn" style="width:32px;height:32px;font-size:14px;border-width:1px;margin-left:auto" title="Дополнить списки голосом">🎤</button>
         </div>
         <div id="ntPartsList"><div class="nt-rw-empty">Запчастей пока нет</div></div>
-        <button type="button" class="nt-rw-add" onclick="ntAddPartRow()">➕ Добавить запчасть</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
+          <button type="button" class="nt-rw-add" onclick="ntAddPartRow()">➕ Добавить запчасть</button>
+          <button type="button" class="nt-rw-add" id="ntLookupArticlesBtn" onclick="ntLookupArticlesInNewTask()" title="AI подберёт OEM-артикулы по марке/модели/году">🔍 Найти артикулы</button>
+        </div>
       </div>
       <div class="nt-rw-group">
         <div class="nt-rw-title">🛠 Работы <span class="cnt" id="ntWorksCount">0</span></div>
@@ -3639,6 +3904,7 @@ function openNewTaskModal() {
       <div class="nt-ai-panel" id="ntAiPanel">
         <div class="nt-ai-panel__row">
           <div><label>API-ключ TokenWave</label><input type="password" id="ntAiKey" placeholder="Ключ"></div>
+          <div><label>API-ключ PartsAPI (TecDoc)</label><input type="password" id="ntPartsApiKey" placeholder="Ключ partsapi.ru"></div>
           <div><label>Текстовая модель</label><input type="text" id="ntAiTextModel" placeholder="deepseek-v4-flash"></div>
         </div>
         <div class="nt-ai-panel__row">
@@ -3673,7 +3939,7 @@ function openNewTaskModal() {
   document.getElementById('ntAiCheckModels').addEventListener('click', ntCheckModels);
 
   // Изменения ключа/моделей → сохранение в Firebase
-  ['ntAiKey','ntAiTextModel','ntAiVisionModel'].forEach(id => {
+  ['ntAiKey','ntAiTextModel','ntAiVisionModel','ntPartsApiKey'].forEach(id => {
     const el = document.getElementById(id);
     el.addEventListener('change', () => ntSaveAISettings());
   });
@@ -3696,7 +3962,18 @@ function openNewTaskModal() {
         const currentWorks = ntCollectWorks();
         const data = await ntCallTextLLM(ntBuildRWAppendPrompt(text, currentParts, currentWorks));
         if (Array.isArray(data.parts)) {
-          ntRenderParts(data.parts.map(p => ({ name: p.name||'', qty: parseInt(p.qty,10)||1, status: p.status||'notordered' })));
+          let enriched = ntEnrichPartsWithArticles(data.parts, text);
+          const missing = enriched.filter(p => String(p.name || '').trim() && !ntExtractArticle(p));
+          if (missing.length && _aiCache.key) {
+            ntSetAIStatus(`🔍 Ищу артикулы для ${missing.length} запч.…`, 'info');
+            enriched = await ntAutoFillArticles(enriched, null);
+          }
+          ntRenderParts(enriched.map(p => ({
+            name: p.name || '',
+            article: ntExtractArticle(p),
+            qty: parseInt(p.qty, 10) || 1,
+            status: p.status || 'notordered'
+          })));
         }
         if (Array.isArray(data.works)) {
           ntRenderWorks(data.works.map(w => ({ name: w.name||'', qty: parseInt(w.qty,10)||1, status: w.status||'notstarted' })));
@@ -3710,6 +3987,10 @@ function openNewTaskModal() {
 
   // Фото
   document.getElementById('ntPhotoBtn').addEventListener('click', () => ntPickPhoto());
+  // Файл (любой, но AI обрабатывает картинки и текст)
+  document.getElementById('ntFileBtn').addEventListener('click', () => ntPickFile());
+  // Текстовая заметка / промпт
+  document.getElementById('ntNoteBtn').addEventListener('click', () => openNotePrompt(null));
 
   // Восстановить черновик из localStorage (если пользователь уже что-то вводил)
   ntRestoreDraft();
@@ -3743,7 +4024,7 @@ async function createTaskFromForm() {
     damageDescription: document.getElementById('nDamage').value.trim() || '',
     scheduledTime: null, assignee: null, post: null,
     parts: newParts.map(p => ({
-      name: p.name, article: '', quantity: p.qty, purchase: '', sale: '',
+      name: p.name, article: p.article || '', quantity: p.qty, purchase: '', sale: '',
       status: p.status || 'notordered', notes: [], note: '', link: ''
     })),
     works: newWorks.map(w => ({
@@ -3859,6 +4140,8 @@ function openTaskView(taskId) {
     <div class="task-block__header-actions">
       <button type="button" class="task-block__mic-btn" id="blockRWMicBtn" data-task-id="${taskId}">🎤</button>
       <button type="button" class="task-block__mic-btn" id="blockRWPhotoBtn" data-task-id="${taskId}">📷</button>
+      <button type="button" class="task-block__mic-btn" id="blockRWFileBtn" data-task-id="${taskId}" title="Загрузить файл">📎</button>
+      <button type="button" class="task-block__mic-btn" id="blockRWNoteBtn" data-task-id="${taskId}" title="Текстовая заметка">📝</button>
     </div>
   </div>
           <div class="task-block__content">
@@ -3867,7 +4150,9 @@ function openTaskView(taskId) {
                 <div class="item-list__group">
                   <div class="item-list__group-title">🔩 Запчасти (${(task.parts||[]).filter(partHasContent).length})</div>
                   ${partsItemsHtml(task)}
-<button type="button" class="item-row__btn item-row__btn--add" data-action="parts">➕ Добавить запчасть</button>                </div>
+<button type="button" class="item-row__btn item-row__btn--add" data-action="parts">➕ Добавить запчасть</button>
+                  <button type="button" class="item-row__btn item-row__btn--add" data-action="lookup-articles" title="AI подберёт OEM по марке/модели">🔍 Артикулы</button>
+                </div>
                 <div class="item-list__group">
                   <div class="item-list__group-title">🛠 Работы (${(task.works||[]).length})</div>
                   ${worksItemsHtml(task)}
@@ -3979,8 +4264,23 @@ function openTaskView(taskId) {
       try {
         if (action === 'close') closeModal();
         else if (action === 'delete') deleteTask(taskId);
-        else if (action === 'parts') openCharEditor(taskId, 'parts');
-        else if (action === 'works') openCharEditor(taskId, 'works');
+        else if (action === 'parts') {
+          const t = state.tasks.find(x => x.id === taskId);
+          if (!t) return;
+          t.parts = t.parts || [];
+          t.parts.push({ name: '', article: '', quantity: 1, purchase: '', sale: '', status: 'notordered', notes: [], note: '', link: '' });
+          openPartModal(taskId, t.parts.length - 1);
+        }
+        else if (action === 'lookup-articles') {
+          ntLookupArticlesInTask(taskId);
+        }
+        else if (action === 'works') {
+          const t = state.tasks.find(x => x.id === taskId);
+          if (!t) return;
+          t.works = t.works || [];
+          t.works.push({ name: '', hours: '', cost: '', price: '', status: 'notstarted', assignee: '', comment: '', link: '' });
+          openWorkModal(taskId, t.works.length - 1);
+        }
         else if (action === 'payments') openCharEditor(taskId, 'payments');
         else if (action === 'schedule') openCharEditor(taskId, 'time');
         else if (action === 'printWorkOrder') printWorkOrder(taskId);
@@ -4039,6 +4339,34 @@ if (rwPhotoBtn) {
     inp.click();
   });
 }
+const rwFileBtn = modal.querySelector('#blockRWFileBtn');
+if (rwFileBtn) {
+  rwFileBtn.addEventListener('click', () => {
+    if (rwFileBtn.classList.contains('busy')) return;
+    const inp = document.createElement('input');
+    inp.type = 'file';
+    inp.accept = 'image/*,.txt,.csv,.pdf,.doc,.docx';
+    inp.style.display = 'none';
+    inp.addEventListener('change', () => {
+      const file = inp.files && inp.files[0];
+      if (file) {
+        rwFileBtn.classList.add('busy');
+        if (file.type.startsWith('image/')) {
+          ntHandleEditPhotoRWOnly(taskId, file).finally(() => rwFileBtn.classList.remove('busy'));
+        } else {
+          ntHandleFileAsNote(taskId, file).finally(() => rwFileBtn.classList.remove('busy'));
+        }
+      }
+      inp.remove();
+    });
+    document.body.appendChild(inp);
+    inp.click();
+  });
+}
+const rwNoteBtn = modal.querySelector('#blockRWNoteBtn');
+if (rwNoteBtn) {
+  rwNoteBtn.addEventListener('click', () => openNotePrompt(taskId));
+}
   pushModalHistory(() => openTaskView(taskId), 'Задача ' + task.car.plate);
 }
 function toggleTaskBlock(blockId) {
@@ -4067,12 +4395,11 @@ function openPartModal(taskId, index) {
   const modal = document.createElement('div');
   modal.className = 'modal-overlay';
   modal.innerHTML = `
-    <div class="modal" data-task-id="${taskId}">
+    <div class="modal" data-task-id="${taskId}" style="max-width:520px">
       <div class="modal-titlebar"><h2>🔩 Запчасть</h2><div class="modal-title-actions"><button class="back-btn" onclick="modalBack()">← Назад</button><button class="close-x" onclick="closeModal()">×</button></div></div>
-      <div class="readonly-field"><b>Авто:</b> ${esc(task.car.plate)} · ${esc(task.car.model)}</div>
-      <div class="rows-head"><span>Название</span><span class="article">Артикул</span><span class="qty-col">Кол-во</span><span class="num">Закупка</span><span class="num">Продажа</span><span class="work-status">Статус</span><span class="row-total">Итог</span><span class="search-col">Поиск</span><span class="del-col"></span></div>
+      <div class="readonly-field" style="margin-bottom:12px"><b>Авто:</b> ${esc(task.car.plate)} · ${esc(task.car.model)}</div>
       <div id="pm_row"></div>
-      <h3>Примечания</h3>
+      <h3 style="margin-top:14px">Примечания</h3>
       <div id="pm_notes"></div>
       <button type="button" class="small" onclick="addPmNoteLine()">➕ Добавить примечание</button>
       <div class="modal-actions"><button onclick="closeModal()">Отмена</button><button class="primary" onclick="savePartModal('${taskId}', ${index})">Сохранить</button></div>
@@ -4141,12 +4468,10 @@ function openWorkModal(taskId, index) {
   const modal = document.createElement('div');
   modal.className = 'modal-overlay';
   modal.innerHTML = `
-    <div class="modal" data-task-id="${taskId}">
+    <div class="modal" data-task-id="${taskId}" style="max-width:520px">
       <div class="modal-titlebar"><h2>🛠 Работа</h2><div class="modal-title-actions"><button class="back-btn" onclick="modalBack()">← Назад</button><button class="close-x" onclick="closeModal()">×</button></div></div>
-      <div class="readonly-field"><b>Авто:</b> ${esc(task.car.plate)} · ${esc(task.car.model)}</div>
-      <div class="rows-head"><span>Название</span><span class="hours-col">Часы</span><span class="num">Себест.</span><span class="num">Цена</span><span class="work-status">Статус</span><span class="assignee-col">Исполнитель</span><span class="row-total">Итог</span><span class="del-col"></span></div>
+      <div class="readonly-field" style="margin-bottom:12px"><b>Авто:</b> ${esc(task.car.plate)} · ${esc(task.car.model)}</div>
       <div id="ce_worksList"></div>
-      <button type="button" class="small" onclick="addCeWorkRow()">➕ Добавить ещё</button>
       <div class="modal-actions"><button onclick="closeModal()">Отмена</button><button class="primary" onclick="saveWorkModal('${taskId}', ${index})">Сохранить</button></div>
     </div>`;
   document.getElementById('modalContainer').appendChild(modal);
@@ -4393,6 +4718,8 @@ function openEditTask(taskId) {
         <input id="e_plate" value="${esc(task.car.plate)}" style="flex:1">
         <button type="button" class="nt-icon-btn" id="eMicBtn" title="Голосовой ввод (все поля)">🎤</button>
         <button type="button" class="nt-icon-btn" id="ePhotoBtn" title="Сканировать фото">📷</button>
+        <button type="button" class="nt-icon-btn" id="eFileBtn" title="Загрузить файл">📎</button>
+        <button type="button" class="nt-icon-btn" id="eNoteBtn" title="Текстовая заметка / промпт" style="font-size:11px;font-weight:700">📝</button>
       </div>
       <label>Модель</label><input id="e_model" value="${esc(task.car.model)}">
       <label>Год</label><input id="e_year" type="number" value="${esc(task.car.year)}">
@@ -4458,6 +4785,34 @@ function openEditTask(taskId) {
     document.body.appendChild(inp);
     inp.click();
   });
+  const eFileBtn = document.getElementById('eFileBtn');
+  if (eFileBtn) {
+    eFileBtn.addEventListener('click', () => {
+      if (eFileBtn.classList.contains('busy')) return;
+      const inp = document.createElement('input');
+      inp.type = 'file';
+      inp.accept = 'image/*,.txt,.csv,.pdf,.doc,.docx';
+      inp.style.display = 'none';
+      inp.addEventListener('change', () => {
+        const file = inp.files && inp.files[0];
+        if (file) {
+          eFileBtn.classList.add('busy');
+          if (file.type.startsWith('image/')) {
+            ntHandleEditPhoto(taskId, file).finally(() => eFileBtn.classList.remove('busy'));
+          } else {
+            ntHandleFileAsNote(taskId, file).finally(() => eFileBtn.classList.remove('busy'));
+          }
+        }
+        inp.remove();
+      });
+      document.body.appendChild(inp);
+      inp.click();
+    });
+  }
+  const eNoteBtn = document.getElementById('eNoteBtn');
+  if (eNoteBtn) {
+    eNoteBtn.addEventListener('click', () => openNotePrompt(taskId));
+  }
 }
 
 /* ===== [PATCH] saveEditTask — все поля + оплата ===== */
@@ -4732,6 +5087,111 @@ function renderNotifications() {
   </div>`;
 }
 
+// ============ ПОСЛЕДНИЕ ИЗМЕНЕНИЯ (группировка по задаче) ============
+function collectRecentChanges(limit = 80) {
+  const items = [];
+  (state.tasks || []).forEach(t => {
+    if (!Array.isArray(t.log) || !t.log.length) return;
+    t.log.forEach(entry => {
+      if (!entry || !entry.time) return;
+      items.push({
+        taskId: t.id,
+        plate: t.car?.plate || '—',
+        model: t.car?.model || '',
+        number: t.number || '',
+        time: entry.time,
+        user: entry.user || '—',
+        text: entry.text || '',
+        ts: Date.parse(entry.time) || 0
+      });
+    });
+  });
+  items.sort((a, b) => b.ts - a.ts);
+  return items.slice(0, limit);
+}
+
+function groupChangesByTask(flatList) {
+  const map = new Map();
+  flatList.forEach(item => {
+    if (!map.has(item.taskId)) {
+      map.set(item.taskId, {
+        taskId: item.taskId,
+        plate: item.plate,
+        model: item.model,
+        number: item.number,
+        entries: [],
+        latestTs: item.ts
+      });
+    }
+    const g = map.get(item.taskId);
+    g.entries.push(item);
+    if (item.ts > g.latestTs) g.latestTs = item.ts;
+  });
+  return Array.from(map.values()).sort((a, b) => b.latestTs - a.latestTs);
+}
+
+function rcEntryClass(text) {
+  const t = String(text || '').toLowerCase();
+  if (t.includes('ai:') || t.includes('ai из') || t.includes('артикул')) return 'rc-ai';
+  if (t.includes('статус')) return 'rc-status';
+  if (t.includes('перемещение') || t.includes('→')) return 'rc-move';
+  return '';
+}
+
+function openRecentChanges() {
+  // закрыть уведомления если открыты
+  if (state.notifOpen) { state.notifOpen = false; renderNotifications(); }
+
+  const existing = document.getElementById('rcOverlay');
+  if (existing) { existing.remove(); return; }
+
+  const flat = collectRecentChanges(100);
+  const groups = groupChangesByTask(flat);
+
+  const overlay = document.createElement('div');
+  overlay.className = 'rc-overlay';
+  overlay.id = 'rcOverlay';
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+
+  let bodyHtml = '';
+  if (!groups.length) {
+    bodyHtml = `<div class="rc-empty">Пока нет записей в логах задач.<br>Изменения появятся после действий с задачами.</div>`;
+  } else {
+    bodyHtml = groups.map(g => {
+      const title = g.number ? `№${g.number}` : '';
+      const entriesHtml = g.entries.slice(0, 12).map(e => `
+        <div class="rc-entry ${rcEntryClass(e.text)}">
+          <span class="rc-time">${formatTime(e.time)} — ${esc(e.user)}</span>
+          <span class="rc-text">${esc(e.text)}</span>
+        </div>`).join('');
+      const more = g.entries.length > 12 ? `<div class="rc-entry"><span class="rc-time">… ещё ${g.entries.length - 12} записей</span></div>` : '';
+      return `
+        <div class="rc-group">
+          <div class="rc-group__head" onclick="document.getElementById('rcOverlay')?.remove(); openTaskView('${g.taskId}')">
+            <span class="rc-group__plate">${esc(g.plate)}</span>
+            <span class="rc-group__model">${title ? title + ' · ' : ''}${esc(g.model)}</span>
+            <span class="rc-group__count">${g.entries.length}</span>
+          </div>
+          <div class="rc-group__entries">${entriesHtml}${more}</div>
+        </div>`;
+    }).join('');
+  }
+
+  overlay.innerHTML = `
+    <div class="rc-panel" onclick="event.stopPropagation()">
+      <div class="rc-header">
+        <h2>📜 Последние изменения</h2>
+        <button type="button" class="rc-close" title="Закрыть" onclick="document.getElementById('rcOverlay')?.remove()">×</button>
+      </div>
+      <div class="rc-body">${bodyHtml}</div>
+      <div class="rc-footer">
+        <span>Группировка по задаче · свежие сверху</span>
+        <span>${groups.length} задач · ${flat.length} записей</span>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
 // ============ CSV ============
 function exportCsv() {
   const tasks = visibleTasksForUser();
@@ -4964,6 +5424,195 @@ document.getElementById('userSelect').addEventListener('change', e => {
 
 /* ===== [PATCH] AI-модуль: голос, фото, настройки в Firebase ===== */
 
+/* ===== PartsAPI / TecDoc ===== */
+const PARTSAPI = {
+  base: 'https://api.partsapi.ru',
+  key: '5c52f6e4db91259648e10e3dfab5828e'
+};
+// Карта «разговорное название → PT_ID». Полная таблица (~11k) — у PartsAPI; здесь частые позиции СТО
+const TECDOC_CAT_MAP = {"масляный фильтр":7,"фильтр масляный":7,"маслофильтр":7,"воздушный фильтр":8,"фильтр воздушный":8,"топливный фильтр":9,"фильтр топливный":9,"салонный фильтр":424,"фильтр салона":424,"фильтр салонный":424,"фильтр кабины":424,"тормозной диск":82,"диск тормозной":82,"тормозные диски":82,"тормозные колодки":402,"колодки":402,"колодки передние":402,"колодки задние":402,"тормозной шланг":83,"амортизатор":854,"аморт":854,"амортизационная стойка":198,"стойка":198,"стойка амортизатора":198,"стартер":2,"генератор":4,"аккумулятор":1,"фара":259,"основная фара":259,"фара левая":259,"фара правая":259,"противотуманная фара":2484,"противотуманка":2484,"бампер":20,"бампер передний":20,"бампер задний":20,"облицовка бампера":20,"крыло":449,"зеркало":50,"наружное зеркало":50,"диск сцепления":262,"нажимной диск":261,"сцепление":262,"свеча зажигания":686,"свечи":686,"свеча":686,"свеча накаливания":243,"ремень":10,"клиновой ремень":10,"ремень генератора":10,"ремень грм":306,"грм":306,"зубчатый ремень":306,"водяной насос":1260,"помпа":1260,"радиатор":470,"термостат":316,"шаровая":2462,"шаровая опора":2462,"шаровой шарнир":2462,"рулевая тяга":284,"поперечная рулевая тяга":284,"наконечник рулевой":284,"пыльник":193,"пыльник шруса":193,"ступица":27008,"подшипник ступицы":27010,"ступичный подшипник":27010,"лямбда":3923,"лямбда-зонд":3923,"кислородный датчик":3923,"глушитель":3437,"выхлоп":17,"катушка зажигания":689,"катушка":689,"форсунка":3902,"тормозной суппорт":78,"суппорт":78,"главный тормозной цилиндр":258,"стабилизатор":274,"стойка стабилизатора":274,"рычаг подвески":273,"рычаг":273,"приводной вал":13,"полуось":13};
+const TECDOC_CATS_FOR_AI = [{"id":1,"name":"Стартерная аккумуляторная батарея"},{"id":2,"name":"Стартер"},{"id":4,"name":"Генератор"},{"id":5,"name":"Шарнирный комплект, приводной вал"},{"id":7,"name":"Масляный фильтр"},{"id":8,"name":"Воздушный фильтр"},{"id":9,"name":"Топливный фильтр"},{"id":10,"name":"Клиновой ремень"},{"id":13,"name":"Приводной вал"},{"id":14,"name":"Рассеиватель, основная фара"},{"id":15,"name":"Рассеиватель, прожектор-искатель"},{"id":16,"name":"Рассеиватель, фара дальнего света"},{"id":17,"name":"Труба выхлопного газа"},{"id":19,"name":"Облицовка, противотуманная фара"},{"id":20,"name":"Облицовка, бампер"},{"id":21,"name":"Заслонка, буксирный крюк"},{"id":22,"name":"Покрытие, бачок радиатора"},{"id":23,"name":"Покрытие, внешнее зеркало"},{"id":25,"name":"Крышка, основная фара"},{"id":26,"name":"Система выпуска ОГ"},{"id":27,"name":"Прокладка, выпускной коллектор"},{"id":28,"name":"Комплект прокладок, выпускной коллектор"},{"id":29,"name":"Клапан, фильтр активированного угля"},{"id":31,"name":"Поворотная заслонка, карбюратор"},{"id":32,"name":"Экран, прицепное оборудование"},{"id":33,"name":"Клапан, система подачи топлива"},{"id":34,"name":"Шкворень поворотного кулака"},{"id":36,"name":"Амперметр"},{"id":37,"name":"Монтажный комплект, амортизатор"},{"id":38,"name":"Прицепное ярмо, прицепное оборудование"},{"id":39,"name":"Прицепное устройство"},{"id":42,"name":"Прокладка, впускной коллектор"},{"id":43,"name":"Комплект прокладок, впускной коллектор"},{"id":44,"name":"Прокладка, корпус впускного коллектора"},{"id":46,"name":"Антенна"},{"id":48,"name":"Выжимной подшипник"},{"id":50,"name":"Наружное зеркало"},{"id":51,"name":"Осевой шарнир, рулевая тяга"},{"id":52,"name":"Крепление аккумулятора"},{"id":54,"name":"Болт, диск тормозного механизма"},{"id":55,"name":"Крышка, бачок тормозной жидкости"},{"id":56,"name":"Крышка, резервуар охлаждающей жидкости"},{"id":57,"name":"Крышка, резервуар для воды"},{"id":60,"name":"Облицовка, основная фара"},{"id":61,"name":"Прерыватель указателей поворота"},{"id":62,"name":"Фонарь указателя поворота"},{"id":63,"name":"Корпус, фонарь указателя поворота"},{"id":64,"name":"Решетка фонаря указателя поворота"},{"id":66,"name":"Основание кузова"},{"id":68,"name":"Крепление для лодки, рейлинги"},{"id":70,"name":"Комплект тормозных колодок"},{"id":71,"name":"Тормозная жидкость"},{"id":73,"name":"Регулятор тормозных сил"},{"id":74,"name":"Усилитель тормозного привода"},{"id":76,"name":"Фонарь сигнала торможения"},{"id":77,"name":"Корпус, фонарь сигнала торможения"},{"id":78,"name":"Тормозной суппорт"},{"id":79,"name":"Комплект корпуса скобы тормоза"},{"id":82,"name":"Тормозной диск"},{"id":83,"name":"Тормозной шланг"},{"id":84,"name":"Рассеиватель, фара рабочего освещения"},{"id":85,"name":"Рассеиватель, противотуманная фара"},{"id":86,"name":"Вставка фары, фара рабочего освещения"},{"id":87,"name":"Вставка фары, фара дальнего света"},{"id":88,"name":"Вставка фары, основная фара"},{"id":89,"name":"Вставка фары, противотуманная фара"},{"id":90,"name":"Вставка фары, прожектор-искатель"},{"id":91,"name":"Рассеиватель, фонарь указателя поворота"},{"id":92,"name":"Рассеиватель, фонарь сигнала торможения"},{"id":93,"name":"Рассеиватель, задний фонарь"},{"id":96,"name":"Рассеиватель, фара заднего хода"},{"id":98,"name":"Рассеиватель, проблесковый маячок"},{"id":99,"name":"Кронштейн, фара рабочего освещения"},{"id":100,"name":"Кронштейн, фара дальнего света"},{"id":101,"name":"Кронштейн, основная фара"},{"id":102,"name":"Кронштейн, противотуманная фара"},{"id":103,"name":"Кронштейн, прожектор-искатель"},{"id":106,"name":"Лампа накаливания, фара дальнего света"},{"id":107,"name":"Лампа накаливания, основная фара"},{"id":108,"name":"Лампа накаливания, противотуманная фара"},{"id":109,"name":"Лампа накаливания, прожектор-искатель"},{"id":114,"name":"Лампа накаливания, фара заднего хода"},{"id":116,"name":"Лампа накаливания, проблесковый маячок"},{"id":117,"name":"Лампа накаливания, oсвещение салона"},{"id":120,"name":"Лампа накаливания, подкапотная лампа"},{"id":122,"name":"Кронштейн, тормозный шланг"},{"id":123,"name":"Тормозной барабан"},{"id":124,"name":"Тросик, cтояночный тормоз"},{"id":126,"name":"Багажник на крышу"},{"id":127,"name":"Рейлинги"},{"id":128,"name":"Прокладка, гильза цилиндра"},{"id":130,"name":"Амортизатор рулевого управления"},{"id":131,"name":"Прокладка, масляный радиатор"},{"id":132,"name":"Прокладка, масляный насос"},{"id":133,"name":"Прокладка, маслянный фильтр"},{"id":134,"name":"Прокладка, сетчатый масляный фильтр"},{"id":138,"name":"Прокладка, труба выхлопного газа"},{"id":139,"name":"Прокладка, термостат"},{"id":141,"name":"Прокладка, компрессор"},{"id":143,"name":"Прокладка, топливный насос"},{"id":144,"name":"Уплотнение, топливный фильтр"},{"id":146,"name":"Прокладка, механическая коробка передач"},{"id":148,"name":"Прокладка, датчик уровня топлива"},{"id":149,"name":"Прокладка, заливной патрубок"},{"id":151,"name":"Комплект прокладок, гильза цилиндра"},{"id":152,"name":"Комплект прокладок, компрессор"},{"id":155,"name":"Бортовое кольцо, диск сцепления"},{"id":156,"name":"Система тяг и рычагов торсиона"},{"id":157,"name":"Тахометр"},{"id":158,"name":"Корпус дроссельной заслонки"},{"id":159,"name":"Дисплей, давление наддува"},{"id":160,"name":"Дисплей, давление масла"},{"id":162,"name":"Датчик, давление масла"},{"id":163,"name":"Клапан поддержки давления масла"},{"id":167,"name":"Регулятор давления в тормозном приводе"},{"id":168,"name":"Регулятор давления подачи топлива"},{"id":170,"name":"Преобразователь давления"},{"id":171,"name":"Трубка сопла моечного шланга"},{"id":177,"name":"Входная пластина"},{"id":178,"name":"Фонарь подсветки двери"},{"id":179,"name":"Электрокомплект, прицепное устройство"},{"id":181,"name":"Насадка выпускной трубы"},{"id":183,"name":"Расширительный клапан, кондиционер"},{"id":184,"name":"Сервис срочного ремонта, приводной вал"},{"id":187,"name":"Крепление для велосипеда, рейлинги"},{"id":188,"name":"Пружина ходовой части"},{"id":189,"name":"Комплект ходовой части, пружины"},{"id":191,"name":"Пыльник, рулевое управление"},{"id":193,"name":"Пыльник, приводной вал"},{"id":194,"name":"Комплект пыльника, приводной вал"},{"id":195,"name":"Комплект пыльника, рулевое управление"},{"id":196,"name":"Звуковой сигнал"},{"id":198,"name":"Амортизационная стойка"},{"id":200,"name":"Электродвигатель, стеклоподъемник"},{"id":202,"name":"Фара дальнего света"},{"id":203,"name":"Рама ветрового стекла"},{"id":205,"name":"Прокладка, фланец карбюратора"},{"id":208,"name":"Облицовка передка"},{"id":213,"name":"Направляющая гильза, система сцепления"},{"id":214,"name":"Коврик"},{"id":215,"name":"Комплект ковриков"},{"id":217,"name":"Газоотделитель, карбюратор"},{"id":219,"name":"Газовая пружина, крышка багажник"},{"id":220,"name":"Газовая пружина, раздвижной стол"},{"id":221,"name":"Газовая пружина, вещевой ящик"},{"id":222,"name":"Газовая пружина, выступающая час"},{"id":223,"name":"Газовая пружина, подставка для телефона"},{"id":224,"name":"Газовая пружина, крышка отделени"},{"id":225,"name":"Газовая пружина, спальное место"},{"id":226,"name":"Газовая пружина, распашная дверь"},{"id":227,"name":"Газовая пружина, эмблема радиато"},{"id":228,"name":"Газовая пружина, убирающаяся фар"},{"id":229,"name":"Газовая пружина, стояночная торм"},{"id":230,"name":"Газовая пружина, дуга безопасности"},{"id":232,"name":"Газовая пружина, инерционная тор"},{"id":234,"name":"Главный цилиндр, система сцепления"},{"id":236,"name":"Шарнир, приводной вал"},{"id":238,"name":"Багажник, рейлинги"},{"id":239,"name":"Багажник, задний крепитель"},{"id":240,"name":"Система регулирования скорости"},{"id":243,"name":"Свеча накаливания"},{"id":244,"name":"Решетка вентилятора, буфер"},{"id":245,"name":"Стойка, облицовка радиатора"},{"id":246,"name":"Фланец, колонка рулевого управления"},{"id":247,"name":"Подвеска, двигатель"},{"id":249,"name":"Подвеска, механическая коробка передач"},{"id":252,"name":"Буфер, глушитель"},{"id":253,"name":"Стопорное кольцо, глушитель"},{"id":254,"name":"Пружинный зажим, буфер"},{"id":255,"name":"Пружина, тормозная колодка"},{"id":256,"name":"Пружина, колодки дискового тормоза"},{"id":257,"name":"Рама держателя, система очистки окон"},{"id":258,"name":"Главный тормозной цилиндр"},{"id":259,"name":"Основная фара"},{"id":261,"name":"Нажимной диск сцепления"},{"id":262,"name":"Диск сцепления"},{"id":264,"name":"Усилитель сцепления"},{"id":266,"name":"Шаровая головка, система тяг и рычагов"},{"id":268,"name":"Датчик, пневматическая подвеска"},{"id":271,"name":"Гаситель, подвеска двигателя"},{"id":273,"name":"Рычаг независимой подвески колеса, подвеска колеса"},{"id":274,"name":"Стабилизатор, ходовая часть"},{"id":276,"name":"Ремкомплект, главный тормозной цилиндр"},{"id":277,"name":"Колесный тормозной цилиндр"},{"id":278,"name":"Ремкомплект, колесный тормозной цилиндр"},{"id":281,"name":"Тормозные колодки"},{"id":283,"name":"Регулятор давления, динамика движения"},{"id":284,"name":"Поперечная рулевая тяга"},{"id":285,"name":"Продольная рулевая тяга"},{"id":286,"name":"Рулевой механизм"},{"id":288,"name":"Регулятор генератора"},{"id":289,"name":"Противотуманная фара"},{"id":290,"name":"Задний габаритный огонь"},{"id":291,"name":"Задний противотуманный фонарь"},{"id":292,"name":"Фара заднего хода"},{"id":293,"name":"Фонарь освещения номерного знака"},{"id":294,"name":"Габаритный огонь"},{"id":295,"name":"Двигатель стеклоочистителя"},{"id":297,"name":"Звуковой сигнал"},{"id":298,"name":"Щетка стеклоочистителя"}];
+
+
+function partsApiKey() {
+  try { const v = localStorage.getItem('partsapi_key'); if (v && v.trim()) return v.trim(); } catch (_) {}
+  return PARTSAPI.key;
+}
+function tecdocCatIdForName(partName) {
+  const n = String(partName || '').toLowerCase().replace(/\s+/g, ' ').trim();
+  if (!n) return null;
+  if (TECDOC_CAT_MAP[n]) return TECDOC_CAT_MAP[n];
+  let best = null, bestLen = 0;
+  for (const [k, id] of Object.entries(TECDOC_CAT_MAP)) {
+    if (n.includes(k) || k.includes(n)) { if (k.length > bestLen) { best = id; bestLen = k.length; } }
+  }
+  return best;
+}
+/**
+ * getPartsbyVIN — как в документации PartsAPI:
+ * https://api.partsapi.ru?method=getPartsbyVIN&key=...&vin=...&cat=PT_ID
+ * Параметры: key, vin, cat (без type).
+ * Ответ: массив строк вида "MITSUBISHI 1230A045"
+ */
+async function partsApiGetPartsByVin(vin, catId) {
+  const key = partsApiKey();
+  if (!key) throw new Error('Нет ключа PartsAPI');
+  if (!vin || String(vin).length < 11) throw new Error('Нужен VIN');
+  if (!catId) throw new Error('Не определена категория');
+  const url = `${PARTSAPI.base}?method=getPartsbyVIN&key=${encodeURIComponent(key)}&vin=${encodeURIComponent(vin)}&cat=${encodeURIComponent(catId)}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('PartsAPI HTTP ' + res.status);
+  return await res.json();
+}
+/** Нормализует сырой ответ PartsAPI → чистый артикул без бренда и скобок */
+function partsApiNormalizeArticle(raw) {
+  if (!raw) return '';
+  let s = String(raw).trim();
+  // убрать скобки: [FORD 1302804] → FORD 1302804
+  s = s.replace(/^\[+|\]+$/g, '').trim();
+  // формат BRAND|ARTICLE|... → берём куски
+  const bits = s.split(/[|/;,]+/).map(x => x.trim()).filter(Boolean);
+  const isBrand = (b) => /^(OEM|OES|AFTERMARKET|ORIGINAL|FORD|TOYOTA|VW|AUDI|BMW|MERCEDES|KIA|HYUNDAI|NISSAN|HONDA|MAZDA|RENAULT|PEUGEOT|CITROEN|SKODA|OPEL|CHEVROLET|LADA|VAZ|BOSCH|MANN|MAHLE|VALEO|SACHS)$/i.test(b);
+  const isArt = (b) => /^[A-Z0-9][A-Z0-9\-\.]{3,24}$/i.test(b) && !isBrand(b);
+
+  // 1) явные куски после разделителя
+  for (const b of bits) {
+    // "FORD 1302804" в одном куске
+    const m = b.match(/^([A-Za-z]{2,15})\s+([A-Z0-9][A-Z0-9\-\.]{3,24})$/i);
+    if (m && isArt(m[2])) return m[2].toUpperCase();
+    if (isArt(b)) return b.toUpperCase();
+  }
+  // 2) из строки целиком вытащить последний токен-артикул
+  const tokens = s.split(/[\s|/;,]+/).filter(Boolean);
+  for (let i = tokens.length - 1; i >= 0; i--) {
+    const t = tokens[i].replace(/^\[+|\]+$/g, '');
+    if (isArt(t)) return t.toUpperCase();
+  }
+  return '';
+}
+
+function partsApiPickArticle(data) {
+  if (!data) return '';
+  const rows = Array.isArray(data) ? data
+    : Array.isArray(data.parts) ? data.parts
+    : Array.isArray(data.data) ? data.data
+    : Array.isArray(data.result) ? data.result
+    : (typeof data.parts === 'string' ? [data] : [data]);
+  for (const row of rows) {
+    if (typeof row === 'string') {
+      const a = partsApiNormalizeArticle(row);
+      if (a) return a;
+      continue;
+    }
+    if (!row || typeof row !== 'object') continue;
+    for (const k of ['article','ArticleNo','ART_ARTICLE_NR','oem','number','art','parts','shortname','ArticleSearchNo']) {
+      if (row[k]) {
+        const a = partsApiNormalizeArticle(row[k]);
+        if (a && a.length >= 4) return a;
+      }
+    }
+  }
+  if (typeof data.parts === 'string') return partsApiNormalizeArticle(data.parts);
+  return '';
+}
+/**
+ * AI подбирает PT_ID категории TecDoc по названию запчасти.
+ * В промпт передаётся список ~200 частых категорий.
+ * Возвращает number | null.
+ */
+async function ntResolveCategoryAI(partName, car) {
+  if (!_aiCache.key) return null;
+  const name = String(partName || '').trim();
+  if (!name) return null;
+  if (!window._catAiCache) window._catAiCache = new Map();
+  const cacheKey = name.toLowerCase();
+  if (window._catAiCache.has(cacheKey)) return window._catAiCache.get(cacheKey);
+
+  // Для выбора категории модель авто почти не нужна — категория общая (фильтр, колодки…).
+  // VIN/марка не должны влиять на PT_ID.
+  const list = (typeof TECDOC_CATS_FOR_AI !== 'undefined' ? TECDOC_CATS_FOR_AI : [])
+    .map(c => c.id + ':' + c.name).join('\n');
+  const system = `Ты каталогизатор автозапчастей TecDoc. По названию запчасти выбери ОДИН PT_ID из списка.
+Ответь ТОЛЬКО JSON: {"id":число,"name":"название из списка"} или {"id":null} если ничего не подходит.
+Не выдумывай id вне списка. Марка авто на выбор категории не влияет — только тип детали.`;
+  const user = `Запчасть: «${name}»
+
+Список категорий (id:название):
+${list}`;
+  try {
+    const raw = await ntAIChat([
+      { role: 'system', content: system },
+      { role: 'user', content: user }
+    ], { temperature: 0, max_tokens: 80 });
+    const parsed = ntAiParseJSON(raw) || {};
+    let id = parsed.id;
+    if (id == null || id === '' || id === 'null') {
+      window._catAiCache.set(cacheKey, null);
+      return null;
+    }
+    id = parseInt(id, 10);
+    if (!Number.isFinite(id) || id <= 0) {
+      window._catAiCache.set(cacheKey, null);
+      return null;
+    }
+    const known = (typeof TECDOC_CATS_FOR_AI !== 'undefined' && TECDOC_CATS_FOR_AI.some(c => c.id === id))
+      || Object.values(TECDOC_CAT_MAP).includes(id);
+    if (!known) {
+      console.warn('AI category id not in list', id, name);
+      window._catAiCache.set(cacheKey, null);
+      return null;
+    }
+    window._catAiCache.set(cacheKey, id);
+    return id;
+  } catch (e) {
+    console.warn('ntResolveCategoryAI', e);
+    return null;
+  }
+}
+
+/**
+ * Выбор PT_ID: сначала AI (умнее понимает формулировки),
+ * если AI недоступен / null — локальная карта ключевых слов.
+ */
+async function resolvePartCategory(partName, car) {
+  // 1. AI выбирает категорию из списка TecDoc
+  if (_aiCache && _aiCache.key) {
+    try {
+      const aiId = await ntResolveCategoryAI(partName, car);
+      if (aiId) return aiId;
+    } catch (e) {
+      console.warn('AI category failed, fallback to map', e);
+    }
+  }
+  // 2. Запасной вариант — локальная карта
+  return tecdocCatIdForName(partName);
+}
+
+async function partsApiLookupArticles(parts, car) {
+  const map = new Map();
+  const vin = (car && car.vin) ? String(car.vin).trim().toUpperCase() : '';
+  if (!vin || vin.length < 11) return map;
+  const need = (parts || []).filter(p => String(p.name || '').trim() && !ntExtractArticle(p));
+  for (const p of need) {
+    const name = String(p.name || '').trim();
+    let cat = null;
+    try { cat = await resolvePartCategory(name, car); } catch (_) {}
+    if (!cat) {
+      console.warn('Нет категории для', name);
+      continue;
+    }
+    try {
+      const data = await partsApiGetPartsByVin(vin, cat);
+      const art = partsApiPickArticle(data);
+      if (art) map.set(name.toLowerCase(), art);
+      else console.warn('PartsAPI пусто для', name, 'cat=' + cat);
+    } catch (e) {
+      console.warn('PartsAPI', name, 'cat=' + cat, e.message);
+    }
+  }
+  return map;
+}
+
 const NT_AI_CONFIG = {
   baseURL: 'https://tokenwave.ru/v1/chat/completions',
   modelsURL: 'https://tokenwave.ru/v1/models',
@@ -4997,21 +5646,25 @@ function ntFillAIPanel() {
   const k = document.getElementById('ntAiKey');
   const tm = document.getElementById('ntAiTextModel');
   const vm = document.getElementById('ntAiVisionModel');
+  const pk = document.getElementById('ntPartsApiKey');
   if (k) k.value = _aiCache.key || '';
   if (tm) tm.value = _aiCache.textModel || 'deepseek-v4-flash';
   if (vm) vm.value = _aiCache.visionModel || 'deepseek-flash';
+  if (pk) pk.value = partsApiKey() || '';
 }
 
 function ntSaveAISettings() {
   const key = (document.getElementById('ntAiKey')?.value || '').trim();
   const tm = (document.getElementById('ntAiTextModel')?.value || '').trim() || 'deepseek-v4-flash';
   const vm = (document.getElementById('ntAiVisionModel')?.value || '').trim() || 'deepseek-flash';
+  const pk = (document.getElementById('ntPartsApiKey')?.value || '').trim();
   _aiCache.key = key;
   _aiCache.textModel = tm;
   _aiCache.visionModel = vm;
+  try { if (pk) localStorage.setItem('partsapi_key', pk); } catch (_) {}
   const ref = aiSettingsRef();
   if (!ref) return;
-  ref.set({ key, textModel: tm, visionModel: vm }).catch(err => {
+  ref.set({ key, textModel: tm, visionModel: vm, partsApiKey: pk || PARTSAPI.key }).catch(err => {
     console.error('AI settings save error:', err);
     ntSetAIStatus('Не удалось сохранить настройки: ' + err.message, 'err');
   });
@@ -5035,9 +5688,10 @@ function ntAiParseJSON(s) {
 // ---------- Строки запчастей/работ ----------
 function ntPartRowHtml(p) {
   p = p || {};
-  return `<div class="nt-rw-row" data-kind="part">
+  return `<div class="nt-rw-row" data-kind="part" style="grid-template-columns:minmax(100px,1.5fr) minmax(70px,1fr) 55px 110px 32px">
     <input type="text" class="rw-name" placeholder="Название запчасти" value="${esc(p.name||'')}">
-    <input type="number" class="rw-qty" min="1" step="1" placeholder="Кол-во" value="${p.qty||1}">
+    <input type="text" class="rw-article" placeholder="Артикул" value="${esc(p.article||'')}" style="text-transform:uppercase">
+    <input type="number" class="rw-qty" min="1" step="1" placeholder="Кол" value="${p.qty||1}">
     <select class="rw-status">
       <option value="notordered" ${p.status==='notordered'?'selected':''}>Не заказано</option>
       <option value="ordered" ${p.status==='ordered'?'selected':''}>Заказано</option>
@@ -5066,6 +5720,85 @@ function ntAddPartRow() {
   list.insertAdjacentHTML('beforeend', ntPartRowHtml({}));
   ntUpdateRWCounts();
 }
+
+/** Кнопка «Найти артикулы» в форме новой задачи */
+async function ntLookupArticlesInNewTask() {
+  const parts = ntCollectParts();
+  const missing = parts.filter(p => p.name && !p.article);
+  if (!missing.length) {
+    ntSetAIStatus('У всех запчастей уже есть артикул.', 'ok');
+    return;
+  }
+  const car = ntGetCarContext(null);
+  if (!car.vin || String(car.vin).length < 11) {
+    ntSetAIStatus('Для точного поиска нужен VIN. Без VIN AI смотрит только на поле «модель» (может ошибиться).', 'err');
+    if (!car.model) return;
+  }
+  const btn = document.getElementById('ntLookupArticlesBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '🔍 Ищу…'; }
+  ntSetAIStatus(`🔍 Ищу по VIN ${car.vin ? car.vin.slice(0,8)+'…' : '—'} (модель в форме игнорируется при наличии VIN)…`, 'info');
+  try {
+    const filled = await ntAutoFillArticles(parts, null);
+    ntRenderParts(filled.map(p => ({
+      name: p.name || '',
+      article: ntExtractArticle(p) || p.article || '',
+      qty: p.qty || 1,
+      status: p.status || 'notordered'
+    })));
+    const found = filled.filter(p => ntExtractArticle(p) || p.article).length;
+    ntSetAIStatus(`✓ Артикулов: ${found}/${filled.length}. Проверь перед созданием задачи.`, 'ok');
+  } catch (e) {
+    ntSetAIStatus('Ошибка поиска: ' + e.message, 'err');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '🔍 Найти артикулы'; }
+  }
+}
+
+/** Кнопка «Найти артикулы» в карточке задачи */
+async function ntLookupArticlesInTask(taskId) {
+  const task = state.tasks.find(t => t.id === taskId);
+  if (!task) return;
+  task.parts = task.parts || [];
+  const missing = task.parts.filter(p => String(p.name || '').trim() && !String(p.article || '').trim());
+  if (!missing.length) {
+    alert('У всех запчастей уже есть артикул.');
+    return;
+  }
+  if (!task.car?.model && !task.car?.vin) {
+    alert('У задачи нет модели/VIN — укажи в карточке авто.');
+    return;
+  }
+  ntSetAIStatus(`🔍 Ищу OEM для ${missing.length} запч.…`, 'info');
+  try {
+    const filled = await ntAutoFillArticles(task.parts, task);
+    let updated = 0;
+    filled.forEach((p, i) => {
+      const art = ntExtractArticle(p);
+      if (art && art !== String(task.parts[i].article || '')) {
+        task.parts[i].article = art;
+        updated++;
+      }
+    });
+    if (updated) {
+      task.updatedAt = new Date().toISOString();
+      task.log = task.log || [];
+      task.log.push({
+        time: new Date().toISOString(),
+        user: USERS[state.currentUser].name,
+        text: `AI: подобрано артикулов: ${updated}`
+      });
+      saveState(taskId);
+      closeModal();
+      render();
+      setTimeout(() => openTaskView(taskId), 100);
+    } else {
+      ntSetAIStatus('AI не нашёл уверенных OEM-номеров. Укажи артикул вручную или проверь модель/год.', 'info');
+    }
+  } catch (e) {
+    ntSetAIStatus('Ошибка поиска: ' + e.message, 'err');
+    alert('Ошибка: ' + e.message);
+  }
+}
 function ntAddWorkRow() {
   const list = document.getElementById('ntWorksList');
   if (!list) return;
@@ -5086,6 +5819,7 @@ function ntCollectParts() {
     if (!name) return;
     out.push({
       name,
+      article: (r.querySelector('.rw-article')?.value || '').trim(),
       qty: Math.max(1, parseInt(r.querySelector('.rw-qty')?.value, 10) || 1),
       status: r.querySelector('.rw-status')?.value || 'notordered'
     });
@@ -5164,13 +5898,14 @@ ${ntBuildTaskContext(null)}
   "reason": "краткая причина (2-4 слова) или пустая строка",
   "comment": "остальные детали или пустая строка",
   "damage": "описание состояния авто или пустая строка",
-  "parts": [{"name":"название","qty":1,"status":"notordered"}],
+  "parts": [{"name":"название","article":"артикул или пустая строка","qty":1,"status":"notordered"}],
   "works": [{"name":"название","qty":1,"status":"notstarted"}]
 }
 Правила:
 - Госномер → РФ А123ВС777.
 - VIN — ровно 17 символов, без I/O/Q.
 - parts/works — только если реально названы. Не дублируй: «замена масла» — работа, «масло» — запчасть.
+- article — артикул запчасти (OEM / каталожный номер), если назван или виден. Иначе "".
 - Пустое — "" или [].
 
 Текст:
@@ -5192,19 +5927,20 @@ ${ntBuildTaskContext(null)}
   "reason": "краткая причина или пустая строка",
   "comment": "детали или пустая строка",
   "damage": "описание состояния или пустая строка",
-  "parts": [{"name":"название","qty":1,"status":"notordered"}],
+  "parts": [{"name":"название","article":"артикул или пустая строка","qty":1,"status":"notordered"}],
   "works": [{"name":"название","qty":1,"status":"notstarted"}]
 }
 Правила:
 - VIN: ровно 17 символов, без I/O/Q. Нечитаем — "".
 - Поля нет — "".
-- parts/works — только если перечислены.`;
+- parts/works — только если перечислены.
+- article — артикул/номер детали, если виден на документе. Иначе "".`;
 }
 function ntBuildRWAppendPrompt(text, currentParts, currentWorks) {
   return `Ты — оператор автосервиса. Пользователь продиктовал фрагмент — дополни списки запчастей и работ.
 
 === NOTE: статусы и поля ===
-part: { name, qty (≥1), purchase (₽), sale (₽), status: "notordered"|"ordered"|"instock" }
+part: { name, article (артикул/каталожный номер), qty (≥1), purchase (₽), sale (₽), status: "notordered"|"ordered"|"instock" }
 work: { name, hours, cost (₽), price (₽), status: "notstarted"|"inwork"|"finished" }
 
 УЖЕ ЕСТЬ запчасти:
@@ -5218,12 +5954,13 @@ ${JSON.stringify(currentWorks, null, 2)}
 
 Верни СТРОГО JSON без markdown:
 {
-  "parts": [{"name":"название","qty":1,"status":"notordered"}],
+  "parts": [{"name":"название","article":"артикул или пустая строка","qty":1,"status":"notordered"}],
   "works": [{"name":"название","qty":1,"status":"notstarted"}]
 }
 Правила:
 - Верни ПОЛНЫЕ объединённые списки: было + новые. Не теряй, не дублируй.
 - Если позиция уже есть и назвали количество — обнови qty.
+- Если назван артикул — запиши в article.
 - Не дублируй: «замена масла» — работа, «масло» — запчасть.`;
 }
 /* ===== [PATCH] Контекст задачи для AI-промптов ===== */
@@ -5267,11 +6004,11 @@ function ntBuildTaskContext(task) {
 
 ПОЛЯ ЗАПЧАСТИ (part):
 - name        — название
+- article     — АРТИКУЛ / каталожный номер / OEM (ОБЯЗАТЕЛЬНО если назван или виден в тексте/на фото; иначе "")
 - qty         — количество, целое ≥ 1
 - purchase    — закупочная цена, ₽ (число или "")
 - sale        — цена продажи клиенту, ₽ (число или "")
 - status      — см. статусы запчастей
-- article     — артикул (можно пустым)
 
 ПОЛЯ РАБОТЫ (work):
 - name        — название работы
@@ -5317,6 +6054,7 @@ function ntBuildTaskContext(task) {
       scheduledTime: task.scheduledTime || null,
       parts: (task.parts || []).map(p => ({
         name: p.name || "",
+        article: p.article || "",
         qty: p.quantity || 1,
         purchase: p.purchase || "",
         sale: p.sale || "",
@@ -5388,6 +6126,282 @@ async function ntCallVisionLLM(dataUrl) {
 }
 
 // ---------- Применение данных ----------
+/** Достаёт артикул из объекта запчасти AI (разные возможные ключи) */
+function ntExtractArticle(p) {
+  if (!p || typeof p !== 'object') return '';
+  const keys = ['article', 'art', 'sku', 'oem', 'partNumber', 'part_number', 'catalog', 'code', 'артикул', 'Артикул'];
+  for (const k of keys) {
+    const v = p[k];
+    if (v == null || !String(v).trim()) continue;
+    // чистим [FORD 1302804] / FORD|1302804 → 1302804
+    const cleaned = (typeof partsApiNormalizeArticle === 'function')
+      ? partsApiNormalizeArticle(v)
+      : String(v).trim().toUpperCase();
+    if (cleaned) return cleaned;
+    return String(v).trim().toUpperCase();
+  }
+  return '';
+}
+
+/**
+ * Из сырого текста вытаскивает пары «название → артикул».
+ * Паттерны: «крыло артикул 5C0481203», «арт. 8K0941003», «OEM: 12345», «[5C0481203]»
+ */
+function ntParseArticlesFromText(text) {
+  const map = new Map(); // nameLower -> article
+  if (!text) return map;
+  const t = String(text);
+
+  // 1) «название … артикул/арт./OEM/код … CODE»
+  const re1 = /([а-яёa-z0-9][а-яёa-z0-9\s\-]{1,40}?)\s*(?:артикул|арт\.?|oem|код|pn|p\/n|cat\.?|номер)\s*[:\-]?\s*([A-Z0-9][A-Z0-9\-]{4,20})/gi;
+  let m;
+  while ((m = re1.exec(t)) !== null) {
+    const name = m[1].trim().toLowerCase().replace(/\s+/g, ' ');
+    const art = m[2].trim().toUpperCase();
+    if (name.length >= 2 && art.length >= 5) map.set(name, art);
+  }
+
+  // 2) «CODE — название» или «название (CODE)»
+  const re2 = /([а-яёa-z][а-яёa-z0-9\s\-]{1,30}?)\s*[\(\[]\s*([A-Z0-9][A-Z0-9\-]{4,20})\s*[\)\]]/gi;
+  while ((m = re2.exec(t)) !== null) {
+    const name = m[1].trim().toLowerCase().replace(/\s+/g, ' ');
+    const art = m[2].trim().toUpperCase();
+    if (name.length >= 2 && art.length >= 5 && !map.has(name)) map.set(name, art);
+  }
+
+  // 3) одиночные артикулы после слова «артикул» без названия рядом
+  // (используется как fallback для единственной запчасти)
+  const re3 = /(?:артикул|арт\.?|oem)\s*[:\-]?\s*([A-Z0-9][A-Z0-9\-]{4,20})/gi;
+  const lone = [];
+  while ((m = re3.exec(t)) !== null) lone.push(m[1].trim().toUpperCase());
+  if (lone.length) map.set('__lone__', lone);
+
+  return map;
+}
+
+/** Дополняет parts артикулами из сырого текста, если AI их не вернул */
+function ntEnrichPartsWithArticles(parts, rawText) {
+  if (!Array.isArray(parts) || !parts.length || !rawText) return parts;
+  const map = ntParseArticlesFromText(rawText);
+  const loneList = map.get('__lone__') || [];
+  map.delete('__lone__');
+  let loneIdx = 0;
+
+  return parts.map(p => {
+    const existing = ntExtractArticle(p);
+    if (existing) return { ...p, article: existing };
+
+    const name = String(p.name || '').trim().toLowerCase();
+    // точное совпадение
+    if (map.has(name)) return { ...p, article: map.get(name) };
+    // частичное: ключ содержится в имени или наоборот
+    for (const [k, art] of map.entries()) {
+      if (name.includes(k) || k.includes(name)) return { ...p, article: art };
+    }
+    // fallback — одиночные артикулы по порядку
+    if (loneIdx < loneList.length) {
+      const art = loneList[loneIdx++];
+      return { ...p, article: art };
+    }
+    return p;
+  });
+}
+
+/** Собирает данные авто из формы новой задачи или из объекта task */
+function ntGetCarContext(task) {
+  if (task && task.car) {
+    return {
+      model: task.car.model || '',
+      year: task.car.year || '',
+      vin: task.car.vin || '',
+      plate: task.car.plate || ''
+    };
+  }
+  return {
+    model: (document.getElementById('nModel')?.value || '').trim(),
+    year: (document.getElementById('nYear')?.value || '').trim(),
+    vin: (document.getElementById('nVin')?.value || '').trim().toUpperCase(),
+    plate: (document.getElementById('nPlate')?.value || '').trim()
+  };
+}
+
+/**
+ * Расшифровка VIN через PartsAPI (марка/модель по факту кузова).
+ * Кэшируется. При ошибке — null.
+ */
+async function partsApiVinDecode(vin) {
+  const v = String(vin || '').trim().toUpperCase();
+  if (v.length < 11) return null;
+  if (!window._vinDecodeCache) window._vinDecodeCache = new Map();
+  if (window._vinDecodeCache.has(v)) return window._vinDecodeCache.get(v);
+  try {
+    const key = partsApiKey();
+    const url = `${PARTSAPI.base}?method=VINdecode&key=${encodeURIComponent(key)}&vin=${encodeURIComponent(v)}&lang=ru`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    // разные форматы ответа
+    const make = data.make || data.Make || data.brand || data.Brand || data.marka || data.manufacturer || '';
+    const model = data.model || data.Model || data.modelName || data.name || '';
+    const year = data.year || data.Year || data.modelYear || data.modelyear || '';
+    const decoded = {
+      make: String(make || '').trim(),
+      model: String(model || '').trim(),
+      year: String(year || '').trim(),
+      raw: data
+    };
+    // иногда всё в одной строке
+    if (!decoded.make && !decoded.model && typeof data === 'object') {
+      const s = JSON.stringify(data);
+      decoded.note = s.slice(0, 200);
+    }
+    window._vinDecodeCache.set(v, decoded);
+    return decoded;
+  } catch (e) {
+    console.warn('VINdecode', e.message);
+    window._vinDecodeCache.set(v, null);
+    return null;
+  }
+}
+
+/**
+ * Контекст авто для подбора артикулов.
+ * VIN — главный источник истины. Модель из формы только если VIN нет.
+ */
+async function ntGetArticleCarContext(carOrTask) {
+  const car = ntGetCarContext(carOrTask && carOrTask.car ? carOrTask : carOrTask);
+  const vin = String(car.vin || '').trim().toUpperCase();
+  let decoded = null;
+  if (vin.length >= 11) {
+    decoded = await partsApiVinDecode(vin);
+  }
+  // строка для промптов AI
+  let carLine;
+  if (vin.length >= 11) {
+    const fromVin = [decoded && decoded.make, decoded && decoded.model, decoded && decoded.year]
+      .filter(Boolean).join(' ');
+    carLine = `VIN: ${vin}` +
+      (fromVin ? ` (по VIN: ${fromVin})` : '') +
+      (car.model ? `. Поле «модель» в форме: «${car.model}» — ИГНОРИРУЙ, если противоречит VIN` : '');
+  } else {
+    carLine = [
+      car.model && `марка/модель: ${car.model}`,
+      car.year && `год: ${car.year}`
+    ].filter(Boolean).join(', ') || 'авто неизвестно';
+  }
+  return { ...car, vin, decoded, carLine, vinPrimary: vin.length >= 11 };
+}
+
+/**
+ * AI-поиск OEM-артикулов по названию запчасти + авто.
+ * Возвращает Map: nameLower → article
+ * Если есть VIN — артикулы должны соответствовать VIN, не полю «модель».
+ */
+async function ntLookupArticlesAI(parts, car) {
+  const need = (parts || []).filter(p => {
+    const name = String(p.name || '').trim();
+    return name && !ntExtractArticle(p);
+  });
+  if (!need.length) return new Map();
+  if (!_aiCache.key) throw new Error('Нужен API-ключ AI для поиска артикулов.');
+
+  const ctx = car && car.carLine ? car : await ntGetArticleCarContext(car);
+  const carLine = ctx.carLine || 'авто неизвестно';
+  const list = need.map((p, i) => `${i + 1}. ${p.name}`).join('\n');
+
+  const prompt = `Ты — каталогизатор OEM-запчастей автосервиса. Подбери ОРИГИНАЛЬНЫЕ (OEM) артикулы.
+
+Автомобиль: ${carLine}
+
+КРИТИЧЕСКИ ВАЖНО:
+- Если указан VIN — подбирай артикулы СТРОГО под этот VIN (марка/модель из VIN).
+- Поле «модель» в карточке может быть ошибочным — при наличии VIN оно НЕ источник истины.
+- Не подбирай запчасти от другой марки.
+
+Запчасти без артикула:
+${list}
+
+Верни СТРОГО JSON без markdown:
+{
+  "items": [
+    {"name": "точное название из списка", "article": "OEM-номер", "confidence": "high|medium|low", "note": "кратко почему"}
+  ]
+}
+
+Правила:
+1. article — только реальный OEM/каталожный номер производителя авто (не aftermarket вроде Bosch/Mann, если не уверен).
+2. Формат номера как у марки по VIN.
+3. Если для позиции НЕТ уверенного OEM — article: "" и confidence: "low".
+4. Не выдумывай «красивые» номера. Лучше пусто, чем неверный артикул.
+5. Учитывай сторону (левый/правый), если она в названии.
+6. name в ответе должен совпадать с названием из списка.
+7. Верни элемент для КАЖДОЙ позиции из списка.`;
+
+  const data = await ntCallTextLLM(prompt);
+  const map = new Map();
+  const items = Array.isArray(data.items) ? data.items : (Array.isArray(data.parts) ? data.parts : []);
+  items.forEach(it => {
+    const name = String(it.name || '').trim().toLowerCase();
+    const art = ntExtractArticle(it);
+    const conf = String(it.confidence || '').toLowerCase();
+    if (!name || !art) return;
+    if (conf === 'low' && art.length < 6) return;
+    map.set(name, art);
+  });
+  return map;
+}
+
+/** Проставляет найденные артикулы в массив parts (мутирует/возвращает новый) */
+function ntApplyArticleMap(parts, artMap) {
+  if (!artMap || !artMap.size) return parts;
+  return (parts || []).map(p => {
+    if (ntExtractArticle(p)) return p;
+    const name = String(p.name || '').trim().toLowerCase();
+    if (artMap.has(name)) return { ...p, article: artMap.get(name) };
+    for (const [k, art] of artMap.entries()) {
+      if (name.includes(k) || k.includes(name)) return { ...p, article: art };
+    }
+    return p;
+  });
+}
+
+/**
+ * Главная функция: для parts без артикула —
+ * 1) PartsAPI getPartsbyVIN (если есть VIN + категория)
+ * 2) fallback — AI-подсказка по марке/модели
+ */
+async function ntAutoFillArticles(parts, carOrTask) {
+  const list = Array.isArray(parts) ? parts : [];
+  const missing = list.filter(p => String(p.name || '').trim() && !ntExtractArticle(p));
+  if (!missing.length) return list;
+  const ctx = await ntGetArticleCarContext(carOrTask && carOrTask.car ? carOrTask : carOrTask);
+  if (!ctx.model && !ctx.vin) return list;
+
+  let artMap = new Map();
+  // 1. PartsAPI — ТОЛЬКО по VIN (модель из формы не используется)
+  if (ctx.vinPrimary) {
+    try {
+      artMap = await partsApiLookupArticles(list, ctx);
+    } catch (e) {
+      console.warn('PartsAPI lookup:', e);
+    }
+  }
+  // 2. AI-fallback: тоже с приоритетом VIN
+  const stillMissing = list.filter(p => {
+    const name = String(p.name || '').trim().toLowerCase();
+    return name && !ntExtractArticle(p) && !artMap.has(name);
+  });
+  if (stillMissing.length && _aiCache.key) {
+    try {
+      const aiMap = await ntLookupArticlesAI(stillMissing, ctx);
+      aiMap.forEach((v, k) => { if (!artMap.has(k)) artMap.set(k, v); });
+    } catch (e) {
+      console.warn('AI article fallback:', e);
+    }
+  }
+  return ntApplyArticleMap(list, artMap);
+}
+
 function ntApplyAIData(data) {
   const set = (id, val) => {
     const el = document.getElementById(id);
@@ -5414,12 +6428,41 @@ function ntApplyAIData(data) {
   if (set('nDamage', data.damage)) filled++;
 
   if (Array.isArray(data.parts) && data.parts.length) {
-    ntRenderParts(data.parts.map(p => ({ name: p.name||'', qty: parseInt(p.qty,10)||1, status: p.status||'notordered' })));
+    const raw = data.__rawText || data.raw_text || data.comment || '';
+    let enriched = ntEnrichPartsWithArticles(data.parts, raw);
+    // Асинхронный автопоиск OEM помечаем флагом — вызывающая сторона дождётся через ntApplyAIDataAsync
+    data.__partsEnriched = enriched;
+    ntRenderParts(enriched.map(p => ({
+      name: p.name || '',
+      article: ntExtractArticle(p),
+      qty: parseInt(p.qty, 10) || 1,
+      status: p.status || 'notordered'
+    })));
     filled++;
   }
   if (Array.isArray(data.works) && data.works.length) {
     ntRenderWorks(data.works.map(w => ({ name: w.name||'', qty: parseInt(w.qty,10)||1, status: w.status||'notstarted' })));
     filled++;
+  }
+  return filled;
+}
+
+/** Как ntApplyAIData, но после этого ищет OEM-артикулы для позиций без артикула */
+async function ntApplyAIDataWithArticleLookup(data) {
+  const filled = ntApplyAIData(data);
+  let parts = data.__partsEnriched || (Array.isArray(data.parts) ? data.parts : []);
+  const missing = parts.filter(p => String(p.name || '').trim() && !ntExtractArticle(p));
+  if (missing.length && _aiCache.key) {
+    ntSetAIStatus(`🔍 Ищу артикулы для ${missing.length} запч. по авто…`, 'info');
+    parts = await ntAutoFillArticles(parts, null);
+    ntRenderParts(parts.map(p => ({
+      name: p.name || '',
+      article: ntExtractArticle(p),
+      qty: parseInt(p.qty, 10) || 1,
+      status: p.status || 'notordered'
+    })));
+    const found = parts.filter(p => ntExtractArticle(p)).length;
+    ntSetAIStatus(`✓ Полей: ${filled}. Артикулов найдено: ${found}/${parts.length}.`, 'ok');
   }
   return filled;
 }
@@ -5430,14 +6473,64 @@ async function ntHandleVoiceResult(text) {
   ntSetAIStatus('🤖 Разбираю текст…', 'info');
   try {
     const data = await ntCallTextLLM(ntBuildTextPrompt(text));
-    const filled = ntApplyAIData(data);
-    ntSetAIStatus(`✓ Заполнено полей: ${filled}.`, 'ok');
+    data.__rawText = text;
+    await ntApplyAIDataWithArticleLookup(data);
   } catch (e) {
     ntSetAIStatus('Ошибка разбора: ' + e.message, 'err');
   }
 }
 
 // ---------- Фото → текст ----------
+/** Окно текстовой заметки / промпта */
+function openNotePrompt(taskId) {
+  const existing = document.getElementById('notePromptOverlay');
+  if (existing) existing.remove();
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.id = 'notePromptOverlay';
+  overlay.innerHTML = `
+    <div class="modal" style="max-width:480px">
+      <div class="modal-titlebar">
+        <h2>📝 Заметка / промпт</h2>
+        <div class="modal-title-actions"><button class="close-x" onclick="document.getElementById('notePromptOverlay')?.remove()">×</button></div>
+      </div>
+      <p style="font-size:12px;color:#a6adc8;margin:0 0 8px">Введи текст — AI разберёт его как голосовой ввод${taskId ? ' и обновит задачу' : ' и заполнит форму новой задачи'}.</p>
+      <textarea id="notePromptText" placeholder="Например: Toyota Camry 2019 А123ВС777, клиент Иванов, замена масла артикул 5W30, фара левая 81210-0D040…" style="min-height:120px;width:100%"></textarea>
+      <div class="modal-actions">
+        <button onclick="document.getElementById('notePromptOverlay')?.remove()">Отмена</button>
+        <button class="primary" id="notePromptSubmit">Обработать</button>
+      </div>
+      <div class="nt-ai-status" id="notePromptStatus"></div>
+    </div>`;
+  document.getElementById('modalContainer').appendChild(overlay);
+  const ta = document.getElementById('notePromptText');
+  ta.focus();
+  document.getElementById('notePromptSubmit').addEventListener('click', async () => {
+    const text = (ta.value || '').trim();
+    if (text.length < 3) {
+      const st = document.getElementById('notePromptStatus');
+      if (st) { st.textContent = 'Введи хотя бы несколько слов.'; st.className = 'nt-ai-status visible err'; }
+      return;
+    }
+    const btn = document.getElementById('notePromptSubmit');
+    if (btn) { btn.disabled = true; btn.textContent = '…'; }
+    try {
+      if (taskId) {
+        await ntHandleEditAIData(taskId, text);
+        document.getElementById('notePromptOverlay')?.remove();
+        openTaskView(taskId);
+      } else {
+        await ntHandleVoiceResult(text);
+        document.getElementById('notePromptOverlay')?.remove();
+      }
+    } catch (e) {
+      const st = document.getElementById('notePromptStatus');
+      if (st) { st.textContent = 'Ошибка: ' + e.message; st.className = 'nt-ai-status visible err'; }
+      if (btn) { btn.disabled = false; btn.textContent = 'Обработать'; }
+    }
+  });
+}
+
 function ntPickPhoto() {
   const inp = document.createElement('input');
   inp.type = 'file'; inp.accept = 'image/*'; inp.capture = 'environment';
@@ -5449,6 +6542,98 @@ function ntPickPhoto() {
   });
   document.body.appendChild(inp);
   inp.click();
+}
+function ntPickFile() {
+  const inp = document.createElement('input');
+  inp.type = 'file';
+  inp.accept = 'image/*,.txt,.csv,.pdf,.doc,.docx';
+  inp.style.display = 'none';
+  inp.addEventListener('change', () => {
+    const file = inp.files && inp.files[0];
+    if (!file) { inp.remove(); return; }
+    if (file.type.startsWith('image/')) {
+      ntHandlePhotoFile(file);
+    } else {
+      // Текстовый файл — читаем как заметку / AI-текст
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const text = String(e.target.result || '').slice(0, 8000);
+        if (!text.trim()) { ntSetAIStatus('Файл пустой.', 'err'); return; }
+        ntSetAIStatus('📎 Файл прочитан. Обрабатываю как текст…', 'info');
+        try {
+          if (typeof ntHandleVoiceResult === 'function') {
+            await ntHandleVoiceResult(text);
+          } else {
+            throw new Error('нет обработчика текста');
+          }
+        } catch (err) {
+          // fallback — положить в комментарий/заметку
+          const commentEl = document.getElementById('nComment');
+          if (commentEl) {
+            commentEl.value = (commentEl.value ? commentEl.value + '\n' : '') + '[файл: ' + file.name + ']\n' + text.slice(0, 2000);
+            ntSetAIStatus('📎 Содержимое файла добавлено в комментарий.', 'ok');
+          } else {
+            ntSetAIStatus('Не удалось обработать файл: ' + err.message, 'err');
+          }
+        }
+      };
+      reader.onerror = () => ntSetAIStatus('Не удалось прочитать файл.', 'err');
+      reader.readAsText(file, 'utf-8');
+    }
+    inp.remove();
+  });
+  document.body.appendChild(inp);
+  inp.click();
+}
+/** Обработка файла как заметки в существующей задаче */
+function ntHandleFileAsNote(taskId, file) {
+  return new Promise(resolve => {
+    if (!file) { resolve(); return; }
+    const task = state.tasks.find(t => t.id === taskId);
+    if (!task) { resolve(); return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        let text = '';
+        if (file.type.startsWith('image/')) {
+          // не должно сюда попадать, но на всякий
+          text = '[изображение: ' + file.name + ']';
+        } else {
+          text = String(reader.result || '').slice(0, 4000);
+        }
+        const noteLine = `[файл: ${file.name}] ${text.slice(0, 500)}${text.length > 500 ? '…' : ''}`;
+        task.comment = (task.comment ? task.comment + '\n' : '') + noteLine;
+        task.log = task.log || [];
+        task.log.push({
+          time: new Date().toISOString(),
+          user: USERS[state.currentUser].name,
+          text: `📎 Добавлен файл «${file.name}» как заметка`
+        });
+        task.updatedAt = new Date().toISOString();
+        saveState(taskId);
+        ntSetAIStatus('📎 Файл добавлен как заметка в задачу.', 'ok');
+        openTaskView(taskId);
+      } catch (e) {
+        ntSetAIStatus('Ошибка: ' + e.message, 'err');
+      } finally {
+        resolve();
+      }
+    };
+    reader.onerror = () => { ntSetAIStatus('Не удалось прочитать файл.', 'err'); resolve(); };
+    if (file.type.startsWith('text/') || /\.(txt|csv|log)$/i.test(file.name)) {
+      reader.readAsText(file, 'utf-8');
+    } else {
+      // Для pdf/doc — просто фиксируем имя
+      task.comment = (task.comment ? task.comment + '\n' : '') + `[файл: ${file.name}]`;
+      task.log = task.log || [];
+      task.log.push({ time: new Date().toISOString(), user: USERS[state.currentUser].name, text: `📎 Добавлен файл «${file.name}»` });
+      task.updatedAt = new Date().toISOString();
+      saveState(taskId);
+      ntSetAIStatus('📎 Файл «' + file.name + '» добавлен (бинарный — только имя).', 'ok');
+      openTaskView(taskId);
+      resolve();
+    }
+  });
 }
 function ntHandlePhotoFile(file) {
   const btn = document.getElementById('ntPhotoBtn');
@@ -5464,8 +6649,9 @@ function ntHandlePhotoFile(file) {
       ntSetAIStatus(`🤖 Распознаю фото (${_aiCache.visionModel})…`, 'info');
       try {
         const data = await ntCallVisionLLM(e.target.result);
-        const filled = ntApplyAIData(data);
-        ntSetAIStatus(`✓ Распознано. Заполнено полей: ${filled}. Можно сканировать ещё.`, 'ok');
+        data.__rawText = data.raw_text || data.comment || '';
+        await ntApplyAIDataWithArticleLookup(data);
+        ntSetAIStatus('✓ Распознано. Можно сканировать ещё.', 'ok');
       } catch (err) {
         ntSetAIStatus('Ошибка распознавания: ' + err.message, 'err');
       } finally {
@@ -5525,7 +6711,7 @@ ${ntBuildTaskContext(task)}
   "plate": null, "model": null, "year": null, "vin": null, "mileage": null,
   "clientName": null, "clientPhone": null, "reason": null, "comment": null, "damage": null,
   "assignee": null, "post": null, "scheduledTimeText": null,
-  "parts": [{"name":"","qty":1,"purchase":null,"sale":null,"status":"notordered"}],
+  "parts": [{"name":"","article":"","qty":1,"purchase":null,"sale":null,"status":"notordered"}],
   "works": [{"name":"","hours":null,"cost":null,"price":null,"status":"notstarted"}]
 }
 Правила:
@@ -5533,7 +6719,8 @@ ${ntBuildTaskContext(task)}
 - "назначь слесарю" / "слесарь Иванов" → assignee = "locksmith".
 - "завтра", "в пятницу", "через час" → scheduledTimeText = точная фраза.
 - Цены: "закупка 500, продажа 800" → purchase:500, sale:800. Только цена → price/sale.
-- parts/works — если реально названы. Для существующих (по имени) AI может обновить qty/status/purchase/sale/hours/cost/price.
+- parts/works — если реально названы. Для существующих (по имени) AI может обновить article/qty/status/purchase/sale/hours/cost/price.
+- article — артикул/каталожный номер запчасти, если назван.
 - VIN: ровно 17 символов, без I/O/Q.`;
 }
 
@@ -5546,10 +6733,10 @@ ${ntBuildTaskContext(task)}
   "raw_text": "", "plate": null, "model": null, "year": null, "vin": null, "mileage": null,
   "clientName": null, "clientPhone": null, "reason": null, "comment": null, "damage": null,
   "assignee": null, "post": null, "scheduledTimeText": null,
-  "parts": [{"name":"","qty":1,"purchase":null,"sale":null,"status":"notordered"}],
+  "parts": [{"name":"","article":"","qty":1,"purchase":null,"sale":null,"status":"notordered"}],
   "works": [{"name":"","hours":null,"cost":null,"price":null,"status":"notstarted"}]
 }
-Правила: VIN ровно 17 символов, без I/O/Q. Если поля нет — null. Не придумывай. Цены — только если видны.`;
+Правила: VIN ровно 17 символов, без I/O/Q. Если поля нет — null. Не придумывай. Цены — только если видны. article — если виден артикул.`;
 }
 
 function ntApplyEditAIData(data) {
@@ -5581,18 +6768,23 @@ function ntMergeIntoTask(taskId, data) {
     task.parts = task.parts || [];
     const byName = new Map();
     task.parts.forEach((p, i) => byName.set(String(p.name || '').trim().toLowerCase(), i));
-    data.parts.forEach(p => {
+    // Дополняем артикулы из сырого текста, если AI их пропустил
+    const raw = data.__rawText || data.raw_text || '';
+    const enrichedParts = ntEnrichPartsWithArticles(data.parts, raw);
+    enrichedParts.forEach(p => {
       const name = String(p.name || '').trim(); if (!name) return;
       const key = name.toLowerCase(); const idx = byName.get(key);
+      const art = ntExtractArticle(p);
       if (idx !== undefined) {
         const cur = task.parts[idx]; let ch = false;
         if (p.qty != null) { const q = Math.max(1, parseInt(p.qty,10)||1); if (q !== cur.quantity) { cur.quantity = q; ch = true; } }
         if (p.status && ['notordered','ordered','instock'].includes(p.status) && p.status !== cur.status) { cur.status = p.status; ch = true; }
         if (p.purchase != null && String(p.purchase) !== String(cur.purchase)) { cur.purchase = p.purchase; ch = true; }
         if (p.sale != null && String(p.sale) !== String(cur.sale)) { cur.sale = p.sale; ch = true; }
+        if (art && art !== String(cur.article || '')) { cur.article = art; ch = true; }
         if (ch) partsUpdated++;
       } else {
-        task.parts.push({ name, article: '', quantity: Math.max(1, parseInt(p.qty,10)||1), purchase: p.purchase != null ? p.purchase : '', sale: p.sale != null ? p.sale : '', status: ['ordered','instock'].includes(p.status) ? p.status : 'notordered', notes: [], note: '', link: '' });
+        task.parts.push({ name, article: art, quantity: Math.max(1, parseInt(p.qty,10)||1), purchase: p.purchase != null ? p.purchase : '', sale: p.sale != null ? p.sale : '', status: ['ordered','instock'].includes(p.status) ? p.status : 'notordered', notes: [], note: '', link: '' });
         byName.set(key, task.parts.length - 1); partsAdded++;
       }
     });
@@ -5621,10 +6813,46 @@ function ntMergeIntoTask(taskId, data) {
   if (total) {
     task.updatedAt = new Date().toISOString();
     task.log = task.log || [];
-    task.log.push({ time: new Date().toISOString(), user: USERS[state.currentUser].name, text: `AI: запчасти +${partsAdded}/~${partsUpdated}, работы +${worksAdded}/~${worksUpdated}` });
+    const artCount = (task.parts || []).filter(p => p.article && String(p.article).trim()).length;
+    task.log.push({ time: new Date().toISOString(), user: USERS[state.currentUser].name, text: `AI: запчасти +${partsAdded}/~${partsUpdated} (артикулов: ${artCount}), работы +${worksAdded}/~${worksUpdated}` });
     saveState(taskId);
   }
   return { partsAdded, partsUpdated, worksAdded, worksUpdated };
+}
+
+/** Merge + автопоиск OEM для запчастей без артикула */
+async function ntMergeIntoTaskWithArticleLookup(taskId, data) {
+  const result = ntMergeIntoTask(taskId, data);
+  const task = state.tasks.find(t => t.id === taskId);
+  if (!task || !task.parts || !task.parts.length) return result;
+  const missing = task.parts.filter(p => String(p.name || '').trim() && !String(p.article || '').trim());
+  if (!missing.length || !_aiCache.key) return result;
+  try {
+    ntSetAIStatus(`🔍 Ищу артикулы для ${missing.length} запч. (${task.car?.model || 'авто'})…`, 'info');
+    const filled = await ntAutoFillArticles(task.parts, task);
+    let updated = 0;
+    filled.forEach((p, i) => {
+      const art = ntExtractArticle(p);
+      if (art && art !== String(task.parts[i].article || '')) {
+        task.parts[i].article = art;
+        updated++;
+      }
+    });
+    if (updated) {
+      task.updatedAt = new Date().toISOString();
+      task.log = task.log || [];
+      task.log.push({
+        time: new Date().toISOString(),
+        user: USERS[state.currentUser].name,
+        text: `AI: подобрано артикулов: ${updated}`
+      });
+      saveState(taskId);
+      result.partsUpdated = (result.partsUpdated || 0) + updated;
+    }
+  } catch (e) {
+    console.warn('article lookup after merge:', e);
+  }
+  return result;
 }
 
 function ntMaybeApplyPayment(taskId, data) {
@@ -5654,7 +6882,7 @@ async function ntHandleEditAIData(taskId, text) {
     if (!data.assignee) data.assignee = ntParseAssignee(text);
     if (!data.scheduledTimeText && /завтра|послезавтра|сегодня|через час|понедельник|вторник|среду|четверг|пятницу|субботу|воскресенье/i.test(text)) data.scheduledTimeText = text;
     const filled = ntApplyEditAIData(data);
-    const merged = ntMergeIntoTask(taskId, data);
+    const merged = await ntMergeIntoTaskWithArticleLookup(taskId, data);
     const paid = ntMaybeApplyPayment(taskId, data);
     const info = [];
     if (merged.partsAdded) info.push(`+${merged.partsAdded} запч.`);
@@ -5688,7 +6916,7 @@ function ntHandleEditPhoto(taskId, file) {
         const data = ntAiParseJSON(jres.choices?.[0]?.message?.content || '');
         data.__rawText = data.raw_text || '';
         const filled = ntApplyEditAIData(data);
-        const merged = ntMergeIntoTask(taskId, data);
+        const merged = await ntMergeIntoTaskWithArticleLookup(taskId, data);
         const paid = ntMaybeApplyPayment(taskId, data);
         const info = [];
         if (merged.partsAdded) info.push(`+${merged.partsAdded} запч.`);
@@ -5731,8 +6959,25 @@ function ntSetupMic(btn, { onResult, onStart, onError } = {}) {
   if (!btn) return;
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) {
-    btn.title = 'Голосовой ввод не поддерживается';
-    btn.addEventListener('click', () => ntSetAIStatus('Браузер не поддерживает Web Speech API. Открой в Chrome/Edge.', 'err'));
+    btn.title = 'Голосовой ввод не поддерживается в этом браузере';
+    btn.style.opacity = '0.45';
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      ntSetAIStatus('🎤 Web Speech API не поддерживается. Используй Chrome или Edge (или загрузи файл 📎 / фото 📷).', 'err');
+    });
+    return;
+  }
+  // Доп. проверка: в некоторых браузерах объект есть, но start() падает
+  try {
+    const test = new SR();
+    if (!test || typeof test.start !== 'function') throw new Error('no start');
+  } catch (_) {
+    btn.title = 'Голосовой ввод недоступен';
+    btn.style.opacity = '0.45';
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      ntSetAIStatus('🎤 Распознавание речи недоступно в этом браузере. Используй 📎 или 📷.', 'err');
+    });
     return;
   }
   let rec = null, state = 'idle', collected = '';
@@ -5891,10 +7136,11 @@ async function ntHandleEditRWOnly(taskId, text) {
     // Применяем скалярные поля прямо к task
     const fieldsChanged = ntApplyEditFormToTask(task, data);
 
-    // Дополняем/обновляем parts/works
-    const merged = ntMergeIntoTask(taskId, {
+    // Дополняем/обновляем parts/works + автопоиск артикулов
+    const merged = await ntMergeIntoTaskWithArticleLookup(taskId, {
       parts: Array.isArray(data.parts) ? data.parts : [],
-      works: Array.isArray(data.works) ? data.works : []
+      works: Array.isArray(data.works) ? data.works : [],
+      __rawText: text
     });
 
     // Оплата (с confirm)
@@ -5971,10 +7217,11 @@ function ntHandleEditPhotoRWOnly(taskId, file) {
         // Применяем скалярные поля
         const fieldsChanged = ntApplyEditFormToTask(task, data);
 
-        // Дополняем parts/works
-        const merged = ntMergeIntoTask(taskId, {
+        // Дополняем parts/works + автопоиск артикулов
+        const merged = await ntMergeIntoTaskWithArticleLookup(taskId, {
           parts: Array.isArray(data.parts) ? data.parts : [],
-          works: Array.isArray(data.works) ? data.works : []
+          works: Array.isArray(data.works) ? data.works : [],
+          __rawText: data.__rawText || ''
         });
 
         // Оплата
@@ -5986,7 +7233,7 @@ function ntHandleEditPhotoRWOnly(taskId, file) {
           task.log.push({
             time: new Date().toISOString(),
             user: USERS[state.currentUser].name,
-            text: `AI из карточки (фото): полей ${fieldsChanged}, запчасти +${merged.partsAdded}/~${merged.partsUpdated}, работы +${merged.worksAdded}/~${merged.worksUpdated}${paid ? ', +оплата' : ''}`
+            text: `AI из карточки (фото): полей ${fieldsChanged}, запчасти +${merged.partsAdded}/~${merged.partsUpdated} (с артикулами), работы +${merged.worksAdded}/~${merged.worksUpdated}${paid ? ', +оплата' : ''}`
           });
           saveState(taskId);
         }
